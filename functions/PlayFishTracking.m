@@ -30,13 +30,12 @@ else
     error('Too many inputs!')
 end
 
-
 figure('Name', 'Fish Tracking')
 tic
 for imgNum = startFrame:endFrame
     imagesc(IM(:,:,imgNum)),axis image, axis off, colormap(gray), drawnow
     hold on
-    plot(fishPosVec(1,imgNum),fishPosVec(2,imgNum),'ro'), drawnow
+    plot(fishPosVec(imgNum,1),fishPosVec(imgNum,2),'ro'), drawnow
     title(['Frame: ' num2str(imgNum) ', Frame Rate: ' num2str((round(10*((imgNum+1-startFrame)/toc)))/10) ' fps'])
     shg
     pause(pauseDur)

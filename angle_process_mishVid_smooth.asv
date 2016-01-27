@@ -11,8 +11,8 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
         dirFile = [PathName FileName];
         [~,fname,~]=fileparts(FileName);
-        outdir=[PathName,fname,'\swims\'];
-        mkdir(outdir);
+        outDir=[PathName,fname,'\swims\'];
+        mkdir(outDir);
         
         FileName
         
@@ -70,42 +70,101 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         toc
         x_ = zeros(1,size(IM,3));
         y_ = x_;
-        
-          disp('Tracking the fish...')
-        for i=1:size(IM,3)
-            ii=conv2(-squeeze(IM(:,:,i))+im,ones(5)/25,'same');
-            if 1, imagesc(ii);colormap(gray); axis image; title(i);drawnow;end;
-%           [x_(i) y_(i)]=find(ii==max(ii(:)),1);
-          [~,maxInds] = sort(ii(:),'descend');
-        maxInds = maxInds(1:50);
-        [r,c] = ind2sub(size(ii),maxInds);
-        r = round(mean(r));
-        c = round(mean(c));
-        x_(i) = r;
-        y_(i) = c;
-            if 1, hold on;plot(y_(i),x_(i),'ro');drawnow;
+        disp('Tracking the fish...')
+        IM_proc = zeros(size(IM));
+        for jj=1:size(IM,3)
+            ii=conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+            IM_proc(:,:,jj) = ii;
+            if 1, imagesc(ii);colormap(gray); axis image; title(jj);drawnow;end;
+            %           [x_(i) y_(i)]=find(ii==max(ii(:)),1);
+            [~,maxInds] = sort(ii(:),'descend');
+            maxInds = maxInds(1:30);
+            [r,c] = ind2sub(size(ii),maxInds);
+            r = round(mean(r));
+            c = round(mean(c));
+            x_(jj) = r;
+            y_(jj) = c;
+            if 1, hold on;plot(y_(jj),x_(jj),'ro');drawnow;
                 hold off;cla,%plot(0);
                 shg
-            end; 
+            end;
         end
-        tracexy = [y_; x_]'; 
+        tracexy = [y_; x_]';
         disp('Creating mean reference frame...')
         ref = mean(IM,3);
         
+        %% Fish Orientation       
+        fish.orientation = GetFishOrientation(-IM_proc,tracexy,20);
+        fish.orientation = CorrectOrientation(fish.orientation);
         
         %% Saving variables
         saveOrNot = input('Save the variables (y/n)?  ','s');
         if strcmpi('y',saveOrNot)
             disp('Saving relevant variables...')
-            savefast(fullfile([outdir,fname, '_tracexy.mat']),'tracexy');
-            savefast(fullfile([outdir,fname, '_IM.mat']),'IM');
-            savefast(fullfile([outdir,fname, '_ref.mat']),'ref');
+            savefast(fullfile(outDir,[fname, '_tracexy.mat']),'tracexy');
+            savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
+            savefast(fullfile(outDir,[fname, '_IM_proc.mat']),'IM_proc');
+            savefast(fullfile(outDir,[fname, '_ref.mat']),'ref');
+            savefast(fullfile(outDir,[fname, '_orientation.mat']),'fish.orientation');
         else
             disp('Data not saved!')
         end
-                
+        
+        %% Turn angles during swims and histogram
+        x = tracexy(:,1);
+        y = tracexy(:,2);
+        dx = diff(x);
+        dy = diff(y);
+        dS = sqrt(dx.^2 + dy.^2);
+        noMovInds  = find(dS < 10);
+        movInds = setdiff(1:length(dx),noMovInds);
+        x_mov = x(movInds);
+        y_mov = y(movInds);
+        dx_mov = zeros(size(movInds));
+        dy_mov = zeros(size(movInds));
+        
+        fish.orientation_mov = fish.orientation(movInds);
+        fish.dO_mov = diff(fish.orientation_mov);
+        fish.dO_mov(fish.dO_mov <-180) = fish.dO_mov(fish.dO_mov < -180) + 360;
+        fish.dO_mov(fish.dO_mov >180) = fish.dO_mov(fish.dO_mov > 180) - 360;
+        
+        figure('Name','Turn angle histogram')
+        hist(fish.dO_mov,75)
+        box off
+        set(gca,'tickdir','out','xtick',-180:45:180)
+        xlabel('Turn angle')
+        ylabel('Count')
+        title('Turn angle histogram')
         
         
+        %% Swim distances and histogram
+        
+        dMovInds = diff(movInds);
+        movInds_jump = movInds;
+        movInds_jump(dMovInds==1)=[];
+        x_mov = x(movInds_jump);
+        y_mov = y(movInds_jump);
+        dS_mov = sqrt(x_mov.^2 + y_mov.^2);
+        
+        figure('Name','Swim distance histogram')
+        hist(dS_mov,50)
+        box off
+        xlabel('Swim distances (px)')
+        title('Swim dist histogram')
+        ylabel('Count')
+        set(gca,'tickdir','out')
+        title('Swim distance histogram')
+        shg
+        
+        
+        
+   
+    
+    
+    
+    
+    
+    
     case 'RerunAnalysis'
     case 'LoadingCoordinates'
         clear all

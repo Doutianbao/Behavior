@@ -1,220 +1,105 @@
 
-%% Turn stuff
-x = tracexy_flt(1,:);
-y = size(IM,1)-tracexy_flt(2,:);
+%% Swim analysis
+x = tracexy(:,1);
+y = tracexy(:,2);
 dx = diff(x);
 dy = diff(y);
-
-S = sqrt(dx.^2 + dy.^2);
-S_sort = sort(S,'ascend');
-S_perc = S_sort(round(length(S)/2.5));
-noMovInds = find(S<=S_perc);
-% dx(noMovInds) = []; 
-% dy(noMovInds) = [];
-% S(noMovInds) = [];
-
-clear i angle
-% thetas = angle(dx + dy*i)*(180/pi);
-the
-
-dTh = diff(thetas);
-
-leftInds = find(dTh > 0);
-rightInds = find(dTh < 0 );
-straightInds = setdiff(1:length(x),union(leftInds,rightInds));
-
-% Test turn estimation
-figure
-imagesc(ref),axis image, colormap(gray)
-hold on
-startFrame = 100;
-endFrame = 500;
-
-for f = startFrame:endFrame
-    plot(tracexy_flt(1,f),tracexy_flt(2,f),'ro')
-    %     title(['Frame: ' num2str(f) ', Orientation: ' num2str(orVec(f)) ])
-    if f~=1
-        if intersect(f,leftInds)
-            title(['Frame: ' num2str(f) ', Left' ])
-        elseif intersect(f,rightInds)
-            title(['Frame: ' num2str(f) ', Right' ])
-        else
-            title(['Frame: ' num2str(f) ', Straight' ])
-        end
-        %     title(['Frame: ' num2str(f) ', Turn: ' num2str(orVec(f)) ])
-        shg
-        pause()
+dS = sqrt(dx.^2 + dy.^2);
+noMovInds  = find(dS < 3);
+movInds = setdiff(1:length(dx),noMovInds);
+startInds = [];
+initInd = movInds(1);
+for jj = 2:length(movInds)
+    if movInds(jj)-movInds(jj-1) > 1
+        initInd = movInds(jj-1);
+        nextInd = movInds(jj);
+        startInds = [startInds; initInd;nextInd]; 
     end
 end
-break;
+startInds = unique(startInds);
+x_mov = x(startInds);
+y_mov = y(startInds);
+dS_mov = sqrt(diff(x_mov).^2 + diff(y_mov).^2);
 
-orVec = zeros(size(S));
-or1 = find(dx >0 & dy > 0);
-or2 = find(dx <0 & dy > 0);
-or3 = find(dx <0 & dy < 0);
-or4 = find(dx > 0 & dy <0);
-orVec(or1+1) = 1;
-orVec(or2+1) = 2;
-orVec(or3+1) = 3;
-orVec(or4+1) = 4;
-for jj = 2:length(orVec)
-    if orVec(jj)==0
-        orVec(jj) = orVec(jj-1);
-    end
-end
-
-
-
-% theta2 = atan(dy(2:end)./dx(2:end))*(180/pi);
-
-% theta1 = atan(y(1:end-1)./x(1:end-1)) *(180/pi);
-% theta2 = atan(y(2:end)./x(2:end))*(180/pi)
-
-orVec = orVec(1:end-1);
-rightVec = zeros(size(thetas));
-leftVec = zeros(size(thetas));
-% dTh = theta2-theta1;
-rightVec(((orVec(2:end) ==1) | (orVec(2:end)==4)) & (thetas(2:end)  < 0))=1;
-rightVec(((orVec(2:end) ==3) | (orVec(2:end)==4)) & (thetas(2:end)  >0))=1;
-
-leftVec(((orVec(2:end) ==1) | (orVec(2:end)==2)) & (dTh(2:end)  > 0))=1;
-leftVec(((orVec(2:end) ==3) | (orVec(2:end)==4)) & (dTh(2:end)  <0))=1;
-
-% 
-% rightVec(theta1>5) = 1;
-% leftVec(theta1 <-5) = 1;
-
-rightInds = find(rightVec);
-leftInds = find(leftVec);
-
-
-% Test turn estimation
-figure
-imagesc(ref),axis image, colormap(gray)
-hold on
-startFrame = 500;
-endFrame = 2000;
-
-for f = startFrame:endFrame
-    plot(tracexy_flt(1,f),tracexy_flt(2,f),'ro')
-%     title(['Frame: ' num2str(f) ', Orientation: ' num2str(orVec(f)) ])
-    if f~=1    
-    if intersect(f,leftInds)
-      title(['Frame: ' num2str(f) ', Left' ])
-    elseif intersect(f,rightInds)
-       title(['Frame: ' num2str(f) ', Right' ])
-    else
-        title(['Frame: ' num2str(f) ', Straight' ])
-    end
-%     title(['Frame: ' num2str(f) ', Turn: ' num2str(orVec(f)) ])
-    shg  
-     pause()
-    end
-end 
-break
-
-S_right = S(rightInds+1);
-S_left = S(leftInds + 1);
-
-[rCount,rVals] = hist(S_right,50);
-[lCount,lVals] = hist(S_left,50);
-
-dRightInds = diff(rightInds);
-dLeftInds = diff(leftInds);
-
-contRightInds = find(dRightInds==1);
-contLeftInds = find(dLeftInds==1);
-
-S_right_cont = S(contRightInds);
-S_left_cont = S(contLeftInds);
-[rCount,rVals] = hist(S_right_cont,50);
-[lCount,lVals] = hist(S_left_cont,50);
-
-figure
-plot(lVals,lCount,'linewidth',2)
-hold on
-plot(rVals,rCount,'r','lineWidth',2)
-legend('Left','Right')
-xlim([-inf 50])
-set(gca,'tickdir','out')
-xlabel('Swim distance before turn to other direction')
-ylabel('Count')
+orientation = fish.orientation;
+orient_mov = orientation(startInds); 
+[oX,oY] = pol2cart(orient_mov*pi/180,1);
+clear i
+orVec = oX + oY*i;
+dOr = angle(orVec(1:end-1,:).*conj(orVec(2:end,:)))*180/pi;
+straightInds = find(dOr > -5 & dOr < 5);
+leftInds = find(dOr <-5);
+rightInds = find(dOr >5);
+dOr_str = dOr(straightInds);
+dOr_left = -dOr(leftInds);
+dOr_right = dOr(rightInds);
+[orCount_left,orVals] = hist(dOr_left,[10:10:360]);
+[orCount_right,~] = hist(dOr_right,[10:10:360]);
+orMat = [orCount_left(:),orCount_right(:)];
+figure('Name','Turn histogram')
+bar(orVals,orMat,1)
+xlim([0 130])
 box off
-title('Histogram of swim distances in one direction before turn to other direction')
+legend('Left','Right')
+set(gca,'tickdir','out','xtick',orVals)
+xlabel('Turn angle')
+ylabel('Count')
+title('Turn angle histogram')
 
+%% Swim distance by turn
+dS_left = dS_mov(leftInds);
+dS_right = dS_mov(rightInds);
+dS_straight = dS_mov(straightInds);
 
-SS = nan;
-blah = 0;
-for jj = 1:length(dRightInds)
-    if dRightInds(jj)~=0
-        blah = blah+S(jj);
-    else
-        blah = 0;
-    end
-    SS = [SS; blah];
-end
-SS_right = SS;
-
-SS = nan;
-blah = 0;
-for jj = 1:length(dLeftInds)
-    if dLeftInds(jj)~=0
-        blah = blah+S(jj);
-    else
-        blah = 0;
-    end
-    SS = [SS; blah];
-end
-SS_left = SS;
-
-
-
-%% Plot trajectory
-figure('Name','Fish trajectory')
-imagesc(ref), colormap(gray), axis image, axis off
+[dslCount,dslVals] = hist(dS_left,20);
+[dsrCount,dsrVals] = hist(dS_right,20);
+[dssCount,dssVals] = hist(dS_straight,20);
+ker = gausswin(5);
+ker = ker/sum(ker);
+dslCount = conv2(dslCount(:),ker(:),'same');
+dsrCount = conv2(dsrCount(:),ker(:),'same');
+dssCount = conv2(dssCount(:),ker(:),'same');
+figure('Name','Swim dist histogram')
+plot(dslVals,dslCount,'linewidth',2)
 hold on
-plot(tracexy_flt(1,1:end-3),tracexy_flt(2,1:end-3),'r')
-title('Fish trajectories over a 20 min period')
+plot(dsrVals,dsrCount,'r','linewidth',2)
+plot(dssVals,dssCount,'k','linewidth',2)
+xlim([-inf inf])
+ylim([-inf inf])
+box off
+set(gca,'tickdir','out')
+xlabel('Swim distance')
+ylabel('Count')
+legend('Left','Right','Straight')
+title('Swim distance by turn distribution')
 
-break;
-
-
-
-%% Animate trajectory
-startFrame = 800;
-endFrame = 3000;
-figure('Name','Trajectory animation')
-imagesc(IM(:,:,startFrame)), axis image, colormap(gray), axis off
+%% Velocity stuff
+timeVec = (0:size(IM,3)-1)*(1/30); % Since frame rate = 30fps
+timeVec_mov = timeVec(startInds);
+dT_mov = diff(timeVec_mov);
+vel_mov = dS_mov(:)./dT_mov(:);
+vel_left = vel_mov(leftInds);
+vel_right = vel_mov(rightInds);
+vel_straight = vel_mov(straightInds);
+[vlCount,vlVals] = hist(vel_left,50)
+[vrCount,vrVals] = hist(vel_right,50);
+[vsCount,vsVals] = hist(vel_straight,50);
+vlCount = conv2(vlCount(:),ker(:),'same');
+vrCount = conv2(vrCount(:),ker(:),'same');
+vsCount = conv2(vsCount(:),ker(:),'same');
+figure('Name','Velocity by turn distribution')
+plot(vlVals,vlCount,'linewidth',2)
 hold on
-count = 0;
-for f = startFrame:endFrame    
-    if mod(count,50)==0
-        cla
-        imagesc(IM(:,:,f)), axis image, colormap(gray), axis off, drawnow
-    else
-        cla
-        imagesc(IM(:,:,f)), axis image, colormap(gray), axis off, drawnow
-    end
-    if isempty(intersect(f+1,noMovInds))
-        if  count == 0
-            plot(tracexy_flt(1,f), tracexy_flt(2,f),'ro'), drawnow
-        else
-            plot(tracexy_flt(1,f), tracexy_flt(2,f),'ro-'), drawnow
-        end
-        count = count + 1;
-%         if intersect(f,rightInds)
-%             title(['Frame # ' num2str(f) ', Right'])
-%         elseif intersect(f,leftInds)
-%             title(['Frame # ' num2str(f) ', Left'])
-%         else
-%             title(['Frame # ' num2str(f) ', Straight'])
-%         end
-        title(['Orientation quad ' num2str(orVec(f-1))])
-%         title(['dx = ' num2str(dx(f-1)), ', dy  = ' num2str(dy(f-1))])
-        shg
-        pause()
-    end
-    
-end
+plot(vrVals,vrCount,'r','linewidth',2)
+plot(vsVals,vsCount,'k','linewidth',2)
+box off
+xlim([50 700])
+ylim([-inf inf])
+xlabel('Swim Vel (plx)')
+set(gca,'tickdir','out')
+legend('Left','Right','Straight')
+
+%% 
+break
 
 

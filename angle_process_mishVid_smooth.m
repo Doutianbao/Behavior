@@ -97,21 +97,32 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         ref = mean(IM,3);
         
         %% Fish Orientation       
-        fish.orientation = GetFishOrientation(-IM_proc(:,:,1:1000),tracexy(1:1000,:),20);
-        fish.orientation = CorrectOrientation(fish.orientation, 90);
+         orientation = GetFishOrientation(-IM_proc,tracexy,20);
+         orientation_corr = CorrectOrientation(orientation, 90);
+         orientation_backup = orientation;
+         save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
+         save(fullfile(outDir,[fname, '_orientation_corr.mat']),'orientation_corr');
+  
                
         %% Saving variables
-        saveOrNot = input('Save the variables (y/n)?  ','s');
+        saveOrNot = 'y';
+%         saveOrNot = input('Save the variables (y/n)?  ','s');
+        tic
         if strcmpi('y',saveOrNot)
             disp('Saving relevant variables...')
             savefast(fullfile(outDir,[fname, '_tracexy.mat']),'tracexy');
-            savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
+%             savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
             savefast(fullfile(outDir,[fname, '_IM_proc.mat']),'IM_proc');
             savefast(fullfile(outDir,[fname, '_ref.mat']),'ref');
-            savefast(fullfile(outDir,[fname, '_orientation.mat']),'fish.orientation');
+%             savefast(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
         else
             disp('Data not saved!')
         end
+        toc
+        
+        
+        break;
+        
         
         %% Turn angles during swims and histogram
         x = tracexy(:,1);
@@ -126,10 +137,10 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         dx_mov = zeros(size(movInds));
         dy_mov = zeros(size(movInds));
         
-        fish.orientation_mov = fish.orientation(movInds);
-        fish.dO_mov = diff(fish.orientation_mov);
-        fish.dO_mov(fish.dO_mov <-180) = fish.dO_mov(fish.dO_mov < -180) + 360;
-        fish.dO_mov(fish.dO_mov >180) = fish.dO_mov(fish.dO_mov > 180) - 360;
+        orientation_mov = fish.orientation(movInds);
+        dO_mov = diff(orientation_mov);
+        dO_mov(dO_mov <-180) = dO_mov(dO_mov < -180) + 360;
+        dO_mov(dO_mov >180) = dO_mov(fish.dO_mov > 180) - 360;
         
         figure('Name','Turn angle histogram')
         hist(fish.dO_mov,75)
@@ -162,7 +173,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         
         
    
-    
+   break
     
     
     

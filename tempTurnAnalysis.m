@@ -21,7 +21,7 @@ x_mov = x(startInds);
 y_mov = y(startInds);
 dS_mov = sqrt(diff(x_mov).^2 + diff(y_mov).^2);
 
-orientation = fish.orientation;
+orientation = orientation;
 orient_mov = orientation(startInds); 
 [oX,oY] = pol2cart(orient_mov*pi/180,1);
 clear i
@@ -74,14 +74,14 @@ legend('Left','Right','Straight')
 title('Swim distance by turn distribution')
 
 %% Velocity stuff
-timeVec = (0:size(IM_proc,3)-1)*(1/30); % Since frame rate = 30fps
+timeVec = (0:length(tracexy)-1)*(1/30); % Since frame rate = 30fps
 timeVec_mov = timeVec(startInds);
 dT_mov = diff(timeVec_mov);
 vel_mov = dS_mov(:)./dT_mov(:);
 vel_left = vel_mov(leftInds);
 vel_right = vel_mov(rightInds);
 vel_straight = vel_mov(straightInds);
-[vlCount,vlVals] = hist(vel_left,50)
+[vlCount,vlVals] = hist(vel_left,50);
 [vrCount,vrVals] = hist(vel_right,50);
 [vsCount,vsVals] = hist(vel_straight,50);
 vlCount = conv2(vlCount(:),ker(:),'same');
@@ -102,7 +102,8 @@ set(gca,'tickdir','out')
 legend('Left','Right')
 % legend('Left','Right','Straight')
 
-%% 
+
+
 break
 
 

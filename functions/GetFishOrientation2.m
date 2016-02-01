@@ -47,7 +47,7 @@ for frame = imgFrames
         blahX(blahX<1) = 1;
         blahY(blahY>size(IM,1)) = size(IM,1);
         blahY(blahY<1) = 1;        
-        img = IM(:,:,frame);  
+        img = -IM(:,:,frame);  
         lineInds = sub2ind(size(img),round(blahY),round(blahX));
         
 %         hold on        
@@ -69,25 +69,35 @@ for frame = imgFrames
     end
     lineSums(1) = [];
     lineRanges(1) = [];
-    lineSums = zscore(lineSums);
-    lineRanges = zscore(lineRanges); 
-    inds1 = find(lineRanges < -0.5);
-    orSum = max(lineSums(inds1));
-    orLine{frame} = find(lineSums == orSum);
-    if (numel(orLine{frame})>1) && (frame > 1)
-        [~,ind] = min(abs(orLine{frame}-orLine{frame-1}));
-        orLine{frame} = orLine{frame}(ind);
-    elseif (numel(orLine{frame})>1) && (frame ==1)
-        orLine{frame} = orLine{frame}(1);
-    end
-     orientation(frame) = mod(180+(lineThetas(orLine{frame})*180/pi),360);   
+    lineSums = (lineSums-min(lineSums))/(max(lineSums)-min(lineSums));
+    lineRanges = (lineRanges-min(lineRanges))/(max(lineRanges)-min(lineRanges));
+    trunkLine = lineSums-lineRanges;
+    trunkInd = find(trunkLine==max(trunkLine));
+    orientation(frame) = lineThetas(trunkInd)*180/pi;    
+    
+    
+    
+%     lineSums = zscore(lineSums);
+%     lineRanges = zscore(lineRanges);
+%     
+%     inds1 = find(lineRanges < -0.5);
+%     orSum = max(lineSums(inds1));
+%     orLine{frame} = find(lineSums == orSum);
+%     if (numel(orLine{frame})>1) && (frame > 1)
+%         [~,ind] = min(abs(orLine{frame}-orLine{frame-1}));
+%         orLine{frame} = orLine{frame}(ind);
+%     elseif (numel(orLine{frame})>1) && (frame ==1)
+%         orLine{frame} = orLine{frame}(1);
+%     end
+%      orientation(frame) = mod(180+(lineThetas(orLine{frame})*180/pi),360);   
   
 %     hold on
 %     plot(cartCoords{orLine{imgNum}}(:,1),cartCoords{orLine{imgNum}}(:,2),'color','r','linewidth',2)
 %     title(['Img # ' num2str(imgNum),' Orientation: ' num2str(orientation(imgNum))])
 %     shg
 %     pause()
-    if mod(frame,1000)== 0
+
+    if mod(frame,500)== 0
         disp(['Img # ' num2str(frame)])
     end
 end

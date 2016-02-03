@@ -44,22 +44,13 @@ rho = 0:lineLength-1;
 for imgNum = startFrame:skipFrames:endFrame
     theta = fishOrientation(imgNum);   
 %     theta = mod((theta + 180),360)*pi/180;
-%     theta = 360-theta;
-    theta= mod(theta+180,360)*pi/180;
-%     theta = (180-theta)+theta;
-%     theta = theta*pi/180;
-%     theta = (360-theta)*pi/180;
-    
-    
+    theta = (360-theta)*pi/180;
     thetas = repmat(theta,1,lineLength);    
     [blahX,blahY] = pol2cart(thetas,rho);
-    img = IM(:,:,imgNum);
-   
+    blahY 
     blahX = blahX + fishPos(imgNum,1);
     blahY = blahY + fishPos(imgNum,2);
-%      blahX = flipud(blahX(:));
-%     blahY = blahY(:);
-     
+     img = IM(:,:,imgNum);
 %     blahY = size(img,1)-blahY;
   
 %     lineInds = sub2ind(size(img),round(blahY),round(blahX));

@@ -97,7 +97,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         ref = mean(IM,3);
         
         %% Fish Orientation       
-         orientation = GetFishOrientation2(-IM_proc,tracexy,20);
+         orientation = GetFishOrientation2(IM,tracexy,20);
          orientation_corr = CorrectOrientation(orientation, 90);
          orientation_backup = orientation;
          save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');

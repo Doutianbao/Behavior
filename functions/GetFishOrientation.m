@@ -17,6 +17,7 @@ lineThetas = (0:dTheta:360)*pi/180;
 th = {};
 cartCoords = {};
 imgFrames = 2:size(IM,3);
+
 orientation = zeros(size(x));
 orLine = {};
 orLine{1} = 0;

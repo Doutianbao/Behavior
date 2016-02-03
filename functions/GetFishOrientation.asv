@@ -17,6 +17,7 @@ lineThetas = (0:dTheta:360)*pi/180;
 th = {};
 cartCoords = {};
 imgFrames = 2:size(IM,3);
+
 orientation = zeros(size(x));
 orLine = {};
 orLine{1} = 0;
@@ -42,12 +43,12 @@ for frame = imgFrames
         blahY = blahY  + yy(frame);
 %         hold on
 %          plot(blahX, blahY,'color',rand(3,1))
-           sdsds
+      
         blahX(blahX>size(IM,2)) = size(IM,2);
         blahX(blahX<1) = 1;
         blahY(blahY>size(IM,1)) = size(IM,1);
         blahY(blahY<1) = 1;        
-        img = -IM(:,:,frame);  
+        img = IM(:,:,frame);  
         lineInds = sub2ind(size(img),round(blahY),round(blahX));
         
 %         hold on        

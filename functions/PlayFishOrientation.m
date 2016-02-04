@@ -43,12 +43,9 @@ tic
 rho = 0:lineLength-1;
 for imgNum = startFrame:skipFrames:endFrame
     theta = fishOrientation(imgNum);   
-%     theta = mod((theta + 180),360)*pi/180;
 %     theta = 360-theta;
     theta= mod(theta+180,360)*pi/180;
-%     theta = (180-theta)+theta;
-%     theta = theta*pi/180;
-%     theta = (360-theta)*pi/180;
+
     
     
     thetas = repmat(theta,1,lineLength);    

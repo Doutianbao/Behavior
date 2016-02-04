@@ -18,7 +18,7 @@ lineThetas = (0:dTheta:360)*pi/180;
 th = {};
 cartCoords = {};
 imgFrames = 2:size(IM,3);
-% imgFrames = 4980:4990;
+% imgFrames = 1000:1010;
 orientation = zeros(size(x));
 orLine = {};
 orLine{1} = 0;
@@ -78,29 +78,8 @@ for frame = imgFrames
     lineRanges = (lineRanges-min(lineRanges))/(max(lineRanges)-min(lineRanges));
     trunkLine = lineSums-lineRanges;
     trunkInd = find(trunkLine==max(trunkLine));
-    orientation(frame) = lineThetas(trunkInd(1))*180/pi;    
-    
-    
-    
-%     lineSums = zscore(lineSums);
-%     lineRanges = zscore(lineRanges);
-%     
-%     inds1 = find(lineRanges < -0.5);
-%     orSum = max(lineSums(inds1));
-%     orLine{frame} = find(lineSums == orSum);
-%     if (numel(orLine{frame})>1) && (frame > 1)
-%         [~,ind] = min(abs(orLine{frame}-orLine{frame-1}));
-%         orLine{frame} = orLine{frame}(ind);
-%     elseif (numel(orLine{frame})>1) && (frame ==1)
-%         orLine{frame} = orLine{frame}(1);
-%     end
-%      orientation(frame) = mod(180+(lineThetas(orLine{frame})*180/pi),360);   
-  
-%     hold on
-%     plot(cartCoords{orLine{imgNum}}(:,1),cartCoords{orLine{imgNum}}(:,2),'color','r','linewidth',2)
-%     title(['Img # ' num2str(imgNum),' Orientation: ' num2str(orientation(imgNum))])
-%     shg
-%     pause()
+    orientation(frame) = lineThetas(trunkInd(1))*180/pi;     
+    orientation(frame) = mod(orientation(frame) + 180,360);
 
     if mod(frame,500)== 0
         disp(['Img # ' num2str(frame)])

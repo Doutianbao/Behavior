@@ -39,5 +39,6 @@ for imgNum = startFrame:endFrame
     plot(fishPosVec(imgNum,1),fishPosVec(imgNum,2),'ro'), drawnow
     title(['Frame: ' num2str(imgNum) ', Frame Rate: ' num2str((round(10*((imgNum+1-startFrame)/toc)))/10) ' fps'])
     shg
-    pause(pauseDur)   
+    pause(pauseDur)
+   
 end

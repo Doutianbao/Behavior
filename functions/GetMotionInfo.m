@@ -19,7 +19,7 @@ epInds = {};
 ker  = gausswin(3); ker = ker/sum(ker);
 if trajPlot
     figure
-    axis image
+%     axis image
 end
 for jj = 2:length(swimStartFrames)-1
     epInds{jj} = swimStartFrames(jj):swimStartFrames(jj+1)-1;
@@ -37,9 +37,11 @@ for jj = 2:length(swimStartFrames)-1
     if trajPlot
 %         plot(traj{jj}(:,1), traj{jj}(:,2),'.-')
         hold on
-        plot(traj_adj{jj}(:,1),traj{jj}(:,2),'r.-')
-        xlim([-200 200])
-        ylim([-200 200])
+        plot(traj_adj{jj}(:,1),traj_adj{jj}(:,2),'.-','color',rand(1,3)), drawnow
+%         pause(0.5)
+        xlim([-inf inf])
+        ylim([-inf inf])
+        shg
     end
 end
 motionInfo.dS = dS;

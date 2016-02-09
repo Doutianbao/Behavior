@@ -119,10 +119,8 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
             disp('Data not saved!')
         end
         toc
-        
-        
-        break;
-        
+                
+        break;        
         
         %% Turn angles during swims and histogram
         x = tracexy(:,1);

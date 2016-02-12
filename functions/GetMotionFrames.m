@@ -20,6 +20,8 @@ dy1 = y(2:end)-y(1:end-1);
 dS1 = sqrt(dx1.^2 + dy1.^2);
 dS1 = dS1(1:end-1);
 
+dS = sqrt(diff(fishPos(:,1)).^2 + diff(fishPos(:,2)).^2);
+
 dx2 = x(3:end)-x(1:end-2);
 dy2 = y(3:end)-y(1:end-2);
 dS2 = sqrt(dx2.^2 + dy2.^2);
@@ -29,7 +31,7 @@ dS2 = sqrt(dx2.^2 + dy2.^2);
 % dS2 = sqrt(dx2.^2 + dy2.^2);
 
 
-motFrames = find((dS1 >= motionThr) & (dS2 >= 1.25*motionThr));
+motFrames = find((dS1 >= motionThr) & (dS2 >=2*motionThr));
 % motFrames = find((dS1 >= motionThr) & (dS2 >= motionThr));
 
 startInds = [];

@@ -25,7 +25,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         %% Imaging parameters
         start_f = 1;
         dur_f =  18000*2;
-        samplingRate = 30; %2.5 frames per sec
+        samplingRate = 30; % 2.5 frames per sec
         samp_int = fr_rate/60/samplingRate;
         stop_f =  start_f + dur_f;
         IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));

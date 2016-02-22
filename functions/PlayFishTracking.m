@@ -12,7 +12,7 @@ function PlayFishTracking(IM,fishPosVec,varargin)
 
 if nargin == 2
     startFrame = 1;
-    endFrame = 1000;
+    endFrame = size(IM,3);
     pauseDur = 0.1;
 elseif nargin == 3;
     startFrame = varargin{1};

@@ -28,8 +28,13 @@ Y(inds) = y;
 S = sqrt((X-fishPos(1)).^2 + (Y-fishPos(2)).^2);
 S(S>dThr)=0;
 inds = find(S);
-S_conv = conv2(S,ker,'same');
-B = S_conv.*S;
+
+% S_conv = conv2(S,ker,'same');
+% B = S_conv.*S;
+se = strel('disk',4);
+S(isnan(S))=0;
+S_open = imopen(S,se);
+B = S_open.*S;
 B(B>0) = max(B(:));
 B(isnan(B))=0;
 

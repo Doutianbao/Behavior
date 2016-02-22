@@ -1,10 +1,11 @@
 function PlayFishOriention(IM,fishPos,fishOrientation,varargin)
-% PlayFishTracking - Plays the video of the fish being tracked
-% PlayFishTracking(IM, fishPos,startFrame,endFrame,pauseDur)
+% PlayFishOrientation - Plays the video of the fish along with orientation
+%   line
+% PlayFishOrientation(IM, fishPos, startFrame,endFrame,pauseDur)
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image
 %   width, T = # of time points
-% fishPosVec - T x 2 vec where 1st & 2nd cols contain row & col positions
+% fishPos - T x 2 vec where 1st & 2nd cols contain row & col positions
 %   of the fish in the images
 % startFrame - Frame from which to display video
 % endFrame - Last Frame of video display
@@ -44,9 +45,7 @@ rho = 0:lineLength-1;
 for imgNum = startFrame:skipFrames:endFrame
     theta = fishOrientation(imgNum);   
 %     theta = 360-theta;
-    theta= mod(theta+180,360)*pi/180;
-
-    
+    theta= mod(theta+180,360)*pi/180;    
     
     thetas = repmat(theta,1,lineLength);    
     [blahX,blahY] = pol2cart(thetas,rho);

@@ -8,12 +8,14 @@ function varargout = GetFishPxls(im, fishPos, varargin)
 
 iThr = 5;
 dThr = 105;
-if nargin > 2
+if nargin ==3
     iThr = varargin{1};
-elseif nargin > 3
+elseif nargin == 4
+    iThr = varargin{1};
     dThr = varargin{2};
 end
-
+ker = gausswin(5,2);
+ker = ker(:)*ker(:)';
 im(im<iThr)=0;
 [r,c] = find(im);
 x = c;
@@ -23,15 +25,23 @@ Y  = X;
 inds = sub2ind(size(im),r,c);
 X(inds) = x;
 Y(inds) = y;
-fp = fishPos(jj,:);
-S = sqrt((X-fp(1)).^2 + (Y-fp(2)).^2);
+S = sqrt((X-fishPos(1)).^2 + (Y-fishPos(2)).^2);
 S(S>dThr)=0;
 inds = find(S);
-S_conv = conv2(S,ker,'same');
-B = S_conv.*S;
+
+% S_conv = conv2(S,ker,'same');
+% B = S_conv.*S;
+se = strel('disk',4);
+S(isnan(S))=0;
+S_open = im
 B(B>0) = max(B(:));
 B(isnan(B))=0;
 
+if nargout < 2
+    varargout{1} = B;
+else
+    varargout{2} = find(B);    
+end
 
 end
 

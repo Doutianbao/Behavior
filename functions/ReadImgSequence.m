@@ -13,6 +13,9 @@ end
 
 files = dir(imgDir);
 fNames = {files.name};
+if isempty(fNames)
+    error('No files found in directory, please check path!')
+end
 remInds = [];
 for jj = 1:length(fNames)
     if isempty(findstr(lower(fNames{jj}),lower(imgExt)))

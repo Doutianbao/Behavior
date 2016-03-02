@@ -1,23 +1,20 @@
 function IM_proc = ProcessImages(varargin)
 %ProcessImages Smooth and background subtract images
 % IM_proc = ProcessImages(IM)
-% IM_proc = ProcessImages(IM,refFrames); 
-% Inputs:
-% IM - Image stack where 3rd time is time
-% refFrames - A vector specifying the frames to average for background
-%   subtraction. This is useful for considering only frames in which fish
-%   moves
+% IM_proc = ProcessImages(IM,ref); Uses mode instead of mean to get
+%   reference image
 
 IM = varargin{1};
 disp('Computing smoothed mean frame...')
 tic
 imKer = ones(5)/5^2;
-refFrames = 1:size(IM,3);
-if (nargin == 2)
-    refFrames = varargin{2};
+
+if (nargin == 2) & strcmpi(varargin{1},'mode')
+    im = conv2(squeeze(mode(IM,3)),imKer,'same');
+else
+    im = conv2(squeeze(mean(IM,3)),imKer,'same');
 end
 
-im = conv2(squeeze(mean(IM(:,:,refFrames),3)),imKer,'same');
 toc
 
 % nWorkers= 10;

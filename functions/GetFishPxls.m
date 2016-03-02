@@ -4,16 +4,29 @@ function varargout = GetFishPxls(im, fishPos, varargin)
 %
 %  fishPxlImg = GetFishPxls(im,fishPos)
 % [fishPxlImg,fishPxls] = GetFishPxls(im,fishPos)
-%  ...                  = GetFishPxls(im,fishPos,intensityThr,searchRadius)
+%       ...             = GetFishPxls(im,fishPos,intensityThr,searchRadius)
+% Inputs:
+% im  - Image in which to find fish (it is assumed that image has been 
+%       processed such that fish pixels are brighter)
+% fishPos - Position of fish in cartesian space (not image space)
+% intensityThr - Intensity over which to threshold to find fish pixels. If
+%   instensityThr = [], or it is not specified then finds threshold using
+%   Otsu's method (multithresh MATLAB function)
 
-iThr = 5;
+
+iThr_def = multithresh(im,3);
+iThr = iThr_def(2);
 dThr = 105;
 if nargin ==3
-    iThr = varargin{1};
+    iThr = varargin{1};    
 elseif nargin == 4
     iThr = varargin{1};
     dThr = varargin{2};
 end
+if isempty(iThr)
+    iThr = iThr_def(2);
+end
+
 ker = gausswin(5,2);
 ker = ker(:)*ker(:)';
 im(im<iThr)=0;

@@ -1,127 +1,170 @@
+function midlineInds = GetMidline(IM,varargin)
+% GetMidLine - Given an image series or an image dir containing an image
+%   series, returns a series of indices corresponding to the midline of the
+%   the fish in each image
+% midlineInds = GetMidline(IM);
+% midlineInds = GetMidline(..., fishPos);
+% midlineInds = GetMidline(IM,fishPos, lineLens);
+% Inputs:
+% IM - Either an image stack (3D matrix where 3rd dim is time) or
+%   image dir with image series. If IM is image dir, then assumes all
+%   images are jpegs.
+% fishPos - T x 2 matrix where T is the number of time points and the
+%   columns are x and y positions of the fish. If not specified, or if
+%   empty ([]), then reads the fish position automatically with default
+%   parameters.
+% lineLens - A vector where each value indicates the length of the line
+%   segment in the series of line segments to fit to the fish's body
+% Outputs:
+% midlineInds - Indices of the midline in the image series; L x T matrix
+%   where T is the number of images in the series and L is number of line
+%   indices. L = sum(lineLens).
 
-function lineInds = GetMidline(im,startPt,varargin)
-% lineInds = GetLineToEdge(im,startInd,prevStartInd,dTh,lineLen)
-dTh = 5;
-lineLen = 15;
-if nargin < 2
-    error('At least 2 inputs required!')
-elseif nargin ==2
-    prevStartPt = [];
-elseif nargin == 3
-    prevStartPt = varargin{1};
-elseif nargin ==4
-    prevStartPt = varargin{1};
-    dTh = varargin{2};
-elseif nargin == 5
-    prevStartPt = varargin{1};
-    dTh = varargin{2};
-    lineLen = varargin{3};
-end
-
-if isempty(dTh)
-    dTh  = 5;
-end
-
-[rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-
-if isempty(prevStartPt)
-    farInds = 1:size(indMat,1);
-else
-    lastInds = indMat(:,end);       
-    [rL,cL] = ind2sub(size(im),lastInds);
-    x = cL; y = rL;
-    preVec = startPt-prevStartPt;
-    preVec = preVec(1) + preVec(2)*1i;
-    
-    postVecs = [x y] - repmat(startPt,length(x),1);
-    postVecs = postVecs(:,1) + postVecs(:,2)*1i;
-    dAngles = angle(repmat(preVec,length(x),1).*conj(postVecs)) *(180/pi);
-    
-%     S1 = sqrt(sum((startPt-prevStartPt).^2,2));
-%     S2 = sqrt(sum(([x y] - repmat(prevStartPt,length(rL),1)).^2,2));
-%     S2_90 = sqrt(S1^2 + lineLen^2);
-%     farInds = find(S2>1*S2_90);
-    farInds = find(abs(dAngles)<=90);
-end
-
-%## Find lines that that move farther way from previous starting point and
-%   that have pixels that are of smaller value that previous pixels along
-%   the line
-
-dR = diff(rImg,[],2);
-[~,minInds] = min(dR,[],2);
-% r = 1:length(minInds);
-% negInds = dR(sub2ind(size(dR),r(:),minInds(:)));
-% minNegInds = find(negInds<0);
-% minNegFarInds =  intersect(farInds,minNegInds);
-
-negSlope = rImg(:,end)-rImg(:,end-1);
-thr = mean(negSlope(negSlope<0)) - 0.5*std(negSlope(negSlope<0));
-edgeDropInds = find(negSlope < thr);
-
-%## Find lines that pass through fish
-backgroundInt= sort(rImg(:),'ascend');
-backgroundInt(backgroundInt==0)=[];
-backgroundInt = mean(backgroundInt(1:round(numel(rImg)/2)));
-signalMat = rImg > 1*backgroundInt;
-nPxls = sum(signalMat,2);
-muPxls = mean(rImg,2);
-muPxls = (muPxls-min(muPxls))/(max(muPxls)-min(muPxls));
-slopes = rImg(:,end)-rImg(:,1);
-nms = nPxls(:).*muPxls(:).*(1./abs(slopes(:)));
-nms = nms(farInds);
-nms = (nms-min(nms(:)))/(max(nms)-min(nms));
-nmsInds = find(nms>0.2);
-blahInds = farInds(nmsInds);
-dBlah = find(diff(blahInds)>1);
-blahInds(dBlah)=0;
-
-blahInds(diff(blahInds)>1)=[];
-% blahInds = intersect(nmsInds,farInds);
-
-% throughFishInds = find((nPxls >= round(0.9*lineLen)) & (muPxls >0.2));
-throughFishInds = find(nPxls == lineLen);
-
-blah = repmat(1:size(signalMat,2),size(signalMat,1),1);
-blah(~signalMat) = 0;
-maxInds = max(blah,[],2);
-edgeOffInds = find(maxInds >= (lineLen-1));
-
-% edgeOnInds = find(maxInds < 5);
-
-% mu = mean(rImg(minNegFarInds,:),2);
-% sig = std(rImg(minNegFarInds,:),[],2);
-% cv = sig./mu;
-% [~,throughFishInds] = sort(cv,'ascend');
-% throughFishInds = throughFishInds(1:min(numel(cv),5));
-
-finalInds = intersect(intersect(intersect(farInds, edgeDropInds),edgeOffInds),throughFishInds);
-if isempty(finalInds)
-    finalInds =  intersect(intersect(farInds, edgeOffInds),throughFishInds);
-    if isempty(finalInds)
-        finalInds = intersect(farInds,throughFishInds);
-        if isempty(finalInds)
-            finalInds = throughFishInds;
-        end
+lineLens =  [18 16 14 10 8 8];
+if nargin == 1
+    if isdir(IM)
+        IM  = ReadImgSequence(IM);
     end
-end
-[~, finalInd] = min(rImg(finalInds,end));
-finalInd = finalInds(finalInd);
-
-% minNegFarThroughInds = intersect(minNegFarInds,throughFishInds);
-% minNegFarThroughInds = minNegFarInds(throughFishInds);
-
-if isempty(finalInds)
-    a = 1;
+    fishPos = GetFishPos(ProcessImages(IM),50);
+elseif nargin == 2
+    fishPos = varargin{1};
+elseif nargin ==3
+    fishPos = varargin{1};
+    lineLens = varargin{2};
 end
 
-% inds =  minInds(minNegFarInds);
-% inds = find(inds>= (lineLen-4));
-% % [~,inds] = max(inds);
-% inds = minNegFarInds(inds(1));
+if isempty(fishPos)
+    fishPos = GetFishPos(ProcessImages(IM),50);
+end
 
-finalInd = round(median(blahInds));
-lineInds = indMat(finalInd,:);
-lineInds = lineInds(:);
+midlineInds = {};
+for imgNum = 1:size(IM,3)
+    img = IM(:,:,imgNum);
+    img = max(img(:))-img;
+    
+end
+
+    function lineInds = GetML(im,startPt,varargin)
+        % lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen)
+        
+        dTh = 5;
+        lineLen = 15;
+        if nargin < 2
+            error('At least 2 inputs required!')
+        elseif nargin ==2
+            prevStartPt = [];
+        elseif nargin == 3
+            prevStartPt = varargin{1};
+        elseif nargin ==4
+            prevStartPt = varargin{1};
+            dTh = varargin{2};
+        elseif nargin == 5
+            prevStartPt = varargin{1};
+            dTh = varargin{2};
+            lineLen = varargin{3};
+        end
+        
+        if isempty(dTh)
+            dTh  = 5;
+        end
+        
+        [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
+        
+        if isempty(prevStartPt)
+            farInds = 1:size(indMat,1);
+        else
+            lastInds = indMat(:,end);
+            [rL,cL] = ind2sub(size(im),lastInds);
+            x = cL; y = rL;
+            preVec = startPt-prevStartPt;
+            preVec = preVec(1) + preVec(2)*1i;
+            
+            postVecs = [x y] - repmat(startPt,length(x),1);
+            postVecs = postVecs(:,1) + postVecs(:,2)*1i;
+            dAngles = angle(repmat(preVec,length(x),1).*conj(postVecs)) *(180/pi);
+            farInds = find(abs(dAngles)<=90);
+        end
+        
+        
+        %## Find lines that pass through fish
+        backgroundInt= sort(rImg(:),'ascend');
+        backgroundInt(backgroundInt==0)=[];
+        backgroundInt = mean(backgroundInt(1:round(numel(rImg)/2)));
+        signalMat = rImg > 1*backgroundInt;
+        nPxls = sum(signalMat,2);
+        muPxls = mean(rImg,2);
+        muPxls = (muPxls-min(muPxls))/(max(muPxls)-min(muPxls));
+        slopes = rImg(:,end)-rImg(:,1);
+        nms = (nPxls(:).^1.5).*muPxls(:).*(1./abs(slopes(:)));
+        nms = nms(farInds);
+        nms(find(isinf(nms)))=1;
+        nms = (nms-min(nms(:)))/(max(nms)-min(nms));
+        nmsInds = find(nms>0.4);
+        blahInds = farInds(nmsInds);
+        nms = nms(nmsInds);
+        
+        %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
+        [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
+        blockEndInds = blockInds(2:end)-1;
+        blockEndInds = [blockEndInds(:); length(blahInds)];
+        blockMaxes = zeros(size(blockInds));
+        for jj = 1:length(blockInds)
+            blockMaxes(jj) = max(nms(blockInds(jj):blockEndInds(jj)));
+        end
+        
+        %## For 1st line segment choose smaller block because head block will be
+        %## bigger than tail block
+        
+        % if numel(farInds)== size(rImg,1);
+        %     [~, bigBlock] = min(blockSizes);
+        % else
+        % %     [~, bigBlock] = max(blockSizes);
+        %     [~,bigBlock] = max(blockSizes.*blockMaxes);
+        % end
+        [~,bigBlock]= max(blockSizes.*blockMaxes);
+        
+        if numel(blockInds)> bigBlock
+            keepInds = blockInds(bigBlock):blockInds(bigBlock+1);
+        else
+            keepInds = blockInds(bigBlock):length(blahInds);
+        end
+        
+        blahInds = blahInds(keepInds);
+        nms = nms(keepInds);
+        zerInds = find(blahInds==0);
+        blahInds(zerInds)=[];
+        nms(zerInds) = [];
+        throughFishInds = find(nPxls > 0.9*lineLen);
+        
+        %## Find the line where the sum of pxls is largest
+        % finalInd = round(median(blahInds)); % This used to be a reasonable approx
+        % [~,maxInds] = max(sum(rImg(blahInds,:),2)); % Buggy too
+        [~,maxInds] = max(nms);
+        
+        finalInd = blahInds(round(median(maxInds)));
+        lineInds = indMat(finalInd,:);
+        lineInds = lineInds(:);
+        
+        
+        function [blockSizes, blockInds] = GetContiguousBlocks(values)
+            % Given a set of values, returns the sizes of contiguous blocks and the
+            %   block start indices
+            blockInds = 1;
+            blockSizes = [];
+            count = 1;
+            for jj = 1:length(values)-1
+                if (values(jj+1)-values(jj))==1
+                    count = count+1;
+                else
+                    blockSizes = [blockSizes; count];
+                    count = 0;
+                    blockInds =[blockInds; jj+1];
+                end
+            end
+            blockSizes = [blockSizes; count];
+        end
+        
+    end
 
 end
+

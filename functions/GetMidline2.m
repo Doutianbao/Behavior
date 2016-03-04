@@ -1,4 +1,4 @@
-function midlineInds = GetMidline(IM,varargin)
+function midlineInds = GetMidline2(IM,varargin)
 % GetMidLine - Given an image series or an image dir containing an image
 %   series, returns a series of indices corresponding to the midline of the
 %   the fish in each image
@@ -22,7 +22,7 @@ function midlineInds = GetMidline(IM,varargin)
 
 lineLens =  [18 16 14 10 8 8];
 if nargin == 1
-    if isstr(IM) && isdir(IM)
+    if isdir(IM)
         IM  = ReadImgSequence(IM);
     end
     fishPos = GetFishPos(ProcessImages(IM),50);
@@ -42,24 +42,21 @@ for imgNum = 1:size(IM,3)
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     lineInds = {};
-    startPt = fishPos(imgNum,:);
     for jj = 1:length(lineLens)
         if jj ==1
-            
-            lineInds{jj} = GetML(img,startPt,[],[],lineLens(jj));
+            lineInds{jj} = GetML(blah,startPt,[],[],lineLens(jj));
         else
-            lineInds{jj} = GetML(img,startPt,prevStartPt,[],lineLens(jj));
+            lineInds{jj} = GetML(blah,startPt,prevStartPt,[],lineLens(jj));
         end
-        si = lineInds{jj}(end);
-        [r,c] = ind2sub(size(img),si);
-        x = c;
-        y = r;
-        prevStartPt = startPt;
-        startPt = [x,y];
-       
-        midlineInds{imgNum} = lineInds;
     end
-    
+    si = lineInds{jj}(end);
+    [r,c] = ind2sub(size(blah),si);
+    x = c;
+    y = r;
+    prevStartPt = startPt;
+    startPt = [x,y];
+    img = blah;
+    midlineInds{imgNum} = lineInds;
     cla
     for kk = 1:length(lineInds)
         img(lineInds{kk}) = max(img(:));
@@ -69,7 +66,7 @@ for imgNum = 1:size(IM,3)
     plot(fishPos(imgNum,1),fishPos(imgNum,2),'k*')
     title(num2str(imgNum))
     shg
-    pause(0.15)
+    % pause(0.2)
 end
 end
 
@@ -192,6 +189,8 @@ lineInds = lineInds(:);
         end
         blockSizes = [blockSizes; count];
     end
+
+end
 
 end
 

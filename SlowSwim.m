@@ -5,27 +5,6 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         clear all
         close all
         
-<<<<<<< HEAD
-        cd 'F:\Data\Avinash_behaviorRig'
-        
-        fr_rate = 1800; % frames per min (i.e. 30fps)  
-        [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
-        dirFile = [PathName FileName];
-        [~,fname,~]=fileparts(FileName);
-        outdir=[PathName,fname,'\swims\'];
-        mkdir(outdir);  
-        
-        FileName     
-        
-        h_axis = 608   ; %(608 in original code) - AP
-        v_axis = 608; %(608 in original code) - AP
-        
-        h = fopen(dirFile); 
-        
-        %% Imaging parameters       
-        start_f = 1;
-        dur_f =  18000;
-=======
         cd 'Z:\Behavior rig\Temporary backup of F drive\Data\Ablation'
         
         fr_rate = 1800; % frames per min (i.e. 30fps)
@@ -46,16 +25,11 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         %% Imaging parameters
         start_f = 1;
         dur_f =  18000*2;
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
-        samplingRate = 30; %2.5 frames per sec
+        samplingRate = 30; % 2.5 frames per sec
         samp_int = fr_rate/60/samplingRate;
         stop_f =  start_f + dur_f;
         IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));
-<<<<<<< HEAD
-                
-=======
         
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
         %% Reading video frames
         clear M
         tempVar = [];
@@ -69,10 +43,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
             else
                 if length(x) == h_axis*v_axis
                     xx=reshape(x(1:h_axis*v_axis),h_axis,v_axis);
-<<<<<<< HEAD
-=======
                     xx = circshift(xx,imgCircShift);
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
                 else
                     break;
                 end
@@ -84,16 +55,6 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
                     shg
                 end
                 IM(:,:,1+floor(i/samp_int)) = xx;
-<<<<<<< HEAD
-            end            
-        end        
-        fr_num = floor(i/samp_int);
-        IM=IM(:,:,1:fr_num-1);
-        fclose(h)        
-        
-        
-        %% tracking the fish      
-=======
             end
         end
         fr_num = floor(i/samp_int);
@@ -102,7 +63,6 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         
         
         %% tracking the fish
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
         disp('Computing mean frame...')
         imKer = ones(5)/5^2;
         tic
@@ -110,42 +70,6 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         toc
         x_ = zeros(1,size(IM,3));
         y_ = x_;
-<<<<<<< HEAD
-        
-        disp('Tracking the fish...')
-        for i=1:size(IM,3)
-            ii=conv2(-squeeze(IM(:,:,i))+im,ones(5)/25,'same');
-            if 1, imagesc(ii);colormap(gray); axis image; title(i);drawnow;end;
-%           [x_(i) y_(i)]=find(ii==max(ii(:)),1);  
-            [xCoord, yCoord] = find(ii == max(ii(:)));
-            if numel(xCoord) > 1
-                disp(xCoord)
-                pause()
-            end
-            
-            if 1, hold on;plot(y_(i),x_(i),'ro');drawnow;
-                hold off;plot(0);
-            end; 
-        end
-        tracexy = [y_; x_]'; 
-        disp('Creating mean reference frame...')
-        ref = mean(IM,3);
-        
-        %% Saving variables
-        saveOrNot = input('Save the variables (y/n)?  ','s');
-        if strcmpi('y',saveOrNot)
-            disp('Saving relevant variables...')
-            savefast(fullfile([outdir,fname, '_tracexy.mat']),'tracexy');
-            savefast(fullfile([outdir,fname, '_IM.mat']),'IM');
-            savefast(fullfile([outdir,fname, '_ref.mat']),'ref');
-        else
-            disp('Data not saved!')
-        end
-
-            
-                
-                
-=======
         disp('Tracking the fish...')
         IM_proc = zeros(size(IM));
         for jj=1:size(IM,3)
@@ -173,12 +97,16 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         ref = mean(IM,3);
         
         %% Fish Orientation       
-         orientation = GetFishOrientation(-IM_proc,tracexy,20);
+         orientation = GetFishOrientation2(IM,tracexy,20);
          orientation_corr = CorrectOrientation(orientation, 90);
          orientation_backup = orientation;
          save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
          save(fullfile(outDir,[fname, '_orientation_corr.mat']),'orientation_corr');
   
+       %% Motion Info
+       motionThr = 4;
+       [motionFrames, swimStartFrames] = GetMotionFrames(tracexy,motionThr);
+       motionInfo = GetMotionInfo(tracexy,orientation,swimStartFrames,size(IM,1));
                
         %% Saving variables
         saveOrNot = 'y';
@@ -190,15 +118,14 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
 %             savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
             savefast(fullfile(outDir,[fname, '_IM_proc.mat']),'IM_proc');
             savefast(fullfile(outDir,[fname, '_ref.mat']),'ref');
+            save(fullfile(outDir,'motionInfo.mat'),'motionInfo');
 %             savefast(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
         else
             disp('Data not saved!')
         end
         toc
-        
-        
-        break;
-        
+                
+        break;        
         
         %% Turn angles during swims and histogram
         x = tracexy(:,1);
@@ -255,7 +182,6 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
     
     
     
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
     case 'RerunAnalysis'
     case 'LoadingCoordinates'
         clear all
@@ -326,11 +252,7 @@ else
     x = x_;
     y = y_;
 end
-<<<<<<< HEAD
-dd = sqrt(diff(x).^2+diff(y).^2);
-=======
 
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
 savename = ['Turn_',num2str(s_fac), '_',num2str(s_range),'_',FileName(1:10)];
 tracexy_flt = [y; x];
 
@@ -339,12 +261,8 @@ savefast(fullfile([outdir,fname, '_tracexy_flt.mat']),'tracexy_flt');
 
 
 %% swimming speed
-<<<<<<< HEAD
-if 0
-=======
 if 1
     dd = sqrt(diff(x).^2+diff(y).^2);
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
     dd_ = dd*120/640*samplingRate; %in mm
     [a_, b_] = hist(dd_,100);
     speed = bar(b_,a_);
@@ -358,10 +276,7 @@ if 1
     
 end
 %set(gca,'XLim',[0 100]);
-<<<<<<< HEAD
-=======
 
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
 %%
 thld2 = 100;
 thld = 2;
@@ -503,11 +418,7 @@ saveas(turn_fig,fullfile(tif_name),'fig');
 
 %%
 
-<<<<<<< HEAD
-if 0
-=======
 if 1
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
     
     %for correlation
     p = polyfit(dangle_nobig(1:end-1),dangle_nobig(2:end),1);
@@ -727,11 +638,7 @@ end
 %% for more detailed evaluation
 
 if 1
-<<<<<<< HEAD
-        
-=======
     
->>>>>>> 9c4afa72a930d6645058ad451be95317c47a027b
     startFr = 10;
     endFr = startFr +750;
     anglefac1 =200;

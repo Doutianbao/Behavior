@@ -9,7 +9,7 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen)
 % imgLen - Length of each image, i.e., size(IM,1)
 
 trajPlot = 0;
-motionThr = 4;
+motionThr = 6;
 
 [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
 

@@ -5,7 +5,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         clear all
         close all
         
-        cd 'Z:\Behavior rig\Temporary backup of F drive\Data\Ablation'
+        cd 'Z:\Avinash\Ablations & Behavior'
         
         fr_rate = 1800; % frames per min (i.e. 30fps)
         [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
@@ -106,7 +106,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
        %% Motion Info
        motionThr = 4;
        [motionFrames, swimStartFrames] = GetMotionFrames(tracexy,motionThr);
-       motionInfo = GetMotionInfo(tracexy,orientation,swimStartFrames,size(IM,1));
+       motionInfo = GetMotionInfo(tracexy,orientation,size(IM,1));
                
         %% Saving variables
         saveOrNot = 'y';

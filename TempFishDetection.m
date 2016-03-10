@@ -73,3 +73,9 @@ shg
 % pause(0.2)
 end
 % lineInds = GetLineToEdge(blah,fishPos(560,:));
+
+
+
+
+
+

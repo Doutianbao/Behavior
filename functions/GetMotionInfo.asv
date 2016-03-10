@@ -20,10 +20,7 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen)
 %   .traj_adj - Initial x,y position and orientaion corrected traj
 %   .traj_angle - Angle of vector connecting starting and end point of traj
 %   .traj_speed - Mean speed over 1st three frames (or fewer) of traj
-%   .traj_vel - Mean vel computed over 1st ...
-%   .traj_angVel - Mean angular vel computer over 1st ...
-%   .turnInfo - ?? (later)
-%   .orientInfo - ?? (later)
+%   .traj_vel - Mean vec
 
 trajPlot = 0; % 1 results in plotting of trajectories
 motionThr = 8.5;

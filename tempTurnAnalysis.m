@@ -1,4 +1,4 @@
-% 
+%
 % %% Swim analysis
 % x = tracexy(:,1);
 % y = tracexy(:,2);
@@ -13,16 +13,16 @@
 %     if movInds(jj)-movInds(jj-1) > 1
 %         initInd = movInds(jj-1);
 %         nextInd = movInds(jj);
-%         startInds = [startInds; initInd;nextInd]; 
+%         startInds = [startInds; initInd;nextInd];
 %     end
 % end
 % startInds = unique(startInds);
 % x_mov = x(startInds);
 % y_mov = y(startInds);
 % dS_mov = sqrt(diff(x_mov).^2 + diff(y_mov).^2);
-% 
+%
 % orientation = orientation;
-% orient_mov = orientation(startInds); 
+% orient_mov = orientation(startInds);
 % [oX,oY] = pol2cart(orient_mov*pi/180,1);
 % clear i
 % orVec = oX + oY*i;
@@ -45,12 +45,12 @@
 % xlabel('Turn angle')
 % ylabel('Count')
 % title('Turn angle histogram')
-% 
+%
 % %% Swim distance by turn
 % dS_left = dS_mov(leftInds);
 % dS_right = dS_mov(rightInds);
 % dS_straight = dS_mov(straightInds);
-% 
+%
 % [dslCount,dslVals] = hist(dS_left,20);
 % [dsrCount,dsrVals] = hist(dS_right,20);
 % [dssCount,dssVals] = hist(dS_straight,20);
@@ -72,7 +72,7 @@
 % ylabel('Count')
 % legend('Left','Right','Straight')
 % title('Swim distance by turn distribution')
-% 
+%
 % %% Velocity stuff
 % timeVec = (0:length(tracexy)-1)*(1/30); % Since frame rate = 30fps
 % timeVec_mov = timeVec(startInds);
@@ -101,9 +101,9 @@
 % set(gca,'tickdir','out')
 % legend('Left','Right')
 % % legend('Left','Right','Straight')
-% 
-% 
-% 
+%
+%
+%
 % break
 
 %% Plotting all position- and orientation-adjusted spont swim trajectories with velocity modulation of hue or alpha
@@ -114,14 +114,26 @@ motionInfo = GetMotionInfo(tracexy,orientation,size(IM,1));
 %## Plot all adjusted trajectories
 
 figure('Name','Position & orientation adjusted spont swim trajectories')
-axis image
-set(gca,'tickdir','out')
+set(gca,'tickdir','out','color','k')
+x_max= 0;
+y_max = 0;
+y_min = 0;
 for ep = 2:length(motionInfo.traj_adj)
-%     plot(motionInfo.traj_adj{ep}(:,1),motionInfo.traj_adj{ep}(:,2),'-')
-    patchline(motionInfo.traj_adj{ep}(:,1),motionInfo.traj_adj{ep}(:,2),'edgealpha',0.2)
+    %     plot(motionInfo.traj_adj{ep}(:,1),motionInfo.traj_adj{ep}(:,2),'-')
+    x = motionInfo.traj_adj{ep}(:,1);
+    y = motionInfo.traj_adj{ep}(:,2);
+    x_max = max(x_max,max(abs(x)));
+    y_max = max(y_max,max(y));
+    y_min = min(y_min,min(y));
+    patchline(x,y,'edgealpha',0.2,'linewidth',1.1,'edgecolor','g')    
     hold on
 end
+% plot(0,0,'ro','markersize',10,'linewidth',2)
+plot([-x_max x_max],[0 0],'r--')
+plot([0 0],[y_min,y_max],'r--')
 box off
-xlim([-inf inf])
-ylim([-inf inf])
+axis image
+xlim([-x_max x_max])
+ylim([y_min,y_max])
+title('Position & orientation adjusted spont swim trajectories')
 

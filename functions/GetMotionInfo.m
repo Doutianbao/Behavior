@@ -22,6 +22,7 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen)
 %   .traj_speed - Mean speed over 1st three frames (or fewer) of traj
 %   .traj_vel - Mean vel computed over 1st ...
 %   .traj_angVel - Mean angular vel computer over 1st ...
+%   .traj_angle_lim - Limited traj angle computed over 1st ...
 %   .turnInfo - ?? (later)
 %   .orientInfo - ?? (later)
 
@@ -44,7 +45,8 @@ traj_trans_smooth = {};
 traj_adj = {};
 epInds = {};
 traj_angle = zeros(size(swimStartFrames));
-[speed,vel,angVel] = deal(traj_angle);
+[traj_angle_lim,speed,vel,angVel] = deal(traj_angle);
+
 if trajPlot
     figure
 %     axis image
@@ -77,13 +79,14 @@ for jj = 2:length(swimStartFrames)-1
     speed(jj) = sum(sqrt(sum((diff(blah)).^2,2)),1)/(nPts-1);
     vel(jj) = abs(blah(end,1) + blah(end,2)*1i)/(nPts-1);
     angVel(jj) = (angle(blah(end,1) + blah(end,2)*1i)*180/pi)/(nPts-1);
-    
+    traj_angle_lim(jj) = angle(blah(end,1) + blah(end,2)*1i)*180/pi;
     
     %## Plot trajectories if specified
     if trajPlot
         hold on
         plot(traj_adj{jj}(:,1),traj_adj{jj}(:,2),'.-','color',rand(1,3)), drawnow
-%         pause(0.5)
+        axis image
+%         pause(0.1)
         xlim([-inf inf])
         ylim([-inf inf])
         shg
@@ -106,6 +109,7 @@ motionInfo.traj_trans = traj_trans;
 % motionInfo.traj_trans_smooth  = traj_trans_smooth;
 motionInfo.traj_adj = traj_adj;
 motionInfo.traj_angle = traj_angle(2:end);
+motionInfo.traj_angle_lim = traj_angle_lim(2:end);
 motionInfo.traj_speed = speed(2:end);
 motionInfo.traj_vel = vel(2:end);
 motionInfo.traj_angVel = angVel(2:end);

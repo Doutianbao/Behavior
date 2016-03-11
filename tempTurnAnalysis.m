@@ -137,3 +137,16 @@ xlim([-x_max x_max])
 ylim([y_min,y_max])
 title('Position & orientation adjusted spont swim trajectories')
 
+ PlotAngularHist(motionInfo.traj_angle*pi/180,100)
+ 
+ figure
+ polar(motionInfo.traj_angle_lim*pi/180,motionInfo.traj_speed,'.')
+ title('Traj angle vs traj speed (limited)')
+ 
+ figure
+ polar(motionInfo.traj_angle_lim*pi/180,motionInfo.traj_vel,'.')
+ title('Traj angle vs traj vel (limited)')
+  
+ figure
+ polar(motionInfo.traj_angle_lim*pi/180,motionInfo.traj_angVel,'.')
+  title('Traj angle vs traj angular vel (limited)')

@@ -135,4 +135,7 @@ box off
 axis image
 xlim([-x_max x_max])
 ylim([y_min,y_max])
+title('Position & orientation adjusted spont swim trajectories')
 
+ PlotAngularHist(motionInfo.traj_angle*pi/180,100)
+ title()

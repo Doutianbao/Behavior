@@ -1,68 +1,66 @@
-
-
-
-switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'    
+switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
+fromImgSequence = True;   
     case 'LoadingNewFilm'
-    
+        
         clear all
         close all
         
         cd 'Z:\Avinash\Ablations & Behavior'
-    
-            
-            fr_rate = 1800; % frames per min (i.e. 30fps)
-            [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
-            dirFile = [PathName FileName];
-            [~,fname,~]=fileparts(FileName);
-            outDir=[PathName,fname,'\swims\'];
-            mkdir(outDir);
-            
-            FileName
-            
-            h_axis = 608; %(default = 600)
-            v_axis = 608; %(default = 600)
-            imgCircShift = [0 0]; % default = [0 0]
-            
-            h = fopen(dirFile);
-            
-            %% Imaging parameters
-            start_f = 1;
-            dur_f =  18000*2;
-            samplingRate = 30; % 2.5 frames per sec
-            samp_int = fr_rate/60/samplingRate;
-            stop_f =  start_f + dur_f;
-            IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));
-            
-            %% Reading video frames
-            clear M
-            tempVar = [];
-            %     figure('position',[100 100 900 900])
-            for i=start_f:samp_int:stop_f
-                if mod(i,500)==0,disp(i),end
-                fseek(h,h_axis*v_axis*i,'bof');
-                x=fread(h,h_axis*v_axis,'uint8');
-                if isempty(x)
-                    break
+        
+        fr_rate = 1800; % frames per min (i.e. 30fps)
+        [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
+        dirFile = [PathName FileName];
+        [~,fname,~]=fileparts(FileName);
+        outDir=[PathName,fname,'\swims\'];
+        mkdir(outDir);
+        
+        FileName
+        
+        h_axis = 608; %(default = 600)
+        v_axis = 608; %(default = 600)
+        imgCircShift = [0 0]; % default = [0 0]
+        
+        h = fopen(dirFile);
+        
+        %% Imaging parameters
+        start_f = 1;
+        dur_f =  18000*2;
+        samplingRate = 30; % 2.5 frames per sec
+        samp_int = fr_rate/60/samplingRate;
+        stop_f =  start_f + dur_f;
+        IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));
+        
+        %% Reading video frames
+        clear M
+        tempVar = [];
+        %     figure('position',[100 100 900 900])
+        for i=start_f:samp_int:stop_f
+            if mod(i,500)==0,disp(i),end
+            fseek(h,h_axis*v_axis*i,'bof');
+            x=fread(h,h_axis*v_axis,'uint8');
+            if isempty(x)
+                break
+            else
+                if length(x) == h_axis*v_axis
+                    xx=reshape(x(1:h_axis*v_axis),h_axis,v_axis);
+                    xx = circshift(xx,imgCircShift);
                 else
-                    if length(x) == h_axis*v_axis
-                        xx=reshape(x(1:h_axis*v_axis),h_axis,v_axis);
-                        xx = circshift(xx,imgCircShift);
-                    else
-                        break;
-                    end
-                    if mod(i,10) == 0
-                        imagesc(xx,[0 255]);colormap(flipud(jet));  %%imaging is flipped: turn left is actually turn right!!! Yu 8/7/2014
-                        axis image
-                        title(i)
-                        drawnow
-                        shg
-                    end
-                    IM(:,:,1+floor(i/samp_int)) = xx;
+                    break;
                 end
+                if mod(i,10) == 0
+                    imagesc(xx,[0 255]);colormap(flipud(jet));  %%imaging is flipped: turn left is actually turn right!!! Yu 8/7/2014
+                    axis image
+                    title(i)
+                    drawnow
+                    shg
+                end
+                IM(:,:,1+floor(i/samp_int)) = xx;
             end
-            fr_num = floor(i/samp_int);
-            IM=IM(:,:,1:fr_num-1);
-            fclose(h)     
+        end
+        fr_num = floor(i/samp_int);
+        IM=IM(:,:,1:fr_num-1);
+        fclose(h)
+        
         
         %% tracking the fish
         disp('Computing mean frame...')
@@ -98,36 +96,36 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         disp('Creating mean reference frame...')
         ref = mean(IM,3);
         
-        %% Fish Orientation
-        orientation = GetFishOrientation2(IM,tracexy,20);
-        orientation_corr = CorrectOrientation(orientation, 90);
-        orientation_backup = orientation;
-        save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
-        save(fullfile(outDir,[fname, '_orientation_corr.mat']),'orientation_corr');
-        
-        %% Motion Info
-        motionThr = 4;
-        [motionFrames, swimStartFrames] = GetMotionFrames(tracexy,motionThr);
-        motionInfo = GetMotionInfo(tracexy,orientation,size(IM,1));
-        
+        %% Fish Orientation       
+         orientation = GetFishOrientation2(IM,tracexy,20);
+         orientation_corr = CorrectOrientation(orientation, 90);
+         orientation_backup = orientation;
+         save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
+         save(fullfile(outDir,[fname, '_orientation_corr.mat']),'orientation_corr');
+  
+       %% Motion Info
+       motionThr = 4;
+       [motionFrames, swimStartFrames] = GetMotionFrames(tracexy,motionThr);
+       motionInfo = GetMotionInfo(tracexy,orientation,size(IM,1));
+               
         %% Saving variables
         saveOrNot = 'y';
-        %         saveOrNot = input('Save the variables (y/n)?  ','s');
+%         saveOrNot = input('Save the variables (y/n)?  ','s');
         tic
         if strcmpi('y',saveOrNot)
             disp('Saving relevant variables...')
             savefast(fullfile(outDir,[fname, '_tracexy.mat']),'tracexy');
-            %             savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
+%             savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
             savefast(fullfile(outDir,[fname, '_IM_proc.mat']),'IM_proc');
             savefast(fullfile(outDir,[fname, '_ref.mat']),'ref');
             save(fullfile(outDir,'motionInfo.mat'),'motionInfo');
-            %             savefast(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
+%             savefast(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
         else
             disp('Data not saved!')
         end
         toc
-        
-        break;
+                
+        break;        
         
         %% Turn angles during swims and histogram
         x = tracexy(:,1);
@@ -177,13 +175,13 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         
         
         
-        
-        break
-        
-        
-        
-        
-        
+   
+   break
+    
+    
+    
+    
+    
     case 'RerunAnalysis'
     case 'LoadingCoordinates'
         clear all

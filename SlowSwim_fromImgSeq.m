@@ -8,61 +8,65 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         close all
         
         cd 'Z:\Avinash\Ablations & Behavior'
-    
-            
-            fr_rate = 1800; % frames per min (i.e. 30fps)
-            [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
-            dirFile = [PathName FileName];
-            [~,fname,~]=fileparts(FileName);
-            outDir=[PathName,fname,'\swims\'];
-            mkdir(outDir);
-            
-            FileName
-            
-            h_axis = 608; %(default = 600)
-            v_axis = 608; %(default = 600)
-            imgCircShift = [0 0]; % default = [0 0]
-            
-            h = fopen(dirFile);
-            
-            %% Imaging parameters
-            start_f = 1;
-            dur_f =  18000*2;
-            samplingRate = 30; % 2.5 frames per sec
-            samp_int = fr_rate/60/samplingRate;
-            stop_f =  start_f + dur_f;
-            IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));
-            
-            %% Reading video frames
-            clear M
-            tempVar = [];
-            %     figure('position',[100 100 900 900])
-            for i=start_f:samp_int:stop_f
-                if mod(i,500)==0,disp(i),end
-                fseek(h,h_axis*v_axis*i,'bof');
-                x=fread(h,h_axis*v_axis,'uint8');
-                if isempty(x)
-                    break
-                else
-                    if length(x) == h_axis*v_axis
-                        xx=reshape(x(1:h_axis*v_axis),h_axis,v_axis);
-                        xx = circshift(xx,imgCircShift);
-                    else
-                        break;
-                    end
-                    if mod(i,10) == 0
-                        imagesc(xx,[0 255]);colormap(flipud(jet));  %%imaging is flipped: turn left is actually turn right!!! Yu 8/7/2014
-                        axis image
-                        title(i)
-                        drawnow
-                        shg
-                    end
-                    IM(:,:,1+floor(i/samp_int)) = xx;
-                end
-            end
-            fr_num = floor(i/samp_int);
-            IM=IM(:,:,1:fr_num-1);
-            fclose(h)     
+%     
+%             fr_rate = 1800; % frames per min (i.e. 30fps)
+%             [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
+%             dirFile = [PathName FileName];
+%             [~,fname,~]=fileparts(FileName);
+%             outDir=[PathName,fname,'\swims\'];
+%             mkdir(outDir);
+%             
+%             FileName
+%             
+%             h_axis = 608; %(default = 600)
+%             v_axis = 608; %(default = 600)
+%             imgCircShift = [0 0]; % default = [0 0]
+%             
+%             h = fopen(dirFile);
+%             
+%             %% Imaging parameters
+%             start_f = 1;
+%             dur_f =  18000*2;
+%             samplingRate = 30; % 2.5 frames per sec
+%             samp_int = fr_rate/60/samplingRate;
+%             stop_f =  start_f + dur_f;
+%             IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));
+%             
+%             %% Reading video frames
+%             clear M
+%             tempVar = [];
+%             %     figure('position',[100 100 900 900])
+%             for i=start_f:samp_int:stop_f
+%                 if mod(i,500)==0,disp(i),end
+%                 fseek(h,h_axis*v_axis*i,'bof');
+%                 x=fread(h,h_axis*v_axis,'uint8');
+%                 if isempty(x)
+%                     break
+%                 else
+%                     if length(x) == h_axis*v_axis
+%                         xx=reshape(x(1:h_axis*v_axis),h_axis,v_axis);
+%                         xx = circshift(xx,imgCircShift);
+%                     else
+%                         break;
+%                     end
+%                     if mod(i,10) == 0
+%                         imagesc(xx,[0 255]);colormap(flipud(jet));  %%imaging is flipped: turn left is actually turn right!!! Yu 8/7/2014
+%                         axis image
+%                         title(i)
+%                         drawnow
+%                         shg
+%                     end
+%                     IM(:,:,1+floor(i/samp_int)) = xx;
+%                 end
+%             end
+%             fr_num = floor(i/samp_int);
+%             IM=IM(:,:,1:fr_num-1);
+%             fclose(h)     
+          
+            imgDir = input('Enter image dir path:  ', 's');
+            imgExt = input('Enter image extension, e.g. .jpg:  ','s')
+            imgInds = input('Enter indices of images to read as a vector:  ');
+            IM = ReadImgSequence(imgDir,imgExt,imgInds)
         
         %% tracking the fish
         disp('Computing mean frame...')

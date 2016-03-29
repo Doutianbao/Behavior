@@ -48,7 +48,7 @@ disp(['Reading all .' imgExt ' images from dir...'])
 tic
 for jj = 1 :length(fNames)
     img = imread(fullfile(imgDir,fNames{jj}));
-    if length(size(img)==3)
+    if length(size(img))==3
         if jj ==1
             disp('Great! Images are rgb and are being converted to gray...')
         end

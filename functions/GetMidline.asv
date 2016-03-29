@@ -4,8 +4,7 @@ function midlineInds = GetMidline(IM,varargin)
 %   the fish in each image
 % midlineInds = GetMidline(IM);
 % midlineInds = GetMidline(..., fishPos);
-% midlineInds = GetMidline(IM,fishPos,lineLens);
-% midlineInds = GetMidline(IM,fishPos,lineLens, imgExt);
+% midlineInds = GetMidline(IM,fishPos, lineLens);
 % Inputs:
 % IM - Either an image stack (3D matrix where 3rd dim is time) or
 %   image dir with image series. If IM is image dir, then assumes all
@@ -16,7 +15,6 @@ function midlineInds = GetMidline(IM,varargin)
 %   parameters.
 % lineLens - A vector where each value indicates the length of the line
 %   segment in the series of line segments to fit to the fish's body
-% imgExt - Image extension (default: 'jpg')
 % Outputs:
 % midlineInds - Indices of the midline in the image series; L x T matrix
 %   where T is the number of images in the series and L is number of line
@@ -26,7 +24,7 @@ lineLens =  [18 16 14 10 8 8];
 imgExt = 'jpg';
 if nargin == 1
     if isstr(IM) && isdir(IM)
-        IM  = ReadImgSequence(IM,imgExt);
+        IM  = ReadImgSequence(IM);
     end
     fishPos = GetFishPos(ProcessImages(IM),50);
 elseif nargin == 2
@@ -34,10 +32,6 @@ elseif nargin == 2
 elseif nargin ==3
     fishPos = varargin{1};
     lineLens = varargin{2};
-elseif nargin ==4
-    fishPos = varargin{1};
-    lineLens = varargin{2};
-    imgExt = varargin{3};
 end
 
 if isempty(fishPos)

@@ -76,7 +76,6 @@
 % 
 
 %%
-fishPos = tracexy;
-midlineInds = GetMidline(IM,fishPos,18);
+
 
 

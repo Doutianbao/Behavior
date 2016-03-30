@@ -1,12 +1,13 @@
-function PlayFishOriention(IM,fishPos,fishOrientation,varargin)
+function PlayFishOriention(IM,fishPos,orientation,varargin)
 % PlayFishOrientation - Plays the video of the fish along with orientation
 %   line
-% PlayFishOrientation(IM, fishPos, startFrame,endFrame,pauseDur)
+% PlayFishOrientation(IM, fishPos,orientation, startFrame,endFrame,pauseDur)
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image
 %   width, T = # of time points
 % fishPos - T x 2 vec where 1st & 2nd cols contain row & col positions
 %   of the fish in the images
+% orientation - Orientation of the fish in degrees
 % startFrame - Frame from which to display video
 % endFrame - Last Frame of video display
 % pauseDur - Duration of pause between subsequent frames
@@ -34,7 +35,7 @@ elseif nargin == 6
     endFrame = varargin{2};
     pauseDur = varargin{3};
     
-else
+elseif nargin >6
     error('Too many inputs!')
 end
 
@@ -43,9 +44,9 @@ figure('Name', 'Fish Tracking')
 tic
 rho = 0:lineLength-1;
 for imgNum = startFrame:skipFrames:endFrame
-    theta = fishOrientation(imgNum);   
-%     theta = 360-theta;
-    theta= mod(theta+180,360)*pi/180;    
+    theta = orientation(imgNum); 
+    theta= mod(theta+180,360)*pi/180; 
+
     
     thetas = repmat(theta,1,lineLength);    
     [blahX,blahY] = pol2cart(thetas,rho);

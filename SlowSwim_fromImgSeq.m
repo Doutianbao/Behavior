@@ -13,7 +13,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
         imgInds = input('Enter indices of images to read as a vector:  ');
         IM = ReadImgSequence(imgDir,imgExt,imgInds);
-        outDir = fullfile(imgDir,'Spont');
+        outDir = fullfile(imgDir,'spont');
         if exist(outDir)~=7
             mkdir(outDir)
         end
@@ -60,16 +60,18 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         %         orientation = GetFishOrientation2(IM,tracexy,20);
         
         %         orientation_corr = CorrectOrientation(orientation, 90);
-        imgDims = size(IM);
+        imgDims = size(IM_proc);
         orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2));
         orientation_backup = orientation;
         save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
+        save(fullfile(outDir,[fname, '_imgDims.mat']),'imgDims')
+        save(fullfile(outDir,[fname, '_midlineInds.mat']),'midlineInds');
 %         save(fullfile(outDir,[fname, '_orientation_corr.mat']),'orientation_corr');
         
         %% Motion Info
-        motionThr = 4;
+        motionThr = 5;
         [motionFrames, swimStartFrames] = GetMotionFrames(tracexy,motionThr);
-        motionInfo = GetMotionInfo(tracexy,orientation,size(IM,1));
+        motionInfo = GetMotionInfo(tracexy,orientation,size(IM_proc,1));
         
         %% Saving variables
         saveOrNot = 'y';

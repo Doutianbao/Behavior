@@ -1,12 +1,17 @@
-function motionInfo = GetMotionInfo(fishPos,orientation,imgLen)
+function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 %GetMotionInfo - Returns some info about fish motion
 % motionInfo = GetMotionInfo(fishPos, orientation, imgLen)
+% motionInfo = GetMotionInfo(...,motionThr);
+% motionInto = GetMotionInfo(...,trajPlot)
 % Inputs:
 % fishPos - T x 2 matrix where T is the total number of time points (img
 %   frames) and the 1st and the 2nd cols contain the x and y coordinates of the fish
 % orientation - A vector containing the orientation of the fish at each
 %   time point
 % imgLen - Length of each image, i.e., size(IM,1)
+% motionThr - The fish has to move by this many pixels to be considered in
+%   motion
+% trajPlot - Trajectory plot boolean
 % Outputs:
 % motionInfo - Structure variable containing swimming info extracted from
 %   trajectories.
@@ -26,9 +31,16 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen)
 %   .turnInfo - ?? (later)
 %   .orientInfo - ?? (later)
 
-trajPlot = 0; % 1 results in plotting of trajectories
-motionThr = 8.5;
 
+trajPlot = 0; % 1 results in plotting of trajectories
+motionThr = 5;
+
+if nargin ==4
+   motionThr = varargin{1};
+elseif nargin ==5
+    motionThr = varargin{1};
+    trajPlot = varargin{2};
+end
 [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
 
 x = fishPos(swimStartFrames,1);
@@ -71,7 +83,8 @@ for jj = 2:length(swimStartFrames)-1
     else
         traj_angle(jj) = angle(c)*180/pi;
     end
-    
+%     traj_angle(jj)  = GetTrajAngle(traj_adj);
+
     %## Traj speed (Mean of speed in first 3 frames or fewer; since frame rate is
     %## fixed, using dist as proxy for speed), vel, angular vel
     nPts = min(size(traj_adj{jj},1),4);   
@@ -202,3 +215,14 @@ orientInfo{3} = straightInds;
 orientInfo{4} = dOr;
 orientInfo{5} = {'leftInds','rightInds','straightInds','dOr'};
 end
+
+
+function traj_angle = GetTrajAngle(traj_adj)
+c = traj_adj(end,1) + traj_adj(end,2)*1i;
+if abs(c)== 0
+    traj_angle(jj) = nan;
+else
+    traj_angle(jj) = angle(c)*180/pi;
+end
+end
+

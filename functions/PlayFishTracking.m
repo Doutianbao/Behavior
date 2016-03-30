@@ -12,7 +12,9 @@ function PlayFishTracking(IM,fishPos,varargin)
 
 frameInds = 1:size(IM,3);
 pauseDur = 0.1;
-if nargin == 3;
+if nargin == 1
+    fishPos = [];
+elseif nargin == 3;
     frameInds = varargin{1};   
 elseif nargin == 4;
     frameInds = varargin{1};
@@ -20,7 +22,7 @@ elseif nargin == 4;
 elseif nargin > 4
     error('Too many inputs!')
 end
-if frameInds == [];
+if isempty(frameInds);
     frameInds = 1:size(IM,3);
 end
 figure('Name', 'Fish Tracking')
@@ -31,8 +33,10 @@ for imgNum = frameInds(:)'
     hold on
     if ~isempty(fishPos)
     plot(fishPos(imgNum,1),fishPos(imgNum,2),'ro'), drawnow
-    end
-    title(['Frame: ' num2str(imgNum) ', Frame Rate: ' num2str((round(10*((imgNum+1-startFrame)/toc)))/10) ' fps'])
+    end    
+    fps = (imgNum - frameInds(1))/toc;
+    fps = round(fps*100)/100;
+    title(['Frame: ' num2str(imgNum) ', Abs frame Rate: ' num2str(fps) ' fps'])
     shg
     pause(pauseDur)   
 end

@@ -20,11 +20,11 @@ rho = [rho(:); rho(1)];
 theta = [theta(:); theta(1)]; 
 
 figure('Name','Polar histogram plot')
-ph{1} = mmpolar(theta,rho,'TTickDelta',tTickDelta,'RTickValue',rTickVal,'TGridColor','r','Border','off','TTickLabel',ttl);
+mmpolar(theta,rho,'TTickDelta',tTickDelta,'RTickValue',rTickVal,'TGridColor','r','Border','off','TTickLabel',ttl);
 
 
 figure('Name','Rose histogram plot')
-ph{2} = rose(angles,nBins);
+ph{1} = rose(angles,nBins);
 varargout{1} = ph;
 
 

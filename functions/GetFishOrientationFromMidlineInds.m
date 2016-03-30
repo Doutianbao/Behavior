@@ -33,12 +33,14 @@ for imgNum = 1:length(midlineInds)
     orientation(imgNum) = cart2Angle(x(end),y(end));
 end
 orientation(orientation<0)= orientation(orientation<0) + 360;
+orientation = mod(orientation+180,360);
 end
 
 function [x, y] =  ImageIndsToXYCoords(imgInds,imgDims)
 [I,J] = ind2sub(imgDims,imgInds);
 x = J;
-y = imgDims(1)-I;
+y = I;
+% y = imgDims(1)-I;
 end
 
 function angle = cart2Angle(x,y)

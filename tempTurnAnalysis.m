@@ -109,10 +109,9 @@
 %% Plotting all position- and orientation-adjusted spont swim trajectories with velocity modulation of hue or alpha
 
 %## Get all motion info
-motionInfo = GetMotionInfo(tracexy,orientation,size(IM,1));
-
+% motionInfo = GetMotionInfo(tracexy,orientation,size(IM_proc,1),5);
+%  motionInfo = GetMotionInfo(tracexy,orientation,imgDims(1),5)
 %## Plot all adjusted trajectories
-
 figure('Name','Position & orientation adjusted spont swim trajectories')
 set(gca,'tickdir','out','color','k')
 x_max= 0;
@@ -137,7 +136,7 @@ xlim([-x_max x_max])
 ylim([y_min,y_max])
 title('Position & orientation adjusted spont swim trajectories')
 
- PlotAngularHist(motionInfo.traj_angle*pi/180,100)
+ PlotAngularHist(motionInfo.traj_angle*pi/180,50)
  
  figure
  polar(motionInfo.traj_angle_lim*pi/180,motionInfo.traj_speed,'.')
@@ -150,3 +149,96 @@ title('Position & orientation adjusted spont swim trajectories')
  figure
  polar(motionInfo.traj_angle_lim*pi/180,motionInfo.traj_angVel,'.')
   title('Traj angle vs traj angular vel (limited)')
+  
+ %% Binned trajectory speed vs traj angle
+figure('Name','Binned trajectory speed vs traj angle')
+trajAngle = motionInfo.traj_angle_lim(:);
+trajAngle(trajAngle<0) = trajAngle(trajAngle<0) + 360;
+trajSpeed = motionInfo.traj_speed(:);
+unlikelyInds = find((trajAngle> 225) & (trajAngle < 315));
+trajAngle(unlikelyInds) = [];
+trajSpeed(unlikelyInds) = [];
+nanInds = find(isnan(trajSpeed));
+trajSpeed(nanInds) = [];
+trajAngle(nanInds) = [];
+
+binAngles = 0:360/30:360;
+
+binnedSpeeds = cell(size(binAngles));
+binnedAngles = binnedSpeeds;
+numberInBin = zeros(size(binAngles));
+binCtr = nan*numberInBin;
+binMean = nan*numberInBin;
+binStd = nan*numberInBin;
+for jj = 1:length(binAngles)-1
+    binInds = find((trajAngle >= binAngles(jj)) & (trajAngle < binAngles(jj+1)));
+    if ~isempty(binInds)
+    binnedSpeeds{jj} = trajSpeed(binInds);
+    binnedAngles{jj} = trajAngle(binInds);
+    numberInBin(jj) = numel(binInds);
+    binCtr(jj) = mean([binAngles(jj) binAngles(jj+1)]);
+    binMean(jj) = mean(trajSpeed(binInds));
+    binStd(jj) = mean(trajSpeed(binInds));
+    else       
+        binnedSpeeds{jj} = nan;
+        binnedAngles{jj}  = nan;
+    end
+end
+binCtr = [binCtr(:); binCtr(1)];
+binMean = [binMean(:); binMean(1)]
+unlikelyInds = find((binAngles > 225) & (binAngles<315));
+nanInds = find(isnan(binCtr));
+remInds = setdiff(nanInds,unlikelyInds);
+oneInds = find(numberInBin==1);
+remInds = union(remInds,oneInds);
+binCtr(remInds) = [];
+binMean(remInds) = [];
+ polar(binCtr*pi/180, binMean,'.-')
+ 
+ binCtr_neg = binCtr;
+ binCtr_neg(binCtr>180) = binCtr_neg(binCtr>180)-360;
+ rInds = find(binCtr_neg>-90 & binCtr_neg<90);
+ lInds = find(binCtr>90 & binCtr<270);
+ 
+
+% figure('Name','Binned traj speed vs traj angle')
+% polar(binCtr(rInds)*pi/180,binMean(rInds),'.-')
+% hold on
+% polar(mod(binCtr(lInds)+180,360)*pi/180,binMean(lInds),'ro-')
+ 
+
+%% Binned trajectory vel vs traj angle
+figure('Name','Binned trajectory vel vs traj angle')
+trajAngle = motionInfo.traj_angle_lim(:);
+trajAngle(trajAngle<0) = trajAngle(trajAngle<0) + 360;
+trajSpeed = motionInfo.traj_vel(:);
+unlikelyInds = find((trajAngle> 225) & (trajAngle < 315));
+trajAngle(unlikelyInds) = [];
+trajSpeed(unlikelyInds) = [];
+nanInds = find(isnan(trajSpeed));
+trajSpeed(nanInds) = [];
+trajAngle(nanInds) = [];
+
+binAngles = 0:360/30:360;
+
+binnedSpeeds = cell(size(binAngles));
+binnedAngles = binnedSpeeds;
+numberInBin = zeros(size(binAngles));
+binCtr = nan*numberInBin;
+binMean = nan*numberInBin;
+binStd = nan*numberInBin;
+for jj = 1:length(binAngles)-1
+    binInds = find((trajAngle >= binAngles(jj)) & (trajAngle < binAngles(jj+1)));
+    if ~isempty(binInds)
+    binnedSpeeds{jj} = trajSpeed(binInds);
+    binnedAngles{jj} = trajAngle(binInds);
+    numberInBin(jj) = numel(binInds);
+    binCtr(jj) = mean([binAngles(jj) binAngles(jj+1)]);
+    binMean(jj) = mean(trajSpeed(binInds));
+    binStd(jj) = mean(trajSpeed(binInds));
+    else       
+        binnedSpeeds{jj} = nan;
+        binnedAngles{jj}  = nan;
+    end
+end
+polar(binCtr*pi/180, binMean,'.-')

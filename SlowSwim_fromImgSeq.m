@@ -9,7 +9,7 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         
         cd 'Z:\Avinash\Ablations & Behavior'
         
-        imgDir = input('Enter image dir path:  ', 's')
+        imgDir = input('Enter image dir path:  ', 's');
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
         imgInds = input('Enter indices of images to read as a vector:  ');
         IM = ReadImgSequence(imgDir,imgExt,imgInds);

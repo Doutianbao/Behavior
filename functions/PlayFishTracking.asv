@@ -20,12 +20,12 @@ elseif nargin == 4;
 elseif nargin > 4
     error('Too many inputs!')
 end
-if frameInds == [];
-    frameInds = 1:size(IM,3);
+if frameInds = [];
+    frameInds = 1:size(IM)
 end
 figure('Name', 'Fish Tracking')
 tic
-for imgNum = frameInds(:)'
+for imgNum = startFrame:endFrame
     cla
     imagesc(IM(:,:,imgNum)),axis image, axis off, colormap(gray), drawnow
     hold on

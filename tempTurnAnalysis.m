@@ -1,7 +1,7 @@
 %
 % %% Swim analysis
-% x = tracexy(:,1);
-% y = tracexy(:,2);
+% x = fishPos(:,1);
+% y = fishPos(:,2);
 % dx = diff(x);
 % dy = diff(y);
 % dS = sqrt(dx.^2 + dy.^2);
@@ -74,7 +74,7 @@
 % title('Swim distance by turn distribution')
 %
 % %% Velocity stuff
-% timeVec = (0:length(tracexy)-1)*(1/30); % Since frame rate = 30fps
+% timeVec = (0:length(fishPos)-1)*(1/30); % Since frame rate = 30fps
 % timeVec_mov = timeVec(startInds);
 % dT_mov = diff(timeVec_mov);
 % vel_mov = dS_mov(:)./dT_mov(:);
@@ -109,8 +109,9 @@
 %% Plotting all position- and orientation-adjusted spont swim trajectories with velocity modulation of hue or alpha
 
 %## Get all motion info
-% motionInfo = GetMotionInfo(tracexy,orientation,size(IM_proc,1),5);
-%  motionInfo = GetMotionInfo(tracexy,orientation,imgDims(1),5)
+% motionInfo = GetMotionInfo(fishPos,orientation,size(IM_proc,1),5);
+imgDims = size(ref);
+ motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),5)
 %## Plot all adjusted trajectories
 figure('Name','Position & orientation adjusted spont swim trajectories')
 set(gca,'tickdir','out','color','k')
@@ -185,7 +186,7 @@ for jj = 1:length(binAngles)-1
     end
 end
 binCtr = [binCtr(:); binCtr(1)];
-binMean = [binMean(:); binMean(1)]
+binMean = [binMean(:); binMean(1)];
 unlikelyInds = find((binAngles > 225) & (binAngles<315));
 nanInds = find(isnan(binCtr));
 remInds = setdiff(nanInds,unlikelyInds);

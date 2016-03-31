@@ -25,7 +25,7 @@ function midlineInds = GetMidline_parallel(IM,varargin)
 lineLens =  [18 16 14 10 8 8];
 imgExt = 'jpg';
 if nargin == 1
-    if isstr(IM) && isdir(IM)
+    if ischar(IM) && isdir(IM)
         IM  = ReadImgSequence(IM,imgExt);
     end
     fishPos = GetFishPos(ProcessImages(IM),50);
@@ -44,11 +44,13 @@ if isempty(fishPos)
     fishPos = GetFishPos(ProcessImages(IM),50);
 end
 
-poolSize = 10;
-matlabpool open poolSize;
+if matlabpool('size')==0
+    poolSize = 10;
+    matlabpool(poolSize);
+end
 midlineInds = {};
 imgNumVec = 1:size(IM,3);
-parfor imgNum = 1:imgNumVec
+parfor imgNum = imgNumVec
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     lineInds = {};
@@ -66,7 +68,7 @@ parfor imgNum = 1:imgNumVec
         y = r;
         prevStartPt = startPt;
         startPt = [x,y];
-       
+        
         midlineInds{imgNum} = lineInds;
     end
     
@@ -81,6 +83,7 @@ parfor imgNum = 1:imgNumVec
     shg
     pause(0.15)
 end
+matlabpool close
 end
 
 function lineInds = GetML(im,startPt,varargin)

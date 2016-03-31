@@ -3,12 +3,12 @@
 
 switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
     case 'LoadingNewFilm'
-        
+       
         clear all
         close all
         
         cd 'Z:\Avinash\Ablations & Behavior'
-        
+        poolSize  = 10;
         imgDir = input('Enter image dir path:  ', 's');
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
         imgInds = input('Enter indices of images to read as a vector:  ');
@@ -19,59 +19,69 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         end
         
         %% tracking the fish
-        disp('Computing mean frame...')
-        imKer = ones(5)/5^2;
+%         disp('Computing mean frame...')
+%         imKer = ones(5)/5^2;
+%         tic
+%         im=conv2(squeeze(mean(IM,3)),imKer,'same');
+%         toc
+%         x_ = zeros(1,size(IM,3));
+%         y_ = x_;
         tic
-        im=conv2(squeeze(mean(IM,3)),imKer,'same');
-        toc
-        x_ = zeros(1,size(IM,3));
-        y_ = x_;
-        disp('Tracking the fish...')
-        IM_proc = zeros(size(IM));
-        for jj=1:size(IM,3)
-            ii=conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
-            IM_proc(:,:,jj) = ii;
-            if 0, imagesc(ii);colormap(gray); axis image; title(jj);drawnow;end;
-            %           [x_(i) y_(i)]=find(ii==max(ii(:)),1);
-            [~,maxInds] = sort(ii(:),'descend');
-            maxInds = maxInds(1:30);
-            [r,c] = ind2sub(size(ii),maxInds);
-            r = round(mean(r));
-            c = round(mean(c));
-            x_(jj) = r;
-            y_(jj) = c;
-            if 0, hold on;plot(y_(jj),x_(jj),'ro');drawnow;
-                hold off;cla,%plot(0);
-                shg
-            end;
-            if mod(jj,1000)==0
-                disp(['Img # ' num2str(jj)])
-            end
+        if matlabpool('size')==0
+            matlabpool(poolSize)
         end
-        tracexy = [y_; x_]';
+        disp('Processing images...')
+%         IM_proc = ProcessImages_parallel(IM);
+        disp('Tracking fish...')
+        fishPos = GetFishPos_parallel(IM_proc, 40);
+%         for jj=1:size(IM_proc,3)
+%             ii=conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+%             IM_proc(:,:,jj) = ii;
+%             if 0, imagesc(ii);colormap(gray); axis image; title(jj);drawnow;end;
+%             %           [x_(i) y_(i)]=find(ii==max(ii(:)),1);
+%             [~,maxInds] = sort(ii(:),'descend');
+%             maxInds = maxInds(1:30);
+%             [r,c] = ind2sub(size(ii),maxInds);
+%             r = round(mean(r));
+%             c = round(mean(c));
+%             x_(jj) = r;
+%             y_(jj) = c;
+%             if 0, hold on;plot(y_(jj),x_(jj),'ro');drawnow;
+%                 hold off;cla,%plot(0);
+%                 shg
+%             end;
+%             if mod(jj,1000)==0
+%                 disp(['Img # ' num2str(jj)])
+%             end
+%         end
+%         fishPos = [y_; x_]';
+        toc
         disp('Creating mean reference frame...')
         ref = mean(IM,3);
-       
+        toc
         
-        %% Fish Orientation
-        fishPos = tracexy;
+        %% Fish Orientation        
         IM_orient = max(IM_proc(:))-IM_proc;
-        midlineInds = GetMidline(IM_orient,fishPos,28);
-        %         orientation = GetFishOrientation2(IM,tracexy,20);
+        midlineInds = GetMidline_parallel(IM_orient,fishPos,28);
+        %         orientation = GetFishOrientation2(IM,fishPos,20);
         
         %         orientation_corr = CorrectOrientation(orientation, 90);
         imgDims = size(IM_proc);
         orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2));
         orientation_backup = orientation;
-        save(fullfile(outDir,[fname, '_orientation.mat']),'orientation');
-        save(fullfile(outDir,[fname, '_imgDims.mat']),'imgDims')
-        save(fullfile(outDir,[fname, '_midlineInds.mat']),'midlineInds');
-%         save(fullfile(outDir,[fname, '_orientation_corr.mat']),'orientation_corr');
+        fName = input('Enter fish name (e.g. Fish7): ','s');
+        save(fullfile(outDir,[fName, '_orientation.mat']),'orientation');
+        save(fullfile(outDir,[fName, '_imgDims.mat']),'imgDims')
+        save(fullfile(outDir,[fName, '_midlineInds.mat']),'midlineInds');
+        save(fullfile(outDir,[fName, '_ref.mat']),'ref');
+        save(fullfile(outDir,[fName, '_tracexy.mat']),'fishPos');
+        disp(['Saved orientation, imgDims ,midlineInds, ref, tracexy at ' outDir])
+%         save(fullfile(outDir,[fName, '_orientation_corr.mat']),'orientation_corr');
         
         %% Motion Info
         motionThr = 5;
-        [motionFrames, swimStartFrames] = GetMotionFrames(tracexy,motionThr);
-        motionInfo = GetMotionInfo(tracexy,orientation,size(IM_proc,1));
+        [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
+        motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
         
         %% Saving variables
         saveOrNot = 'y';
@@ -79,21 +89,22 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         tic
         if strcmpi('y',saveOrNot)
             disp('Saving relevant variables...')
-            savefast(fullfile(outDir,[fname, '_tracexy.mat']),'tracexy');
-            %             savefast(fullfile(outDir,[fname, '_IM.mat']),'IM');
-            savefast(fullfile(outDir,[fname, '_IM_proc.mat']),'IM_proc');
-            savefast(fullfile(outDir,[fname, '_ref.mat']),'ref');
-            save(fullfile(outDir,[fname '_motionInfo.mat']),'motionInfo');        
+           
+            %             savefast(fullfile(outDir,[fName, '_IM.mat']),'IM');
+            savefast(fullfile(outDir,[fName, '_IM_proc.mat']),'IM_proc');            
+            save(fullfile(outDir,[fName '_motionInfo.mat']),'motionInfo');        
         else
             disp('Data not saved!')
         end
         toc
-        
+        if matlabpool('size')>0
+        matlabpool close
+        end
         break;
         
         %% Turn angles during swims and histogram
-        x = tracexy(:,1);
-        y = tracexy(:,2);
+        x = fishPos(:,1);
+        y = fishPos(:,2);
         dx = diff(x);
         dy = diff(y);
         dS = sqrt(dx.^2 + dy.^2);
@@ -152,15 +163,15 @@ switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
         
         fr_rate = 1500; %3000 frames per min
         [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
-        [~,fname,~]=fileparts(FileName);
-        outdir=[PathName,fname,'\swims\'];
-        load([outdir,fname, '_tracexy.mat']);
-        load([outdir,fname, '_ref.mat']);
+        [~,fName,~]=fileparts(FileName);
+        outDir=[PathName,fName,'\swims\'];
+        load([outDir,fName, '_tracexy.mat']);
+        load([outDir,fName, '_ref.mat']);
         tic
-        load([outdir,fname, '_IM.mat']);
+        load([outDir,fName, '_IM.mat']);
         toc
-        y_ = tracexy(:,1)';
-        x_ = tracexy(:,2)';
+        y_ = fishPos(:,1)';
+        x_ = fishPos(:,2)';
 end
 
 
@@ -217,7 +228,7 @@ end
 savename = ['Turn_',num2str(s_fac), '_',num2str(s_range),'_',FileName(1:10)];
 tracexy_flt = [y; x];
 
-savefast(fullfile([outdir,fname, '_tracexy_flt.mat']),'tracexy_flt');
+savefast(fullfile([outDir,fName, '_tracexy_flt.mat']),'tracexy_flt');
 
 
 
@@ -232,7 +243,7 @@ if 1
     set(gca,'XLim',[0.5 max(dd)]);
     xlabel('number','fontsize',10);
     ylabel('speed (mm/sec)','fontsize',10);
-    speed_name = [outdir,savename,'_speed.tif'];
+    speed_name = [outDir,savename,'_speed.tif'];
     saveas(speed,fullfile(speed_name),'tif');
     
 end
@@ -370,10 +381,10 @@ for i = 1:rangenum
 end
 
 turn_ind.thrld = [thld;thld2];
-savefast(fullfile([outdir,fname,'_turn.mat']),'turn');
-savefast(fullfile([outdir,fname,'_turn_ind.mat']),'turn_ind');
+savefast(fullfile([outDir,fName,'_turn.mat']),'turn');
+savefast(fullfile([outDir,fName,'_turn_ind.mat']),'turn_ind');
 
-tif_name = [outdir,fname,'_multiregion.fig'];
+tif_name = [outDir,fName,'_multiregion.fig'];
 saveas(turn_fig,fullfile(tif_name),'fig');
 
 
@@ -466,7 +477,7 @@ if 1
     set(gca, 'XLim', [ -2 2 ], 'YLim', [ -2 2 ] );
     title(['R2 = '  rsq_str(1:8)],'interpreter','none')
     set(final_h,'PaperPositionMode','auto');
-    tif_name = [outdir,savename,'.tif'];
+    tif_name = [outDir,savename,'.tif'];
     saveas(final_h,fullfile(tif_name),'tif');
 end
 
@@ -482,7 +493,7 @@ if 1
     color_dangle = (turn.(rangename).dangle)'/max(abs(turn.(rangename).dangle));
     if 1 % whether to save the video
         ff.FrameRate = 1;
-        movie_folder = [outdir,savename,'_',num2str(ff.FrameRate),'.mpeg'];
+        movie_folder = [outDir,savename,'_',num2str(ff.FrameRate),'.mpeg'];
         ff=VideoWriter(movie_folder,'MPEG-4');
         
         open(ff);
@@ -529,7 +540,7 @@ if 1
     title(['frame' num2str(i) '; turn ' num2str(turn_ind)])
     set(track,'PaperPositionMode','auto');
     sample_time = num2str(sample_fr/fr_rate*60);
-    video_name = [outdir  savename  '-track-' sample_time 'secs''.tif']
+    video_name = [outDir  savename  '-track-' sample_time 'secs''.tif']
     saveas(track,fullfile(video_name),'tif');
 end
 
@@ -545,7 +556,7 @@ if 1
     color_dangle = (turn.(rangename).dangle)'/max(abs(turn.(rangename).dangle));
     if 1 % whether to save the video
         ff.FrameRate = 1;
-        movie_folder = [outdir,savename,'_',num2str(ff.FrameRate),'.mpeg'];
+        movie_folder = [outDir,savename,'_',num2str(ff.FrameRate),'.mpeg'];
         ff=VideoWriter(movie_folder,'MPEG-4');
         
         open(ff);
@@ -592,7 +603,7 @@ if 1
     title(['frame' num2str(i) '; turn ' num2str(turn_ind)])
     set(track,'PaperPositionMode','auto');
     sample_time = num2str(sample_fr/fr_rate*60);
-    video_name = [outdir  savename  '-track-' sample_time 'secs''.tif']
+    video_name = [outDir  savename  '-track-' sample_time 'secs''.tif']
     saveas(track,fullfile(video_name),'tif');
 end
 
@@ -618,15 +629,15 @@ if 1
     trace_var.dangle = dangle;
     trace_var.peaks = peaks_scatter;
     
-    savefast(fullfile([outdir,fname,'_trace_var.mat']),'trace_var');
+    savefast(fullfile([outDir,fName,'_trace_var.mat']),'trace_var');
     
 else
     [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
-    [~,fname,~]=fileparts(FileName);
-    outdir=[PathName,fname,'\swims\'];
-    load([outdir,fname, '_trace_var.mat']);
-    load([outdir,fname, '_tracexy_flt.mat']);
-    load([outdir,fname, '_turn_ind.mat']);
+    [~,fName,~]=fileparts(FileName);
+    outDir=[PathName,fName,'\swims\'];
+    load([outDir,fName, '_trace_var.mat']);
+    load([outDir,fName, '_tracexy_flt.mat']);
+    load([outDir,fName, '_turn_ind.mat']);
     rangename = ['region1'];
     
     y = tracexy_flt(1,:);
@@ -678,10 +689,10 @@ titlestr = sprintf('IT-num =  %s ; \n   IT_angle =  %s ; \n  T-freq = %s \n %s',
 title(titlestr,'interpreter','none')
 
 %%
-% saveas(trace,fullfile([outdir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.tif']),'tif');
-saveas(trace,fullfile([outdir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.fig']),'fig');
-exportfig(trace,[outdir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.eps'],'Color' ,'rgb');
-% saveas(trace,fullfile([outdir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.eps']),'epsc');
+% saveas(trace,fullfile([outDir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.tif']),'tif');
+saveas(trace,fullfile([outDir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.fig']),'fig');
+exportfig(trace,[outDir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.eps'],'Color' ,'rgb');
+% saveas(trace,fullfile([outDir,savename,'_trace_',num2str(startFr),'to',num2str(endFr),'scale',num2str(anglefac1),'_',num2str(anglefac2),'.eps']),'epsc');
 
 return
 
@@ -697,7 +708,7 @@ hold on;
 subplot(2,1,1);plot(a1./(a1+a2));
 subplot(2,1,2);plot(a1./(a1+a2));
 xlim([0 10]);
-core_name = [outdir,savename,'-n-correlation-' '.tif']
+core_name = [outDir,savename,'-n-correlation-' '.tif']
 saveas(n_cor,fullfile(core_name),'tif');
 
 return

@@ -176,6 +176,7 @@ varargout{2} = startInds;
 
 end
 
+function or
 
 function turnInfo = getTurnInfo(fishPos,motionFrames)
 turnAngleThr = 5;

@@ -99,8 +99,9 @@ fldNames = fieldnames(data);
 for fldNum = 1:length(fldNames)
     fldName = fldNames{fldNum};
     if ~isempty(strfind(lower(fldName),lower('left')))
+            blah =data.(fldName).motionInfo.traj_angle;
         data.(fldName).motionInfo.traj_angle = ...
-            ReflectAngleOnY(data.(fldName).motionInfo.traj_angle);
+            ReflectAngleOnY(blah);
         disp(['Flipped ' fldName])
     end
 end

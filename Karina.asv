@@ -8,6 +8,7 @@ frameRate  = 500; % For timeseries lowpass filtering
 lowPass_ts = 100; % Lowpass cutoff for timeseries filtering
 bandPass_img = [5, 15]; % For image spatial filtering
 intThr = 0.75; % For image binarization
+lineLen = 30; % For orienttion estimation
 
 
 %% Read Image Stack
@@ -53,25 +54,23 @@ for frame = 2:nFrames
     for cent = 1:size(cents_prev,1)
         cents_prev(cent,:) = blobPos{cent}(frame-1,1:2);
     end
-    distMat = cell(size(cents_prev,1),1);
-    blobOffset = nan(size(cents_prev,1),1);
+     distMat = cell(size(cents,1),1);
+    blobOffset = nan(size(cents,1),1);
     for blob = 0:size(distMat,1)-1
-        distMat{blob+1} = GetDistMat(circshift(cents_prev,[-blob,0]),cents);
-        if all(size(distMat)>1)
-            dists = sum(DiagCirc(distMat),1);
-        else 
-            dists = sum(distMat,1);            
+        distMat{blob+1} = GetDistMat(circshift(cents,[-blob,0]),cents_prev);
+        if all(size(distMat{blob+1})>1)          
+            dists = sum(DiagCirc(distMat{blob+1}),1);          
+        elseif any(size(distMat{blob+1})==1)
+            
+        else
+            dists = sum(distMat{blob+1},1);            
         end  
-        [~, blobOffset(blob)]
+        [~, blobOffset(blob+1)] = min(dists);
     end
-%     distMat = GetDistMat(cents_prev,cents);
-
-   
-    [~, blobOffset] = min(dists);
-    blobOffset = blobOffset-1;
+    [~,sInds]= sort(blobOffset);
+    
     for rp = 1:size(cents_prev,1)
-        circInd = mod(rp-1+blobOffset,size(cents,1))+1;
-        blobPos{rp}(frame,1:2)= cents(circInd,:);
+        blobPos{rp}(frame,1:2)= cents(blobOffset(sInds(rp)),:);
         blobPos{rp}(frame,3) = round(frame);
     end    
 end
@@ -86,7 +85,7 @@ if matlabpool('size')==0
 matlabpool(10)
 end
 for or = 1:length(orientations)
-    mlInds = GetMidline_parallel(-IM_flt,blobPos{or}(:,1:2),30);
+    mlInds = GetMidline_parallel(-IM_flt,blobPos{or}(:,1:2),lineLen);
     orientations{or} = chebfilt(GetFishOrientationFromMidlineInds(mlInds,imgDims(1:2)),1/frameRate,lowPass_ts,'low');
     dOrs{or} = DiffOrientation(orientations{or})*180/pi;
     IM_adj{or} = PlayFixedFish(IM,blobPos{or}(:,1:2),orientations{or}+180);

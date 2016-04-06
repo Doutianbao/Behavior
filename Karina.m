@@ -54,23 +54,29 @@ for frame = 2:nFrames
     for cent = 1:size(cents_prev,1)
         cents_prev(cent,:) = blobPos{cent}(frame-1,1:2);
     end
-     distMat = cell(size(cents,1),1);
+    if frame==84
+        a = 1;
+    end
+    distMat = cell(size(cents,1),1);
     blobOffset = nan(size(cents,1),1);
     for blob = 0:size(distMat,1)-1
         distMat{blob+1} = GetDistMat(circshift(cents,[-blob,0]),cents_prev);
-        if all(size(distMat{blob+1})>1)          
-            dists = sum(DiagCirc(distMat{blob+1}),1);          
-        else 
-            dists = sum(distMat{blob+1},1);            
-        end  
+        if all(size(distMat{blob+1})>1)
+            dists = sum(DiagCirc(distMat{blob+1}),1);
+        elseif sum(size(distMat{blob+1})==1)==1
+            dists = distMat{blob+1};
+            dists = dists(:)';
+        else
+            dists = sum(distMat{blob+1},1);
+        end
         [~, blobOffset(blob+1)] = min(dists);
     end
     [~,sInds]= sort(blobOffset);
     
     for rp = 1:size(cents_prev,1)
-        blobPos{rp}(frame,1:2)= cents(blobOffset(sInds(rp)),:);
+        blobPos{rp}(frame,1:2)= cents(sInds(rp),:);
         blobPos{rp}(frame,3) = round(frame);
-    end    
+    end
 end
 
 %% Getting orientations of fish and tranformed frames
@@ -80,7 +86,7 @@ IM_adj = orientations;
 dOr = orientations;
 imgDims = size(IM);
 if matlabpool('size')==0
-matlabpool(10)
+    matlabpool(10)
 end
 for or = 1:length(orientations)
     mlInds = GetMidline_parallel(-IM_flt,blobPos{or}(:,1:2),lineLen);

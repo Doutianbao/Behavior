@@ -83,7 +83,7 @@ parfor imgNum = imgNumVec
     shg
     pause(0.15)
 end
-matlabpool close
+% matlabpool close
 end
 
 function lineInds = GetML(im,startPt,varargin)

@@ -6,9 +6,9 @@ function varargout = Karina(varargin)
 %% Some variables
 frameRate  = 500; % For timeseries lowpass filtering
 lowPass_ts = 100; % Lowpass cutoff for timeseries filtering
-bandPass_img = [5, 15]; % For image spatial filtering
+bandPass_img = [5, 10]; % For image spatial filtering
 intThr = 0.75; % For image binarization
-lineLen = 30; % For orienttion estimation
+lineLen = 25; % For orienttion estimation
 
 
 %% Read Image Stack
@@ -54,25 +54,9 @@ for frame = 2:nFrames
     for cent = 1:size(cents_prev,1)
         cents_prev(cent,:) = blobPos{cent}(frame-1,1:2);
     end
-    if frame==84
-        a = 1;
-    end
-    distMat = cell(size(cents,1),1);
-    blobOffset = nan(size(cents,1),1);
-    for blob = 0:size(distMat,1)-1
-        distMat{blob+1} = GetDistMat(circshift(cents,[-blob,0]),cents_prev);
-        if all(size(distMat{blob+1})>1)
-            dists = sum(DiagCirc(distMat{blob+1}),1);
-        elseif sum(size(distMat{blob+1})==1)==1
-            dists = distMat{blob+1};
-            dists = dists(:)';
-        else
-            dists = sum(distMat{blob+1},1);
-        end
-        [~, blobOffset(blob+1)] = min(dists);
-    end
-    [~,sInds]= sort(blobOffset);
-    
+    distMat = GetDistMat(cents,cents_prev);  
+    optInds = GetOptimalInds(distMat);  
+    sInds = optInds;    
     for rp = 1:size(cents_prev,1)
         blobPos{rp}(frame,1:2)= cents(sInds(rp),:);
         blobPos{rp}(frame,3) = round(frame);
@@ -88,8 +72,8 @@ imgDims = size(IM);
 if matlabpool('size')==0
     matlabpool(10)
 end
-for or = 1:length(orientations)
-    mlInds = GetMidline_parallel(-IM_flt,blobPos{or}(:,1:2),lineLen);
+for or = 1:length(orientations)   
+    mlInds = GetMidline_parallel(-IM,blobPos{or}(:,1:2),lineLen);
     orientations{or} = chebfilt(GetFishOrientationFromMidlineInds(mlInds,imgDims(1:2)),1/frameRate,lowPass_ts,'low');
     dOrs{or} = DiffOrientation(orientations{or})*180/pi;
     IM_adj{or} = PlayFixedFish(IM,blobPos{or}(:,1:2),orientations{or}+180);
@@ -111,6 +95,45 @@ varargout{2} = out;
 
 
 %% Utility functions
+    function voteMat = DistMat2VoteMat(distMat)
+        voteMat = nan(size(distMat));
+        for col = 1:size(distMat,2)
+            for row = 1:size(distMat,1)
+                blah = distMat;
+                blah(row,:)=[];
+                blah(:,col)  =[];
+                voteMat(row,col) = sum(blah(:));
+            end
+        end
+    end
+
+    function optInds = GetOptimalInds(distMat)
+        [sorts,inds] = sort(distMat,'ascend');
+        rowInds = []; colInds = [];
+        if size(inds,2) > 1
+            for c = 1:size(inds,2)-1
+                sameInds = find(inds(1,:)==inds(1,c));
+                if numel(sameInds)>1
+                    addVec = 1:length(sameInds);
+                    blah = nan(length(addVec),1);
+                    temp = {};
+                    for jj = 1:length(addVec)
+                        addVec = circshift(addVec,[0,jj-1]);
+                        temp{jj} = addVec;
+                        blah(jj) = sum(SparseIndex(sorts,addVec,sameInds));
+                    end
+                    [~, mindInd] = min(blah);
+                    rowInds = [rowInds,temp{mindInd}]
+                    colInds = [colInds,sameInds];
+                    optInds = SparseIndex(inds,rowInds,colInds);
+                else
+                    optInds = inds(1,:);
+                end
+            end
+        else
+            optInds= inds(1,1);
+        end
+    end
 
     function out = GetDistMat(m1,m2)
         S = @(x,y) sqrt(sum((x(1)-y(1)).^2 + (x(2)-y(2)).^2));

@@ -49,7 +49,7 @@ for imgNum = 1:size(IM,3)
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     lineInds = {};
-    startPt = fishPos(imgNum,:);
+    startPt = fishPos(imgNum,:);   
     for jj = 1:length(lineLens)
         if jj ==1
             
@@ -83,7 +83,7 @@ end
 function lineInds = GetML(im,startPt,varargin)
 % lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen)
 
-dTh = 5;
+dTh = 4;
 lineLen = 15;
 if nargin < 2
     error('At least 2 inputs required!')
@@ -101,10 +101,12 @@ elseif nargin == 5
 end
 
 if isempty(dTh)
-    dTh  = 5;
+    dTh  = 4;
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
+ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+rImg = conv2(rImg,ker,'same');
 
 if isempty(prevStartPt)
     farInds = 1:size(indMat,1);
@@ -123,66 +125,64 @@ end
 
 
 %## Find lines that pass through fish
-backgroundInt= sort(rImg(:),'ascend');
-backgroundInt(backgroundInt==0)=[];
-backgroundInt = mean(backgroundInt(1:round(numel(rImg)/2)));
-signalMat = rImg > 1*backgroundInt;
-nPxls = sum(signalMat,2);
+Standardize = @(x)(x-min(x))/(max(x)-min(x));
 muPxls = mean(rImg,2);
-muPxls = (muPxls-min(muPxls))/(max(muPxls)-min(muPxls));
-slopes = rImg(:,end)-rImg(:,1);
-nms = (nPxls(:).^1.5).*muPxls(:).*(1./abs(slopes(:)));
-nms = nms(farInds);
-nms(find(isinf(nms)))=1;
-nms = (nms-min(nms(:)))/(max(nms)-min(nms));
-nmsInds = find(nms>0.4);
-blahInds = farInds(nmsInds);
-nms = nms(nmsInds);
+backgroundInt = mean(muPxls);
+signalMat = rImg > 1*backgroundInt;
+rImg(rImg<backgroundInt)=min(rImg(:));
+nPxls = sum(signalMat,2);
+[lps,mr] = GetLineProfileSpread(rImg);
+
+nml = (nPxls(:).^1.5).*muPxls(:).*lps(:);
+nml(isinf(nml))= max(nml);
+nml = Standardize(nml);
+nml = nml(farInds);
+probInds = find(nml>0.4);
+mr = Standardize(mr);
+nml(probInds) = nml(probInds).*mr(probInds);
+probInds= find(nml>0.4);
+blahInds = farInds(probInds);
+nml = nml(probInds);
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
-blockEndInds = blockInds(2:end)-1;
-blockEndInds = [blockEndInds(:); length(blahInds)];
+
+%##Do not uncomment these lines, this could give an erorr
+%###############################################
+% blockInds(blockSizes==1)=[]; 
+% blockSizes(blockSizes==1)=[];
+%###############################################
+
+blockEndInds = blockInds + blockSizes - 1;
 blockMaxes = zeros(size(blockInds));
 for jj = 1:length(blockInds)
-    blockMaxes(jj) = max(nms(blockInds(jj):blockEndInds(jj)));
+    blockMaxes(jj) = max(nml(blockInds(jj):blockEndInds(jj)));
 end
 
 %## For 1st line segment choose smaller block because head block will be
 %## bigger than tail block
 
-% if numel(farInds)== size(rImg,1);
-%     [~, bigBlock] = min(blockSizes);
-% else
-% %     [~, bigBlock] = max(blockSizes);
-%     [~,bigBlock] = max(blockSizes.*blockMaxes);
-% end
-[~,bigBlock]= max(blockSizes.*blockMaxes);
+%# Choose a block that has at at least a few lines and high max int, but weight max int more.
+[~,bigBlock]= max(blockSizes.*(2*blockMaxes)); 
 
 if numel(blockInds)> bigBlock
     keepInds = blockInds(bigBlock):blockInds(bigBlock+1);
 else
-    keepInds = blockInds(bigBlock):length(blahInds);
+    keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
 end
 
 blahInds = blahInds(keepInds);
-nms = nms(keepInds);
+nml = nml(keepInds);
 zerInds = find(blahInds==0);
 blahInds(zerInds)=[];
-nms(zerInds) = [];
-throughFishInds = find(nPxls > 0.9*lineLen);
+nml(zerInds) = [];
+ctrOfMassInd = round(sum((1:length(nml)).*nml(:)')/sum(nml));
 
-%## Find the line where the sum of pxls is largest
-% finalInd = round(median(blahInds)); % This used to be a reasonable approx
-% [~,maxInds] = max(sum(rImg(blahInds,:),2)); % Buggy too
-[~,maxInds] = max(nms);
-
-finalInd = blahInds(round(median(maxInds)));
-lineInds = indMat(finalInd,:);
-lineInds = lineInds(:);
+realInd = blahInds(ctrOfMassInd);
+lineInds = indMat(realInd,:)';
 
 
-    function [blockSizes, blockInds] = GetContiguousBlocks(values)
+function [blockSizes, blockInds] = GetContiguousBlocks(values)
         % Given a set of values, returns the sizes of contiguous blocks and the
         %   block start indices
         blockInds = 1;
@@ -193,12 +193,29 @@ lineInds = lineInds(:);
                 count = count+1;
             else
                 blockSizes = [blockSizes; count];
-                count = 0;
+                count = 1;
                 blockInds =[blockInds; jj+1];
             end
         end
         blockSizes = [blockSizes; count];
-    end
-
+  end
+  
 end
 
+    
+  function [lps,mr] = GetLineProfileSpread(rImg)
+  Y =  sort(rImg,2,'descend');  
+  blah = mean(Y(:,1:round(size(rImg,2)/5)),2);
+  lps = sum(rImg,2)./blah; 
+  
+  Y = rImg';
+  X = [ones(size(Y,1),1), [1:size(Y,1)]'];  
+  B = X\Y;
+  m = abs(B(2,:));
+  b = B(1,:) ;
+  Y_est = X*B;  
+  res = sqrt(sum((Y_est-Y).^2,1));
+  m = max(m)-m;
+  res =max(res)-res;
+  mr = m(:).*res(:);
+  end

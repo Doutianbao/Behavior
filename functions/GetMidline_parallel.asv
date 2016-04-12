@@ -54,7 +54,7 @@ parfor imgNum = imgNumVec
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     lineInds = {};
-    startPt = fishPos(imgNum,:);   
+    startPt = fishPos(imgNum,:);
     for jj = 1:length(lineLens)
         if jj ==1            
             lineInds{jj} = GetML(img,startPt,[],[],lineLens(jj));
@@ -69,6 +69,16 @@ parfor imgNum = imgNumVec
         startPt = [x,y];        
         midlineInds{imgNum} = lineInds;
     end    
+%     cla    
+%     for kk = 1:length(lineInds)
+%         img(lineInds{kk}) = max(img(:));
+%         imagesc(img),axis image
+%     end
+%     hold on
+%     plot(fishPos(imgNum,1),fishPos(imgNum,2),'k*')
+%     title(num2str(imgNum))
+%     shg
+%     pause(0.15)
 end
 % matlabpool close
 end

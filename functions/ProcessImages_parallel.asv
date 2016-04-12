@@ -17,16 +17,16 @@ refFrames = 1:size(IM,3);
 if (nargin == 2)
     refFrames = varargin{2};
 end
-im = conv2(mean(IM(:,:,refFrames),3),imKer,'same');
+
+im = conv2(squeeze(mean(IM(:,:,refFrames),3)),imKer,'same');
 toc
 
 
 disp('Processing images...')
 tic
-if strcmpi(class(IM),'mappedTensor')
- IM_proc = MappedTensor(size(IM));
+if
+IM_proc = zeros(size(IM));
 else
-    IM_proc = zeros(size(IM));
 end
 imgFrames= 1:size(IM,3);
 poolOpened = 0;

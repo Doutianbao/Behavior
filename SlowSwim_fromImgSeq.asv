@@ -66,10 +66,10 @@ switch readMode
         fclose(h)
         
     case 'fromImages'
-        imgDir = input('Enter image dir path:  ', 's');
+        imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
         imgInds = input('Enter indices of images to read as a vector:  ');
-        IM = ReadImgSequence(imgDir,imgExt,imgInds);
+        IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
         outDir = fullfile(imgDir,'spont');
 end
 
@@ -97,7 +97,7 @@ toc
 disp('Getting fish orientation...')
 tic
 IM_orient = max(IM_proc(:))-IM_proc;
-midlineInds = GetMidline_parallel(IM_orient,fishPos,28);
+midlineInds = GetMidline_template(IM_orient,fishPos,[30 28 24]);
 %         orientation = GetFishOrientation2(IM,fishPos,20);
 
 %         orientation_corr = CorrectOrientation(orientation, 90);
@@ -115,11 +115,11 @@ motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
 fName = input('Enter fish name (e.g. Fish7): ','s');
 ts = datestr(now,30);
 save(fullfile(outDir,[fName, '_orientation_' ts '.mat']),'orientation');
-save(fullfile(outDir,[fName, '_imgDims.mat']),'imgDims')
-save(fullfile(outDir,[fName, '_midlineInds.mat']),'midlineInds');
-save(fullfile(outDir,[fName, '_ref.mat']),'ref');
-save(fullfile(outDir,[fName, '_tracexy.mat']),'fishPos');
-save(fullfile(outDir,[fName '_motionInfo.mat']),'motionInfo');
+save(fullfile(outDir,[fName, '_imgDims_'  ts '.mat']),'imgDims')
+save(fullfile(outDir,[fName, '_midlineInds_' ts '.mat']),'midlineInds');
+save(fullfile(outDir,[fName, '_ref_' ts '.mat']),'ref');
+save(fullfile(outDir,[fName, '_tracexy_' ts '.mat']),'fishPos');
+save(fullfile(outDir,[fName '_motionInfo_' ts '.mat']),'motionInfo');
 disp(['Saved orientation, imgDims ,midlineInds, ref, tracexy at ' outDir])
 %
 

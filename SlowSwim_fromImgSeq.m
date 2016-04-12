@@ -14,62 +14,12 @@ readMode =  'fromImages'; %'fromMishVid';
 poolSize  = 10;
 switch readMode
     case 'fromMishVid'
-        fr_rate = 1800; % frames per min (i.e. 30fps)
-        [FileName,PathName] = uigetfile('*.mishVid*','Select the mishVid');
-        dirFile = [PathName FileName];
-        [~,fname,~]=fileparts(FileName);
-        outDir=[PathName,fname,'\swims\'];              
-        disp(FileName)   
-        imgDims = input('Enter image dimensions as [height width] e.g. [500 600] :  ');
-        h_axis = imgDims(1); %(default = 600)
-        v_axis = imgDims(1); %(default = 600)
-        imgCircShift = [0 0]; % default = [0 0]        
-        h = fopen(dirFile);        
-        
-        % Imaging parameters
-        start_f = 1;
-        dur_f =  18000*2;
-        samplingRate = 30; % 2.5 frames per sec
-        samp_int = fr_rate/60/samplingRate;
-        stop_f =  start_f + dur_f;
-        IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));
-        
-        % Reading video frames
-        clear M
-        tempVar = [];
-        %     figure('position',[100 100 900 900])
-        for i=start_f:samp_int:stop_f
-            if mod(i,500)==0,disp(i),end
-            fseek(h,h_axis*v_axis*i,'bof');
-            x=fread(h,h_axis*v_axis,'uint8');
-            if isempty(x)
-                break
-            else
-                if length(x) == h_axis*v_axis
-                    xx=reshape(x(1:h_axis*v_axis),h_axis,v_axis);
-                    xx = circshift(xx,imgCircShift);
-                else
-                    break;
-                end
-                if mod(i,10) == 0
-                    imagesc(xx,[0 255]);colormap(flipud(jet));  %%imaging is flipped: turn left is actually turn right!!! Yu 8/7/2014
-                    axis image
-                    title(i)
-                    drawnow
-                    shg
-                end
-                IM(:,:,1+floor(i/samp_int)) = xx;
-            end
-        end
-        fr_num = floor(i/samp_int);
-        IM=IM(:,:,1:fr_num-1);
-        fclose(h)
-        
+        [IM, outDir] = ReadMishVid();        
     case 'fromImages'
         imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
         imgInds = input('Enter indices of images to read as a vector:  ');
-        IM = ReadImgSequence(imgDir,imgExt,imgInds);
+        IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
         outDir = fullfile(imgDir,'spont');
 end
 
@@ -83,7 +33,7 @@ if matlabpool('size')==0
     matlabpool(poolSize)
 end
 disp('Processing images...')
-IM_proc = ProcessImages_parallel(IM);
+IM_proc = ProcessImages(IM);
 
 %% Tracking the fish
 disp('Tracking fish...')
@@ -97,12 +47,13 @@ toc
 disp('Getting fish orientation...')
 tic
 IM_orient = max(IM_proc(:))-IM_proc;
-midlineInds = GetMidline_parallel(IM_orient,fishPos,28);
+midlineInds = GetMidline_template(IM_orient,fishPos,[30 28 24]);
 %         orientation = GetFishOrientation2(IM,fishPos,20);
 
 %         orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2));
+orientation = orientation';
 orientation_backup = orientation;
 toc
 

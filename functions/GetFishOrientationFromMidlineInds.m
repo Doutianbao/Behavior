@@ -24,16 +24,19 @@ if numel(imgDims)>2
     error('Image dimensions must be a 2 element vector')
 end
 
-orientation = nan(1,length(midlineInds));
+orientation = nan(length(midlineInds{1}),length(midlineInds));
 for imgNum = 1:length(midlineInds)
-    mlInds = midlineInds{imgNum}{1};
-    [x, y] = ImageIndsToXYCoords(mlInds,imgDims);
-    x = x-x(1);
-    y = y-y(1);
-    orientation(imgNum) = cart2Angle(x(end),y(end));
+    for seg = 1:size(orientation,1)
+        mlInds = midlineInds{imgNum}{seg};
+        [x, y] = ImageIndsToXYCoords(mlInds,imgDims);
+        x = x-x(1);
+        y = y-y(1);
+        orientation(seg,imgNum) = cart2Angle(x(end),y(end));
+    end
 end
 orientation(orientation<0)= orientation(orientation<0) + 360;
 orientation = mod(orientation+180,360);
+orientation = orientation';
 end
 
 function [x, y] =  ImageIndsToXYCoords(imgInds,imgDims)

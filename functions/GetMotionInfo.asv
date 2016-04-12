@@ -54,8 +54,6 @@ or = orientation(swimStartFrames,1);
 or = mod(or+180,360);
 or = 360-or;
 
-
-curvInfo = GetCurvInfo(orientation)
 traj = {};
 traj_trans = {};
 traj_trans_smooth = {};
@@ -229,8 +227,7 @@ function curvInfo = GetCurvInfo(orientation)
 if (size(orientation,1)==2) && (size(orientation,1)<size(orientation,2))
     orientation = orientation';
 end
-toVec = @(x)[pol2cart(x*pi/180,1)];
-[x,y] = toVec(orientation(2,1));
+toVec = @(x)pol2cart()
 curv = nan(size(orientation));
 for tt = 1:size(orientation,1)
 end

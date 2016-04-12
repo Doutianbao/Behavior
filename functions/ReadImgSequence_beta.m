@@ -1,4 +1,4 @@
-function IM = ReadImgSequence(imgDir,varargin)
+function IM = ReadImgSequence_beta(imgDir,varargin)
 %ReadImgSequence Reads a sequences of images with a specified extension in
 %   a specfied dir
 % IM = ReadImgSequence(imgDir,imgExt)
@@ -7,18 +7,26 @@ function IM = ReadImgSequence(imgDir,varargin)
 % imgExt - Extension of the img, e.g., {'jpg'} ['tif'] ['png']
 % imgInds - A vector of indices indicating which images in the entire
 %   sequence to read
+% 
+% _beta: In this version, creating a mapped tensor object instead of
+%   actually reading the image stack into RAM
 
 imgInds = [];
 imgExt = 'jpg';
-if nargin == 2
+if nargin ==0
+    imgDir = input('Enter image directory: ', 's');
+    imgExt = input('Enter image extension, e.g, jpg ','s');
+    imgInds = input('Enter indices of images to read after ordering, e.g., [100:500]: ');
+elseif nargin == 2
     imgExt = varargin{1}
 elseif nargin == 3
     imgExt = varargin{1};
     imgInds = varargin{2};
 end
-disp('Scanning all image files in the dir...')
+disp(['Scanning all files with extension ' imgExt])
 tic
-files = dir(imgDir);
+searchToken = ['*.' imgExt];
+files = dir(fullfile(imgDir,searchToken));
 fNames = {files.name};
 if isempty(fNames)
     error('No files found in directory, please check path!')
@@ -33,18 +41,19 @@ for jj = 1:length(fNames)
         disp([ num2str(jj) '  images...'])
     end
 end
-disp([num2str(length(fNames)) ' images found'])
 toc
-disp('Subsampling image sequence based on input indices...')
 fNames(remInds)=[];
+disp([num2str(length(fNames)) ' images found'])
+disp('Subsampling image sequence based on input indices...')
 if ~isempty(imgInds)
     fNames = fNames(imgInds);
 end
+disp([num2str(length(fNames)) ' images read'])
 
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
 imSize = [imgInfo.Height imgInfo.Width];
-IM = zeros(imSize(1),imSize(2),length(fNames));
-% IM = MappedTensor(imSize(1),imSize(2),length(fNames));
+% IM = zeros(imSize(1),imSize(2),length(fNames));
+IM = MappedTensor(imSize(1),imSize(2),length(fNames));
 disp(['Reading all .' imgExt ' images from dir...'])
 
 if matlabpool('size')==0

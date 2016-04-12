@@ -51,11 +51,14 @@ for imgNum = 1:size(IM,3)
     lineInds = {};
     startPt = fishPos(imgNum,:);   
     for jj = 1:length(lineLens)
-        if jj ==1
-            
-            lineInds{jj} = GetML(img,startPt,[],[],lineLens(jj));
+        if jj ==1            
+            lineInds{jj} = GetML(img,startPt,[],4,lineLens(jj));
         else
-            lineInds{jj} = GetML(img,startPt,prevStartPt,[],lineLens(jj));
+            try
+            lineInds{jj} = GetML(img,startPt,prevStartPt,4,lineLens(jj));
+            catch
+                a = 1;
+            end
         end
         si = lineInds{jj}(end);
         [r,c] = ind2sub(size(img),si);
@@ -129,23 +132,43 @@ Standardize = @(x)(x-min(x))/(max(x)-min(x));
 muPxls = mean(rImg,2);
 backgroundInt = mean(muPxls);
 signalMat = rImg > 1*backgroundInt;
-rImg(rImg<backgroundInt)=min(rImg(:));
+rImg(rImg<0.5*backgroundInt)=min(rImg(:));
 nPxls = sum(signalMat,2);
 [lps,mr] = GetLineProfileSpread(rImg);
 
 nml = (nPxls(:).^1.5).*muPxls(:).*lps(:);
 nml(isinf(nml))= max(nml);
-nml = Standardize(nml);
 nml = nml(farInds);
-probInds = find(nml>0.4);
+mr = mr(farInds);
+nml = Standardize(nml);
 mr = Standardize(mr);
+mr = nml;
+probInds = find(nml>0.4);
 nml(probInds) = nml(probInds).*mr(probInds);
-probInds= find(nml>0.4);
-blahInds = farInds(probInds);
+thr = 0.4;
+probInds= find(nml>thr);
+count = 0;
+while (numel(probInds)<2) && (count <10)
+     thr = thr*0.9;
+     probInds = find(nml > thr);
+     disp('Lowering threshold to find segment...')
+     count = count + 1;
+end
+if isempty(probInds)
+    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
+else
+    blahInds = farInds(probInds);
+end
+
 nml = nml(probInds);
+
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
+if isempty(blockSizes)
+    blockSizes = 1;
+    blockInds = 1;
+end
 
 %##Do not uncomment these lines, this could give an erorr
 %###############################################
@@ -155,8 +178,12 @@ nml = nml(probInds);
 
 blockEndInds = blockInds + blockSizes - 1;
 blockMaxes = zeros(size(blockInds));
-for jj = 1:length(blockInds)
-    blockMaxes(jj) = max(nml(blockInds(jj):blockEndInds(jj)));
+for kk = 1:length(blockInds) 
+    try
+    blockMaxes(kk) = max(nml(blockInds(kk):blockEndInds(kk))); 
+    catch
+        a = 1;
+    end
 end
 
 %## For 1st line segment choose smaller block because head block will be
@@ -172,15 +199,18 @@ else
 end
 
 blahInds = blahInds(keepInds);
-nml = nml(keepInds);
-zerInds = find(blahInds==0);
+try
+    nml = nml(keepInds);
+    zerInds = find(blahInds==0);
 blahInds(zerInds)=[];
 nml(zerInds) = [];
 ctrOfMassInd = round(sum((1:length(nml)).*nml(:)')/sum(nml));
 
 realInd = blahInds(ctrOfMassInd);
 lineInds = indMat(realInd,:)';
-
+catch
+    a =1;
+end
 
 function [blockSizes, blockInds] = GetContiguousBlocks(values)
         % Given a set of values, returns the sizes of contiguous blocks and the

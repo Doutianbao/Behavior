@@ -47,7 +47,7 @@ end
 fishPos = fliplr(fishPos); % The form in which GetFishPos outputs fishPos is not in row, col coordinates.
 [r,c] = find(T);
 imCtr = [round(size(im,1)/2 + 0.4999),round(size(im,1)/2 + 0.4999)];
-x = round(r + imCtr(1)-size(T,1)/2);
+x = round(r - (size(T,1)/2) + imCtr(1));
 y = c + imCtr(2);
 overX = find(x<1 | x>size(im,1));
 overY = find(y<2 | y>size(im,2));

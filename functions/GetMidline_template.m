@@ -86,7 +86,7 @@ for imgNum = 1:size(IM,3)
 end
 end
 
-function lineInds = GetML(im,startPt,varargin)
+function lineInds = GetML2(im,startPt,varargin)
 % lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen,matchTemplate)
 
 dTh = 4;
@@ -227,6 +227,146 @@ function [blockSizes, blockInds] = GetContiguousBlocks(values)
   
 end
 
+function lineInds = GetML(im,startPt,varargin)
+% lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen,matchTemplate)
+
+dTh = 4;
+lineLen = 15;
+if nargin < 2
+    error('At least 2 inputs required!')
+elseif nargin ==2
+    prevStartPt = [];
+    T = CreateTailTemplate(6,30,-0.15);
+elseif nargin == 3
+    prevStartPt = varargin{1};
+    T = CreateTailTemplate(6,30,-0.15);
+elseif nargin ==4
+    prevStartPt = varargin{1};
+    dTh = varargin{2};
+    T = CreateTailTemplate(6,30,-0.15);
+elseif nargin == 5
+    prevStartPt = varargin{1};
+    dTh = varargin{2};
+    lineLen = varargin{3};
+    T = CreateTailTemplate(6,30,-0.15);
+elseif nargin ==6;
+    prevStartPt = varargin{1};
+    dTh = varargin{2};
+    lineLen = varargin{3};
+    T = varargin{4};
+end
+
+if isempty(dTh)
+    dTh  = 4;
+end
+
+[rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
+ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+rImg = conv2(rImg,ker,'same');
+
+if (isempty(prevStartPt)) || (any(isnan(prevStartPt)))
+    farInds = 1:size(indMat,1);
+else
+    lastInds = indMat(:,end);
+    [rL,cL] = ind2sub(size(im),lastInds);
+    x = cL; y = rL;
+    preVec = startPt-prevStartPt;
+    preVec = preVec(1) + preVec(2)*1i;
+    
+    postVecs = [x y] - repmat(startPt,length(x),1);
+    postVecs = postVecs(:,1) + postVecs(:,2)*1i;
+    dAngles = angle(repmat(preVec,length(x),1).*conj(postVecs)) *(180/pi);
+    farInds = find(abs(dAngles)<=90);
+end
+
+
+%## Find lines that pass through fish
+Standardize = @(x)(x-min(x))/(max(x)-min(x));
+[mV,cV] = RotateAndMatchTemplate(im,startPt,dTh,T);
+[lps,~] = GetLineProfileSpread(rImg);
+nml = lps(:).*(mV(:).^1).*cV(:);
+% nml = mV.^2;
+nml = nml(farInds);
+
+nml = Standardize(nml);
+thr = 0.4;
+probInds= find(nml>thr);
+count = 0;
+while (numel(probInds)<2) && (count <10)
+    thr = thr*0.9;
+    probInds = find(nml > thr);
+    disp('Lowering threshold to find segment...')
+    count = count + 1;
+end
+if isempty(probInds)
+    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
+else
+    blahInds = farInds(probInds);
+end
+
+nml = nml(probInds);
+
+
+%## Find lines that are not contiguous blocks (i.e. islands) and eliminate
+[blockSizes,blockInds] = GetContiguousBlocks(blahInds);
+if isempty(blockSizes)
+    blockSizes = 1;
+    blockInds = 1;
+end
+
+%##Do not uncomment these lines, this could give an erorr
+%###############################################
+% blockInds(blockSizes==1)=[];
+% blockSizes(blockSizes==1)=[];
+%###############################################
+
+blockEndInds = blockInds + blockSizes - 1;
+blockMaxes = zeros(size(blockInds));
+for kk = 1:length(blockInds)
+    blockMaxes(kk) = max(nml(blockInds(kk):blockEndInds(kk)));
+end
+
+%## For 1st line segment choose smaller block because head block will be
+%## bigger than tail block
+
+%# Choose a block that has at at least a few lines and high max int, but weight max int more.
+[~,bigBlock]= max((1./blockSizes).*(2*blockMaxes));
+
+keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
+
+
+blahInds = blahInds(keepInds);
+
+nml = nml(keepInds);
+zerInds = find(blahInds==0);
+blahInds(zerInds)=[];
+nml(zerInds) = [];
+ctrOfMassInd = round(sum((1:length(nml)).*nml(:)')/sum(nml));
+[~, maxInd] = max(nml);
+
+realInd = blahInds(ctrOfMassInd);
+% realInd = blahInds(maxInd);
+lineInds = indMat(realInd,:)';
+
+    function [blockSizes, blockInds] = GetContiguousBlocks(values)
+        % Given a set of values, returns the sizes of contiguous blocks and the
+        %   block start indices
+        blockInds = 1;
+        blockSizes = [];
+        count = 1;
+        for jj = 1:length(values)-1
+            if (values(jj+1)-values(jj))==1
+                count = count+1;
+            else
+                blockSizes = [blockSizes; count];
+                count = 1;
+                blockInds =[blockInds; jj+1];
+            end
+        end
+        blockSizes = [blockSizes; count];
+    end
+
+end
     
   function [lps,mr] = GetLineProfileSpread(rImg)
   Y =  sort(rImg,2,'descend');  

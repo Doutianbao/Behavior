@@ -18,9 +18,10 @@ switch readMode
     case 'fromImages'
         imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
-        imgInds = input('Enter indices of images to read as a vector:  ');
-        IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
-        outDir = fullfile(imgDir,'spont');
+        imgInds = input('Enter indices of images to read as a vector:  ');        
+%         IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
+          IM = ReadImgSequence(imgDir,imgExt,imgInds);          
+          outDir = fullfile(imgDir,'spont');
 end
 
 if exist(outDir)~=7
@@ -47,7 +48,7 @@ toc
 disp('Getting fish orientation...')
 tic
 IM_orient = max(IM_proc(:))-IM_proc;
-midlineInds = GetMidline_template(IM_orient,fishPos,[30 28 24]);
+midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30 28 24]);
 %         orientation = GetFishOrientation2(IM,fishPos,20);
 
 %         orientation_corr = CorrectOrientation(orientation, 90);

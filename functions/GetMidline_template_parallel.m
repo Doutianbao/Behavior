@@ -1,4 +1,4 @@
-function midlineInds = GetMidline_template(IM,varargin)
+function midlineInds = GetMidline_template_parallel(IM,varargin)
 % GetMidLine - Given an image series or an image dir containing an image
 %   series, returns a series of indices corresponding to the midline of the
 %   the fish in each image
@@ -82,7 +82,22 @@ for seg = 1:length(heights)
     end     
     midlineInds{seg} = lineInds;
 end
+midlineInds = Reconfigure(midlineInds);
 toc
+end
+
+function midlineInds = Reconfigure(midlineInds)
+% Reconfigures midlineInds to make compatible with
+%   GetFishOrientationFromMidlineInds()
+mlInds =cell(length(midlineInds{1}),1);
+for imgNum  = 1:length(midlineInds{1})
+    segInds = cell(length(midlineInds),1);
+    for seg = 1:length(midlineInds)
+        segInds{seg} = midlineInds{seg}{imgNum};
+    end
+    mlInds{imgNum} = segInds;
+end
+midlineInds = mlInds;
 end
 
 function lineInds = GetML(im,startPt,varargin)
@@ -140,9 +155,9 @@ end
 
 %## Find lines that pass through fish
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
-[mV,~] = RotateAndMatchTemplate(im,startPt,dTh,T);
+[mV,cV] = RotateAndMatchTemplate(im,startPt,dTh,T);
 [lps,~] = GetLineProfileSpread(rImg);
-nml = lps(:).*mV(:).^2;
+nml = lps(:).*(mV(:).^2).*cV(:);
 % nml = mV.^2;
 nml = nml(farInds);
 

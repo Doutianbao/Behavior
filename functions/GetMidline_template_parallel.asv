@@ -1,4 +1,4 @@
-function midlineInds = GetMidline_template(IM,varargin)
+function midlineInds = GetMidline_template_parallel(IM,varargin)
 % GetMidLine - Given an image series or an image dir containing an image
 %   series, returns a series of indices corresponding to the midline of the
 %   the fish in each image
@@ -56,12 +56,12 @@ imgInds = 1:size(IM,3);
 % startPts_prev = startPts_now;
 midlineInds = cell(1,length(heights));
 lineEndInds = nan(size(fishPos));
+tic  
 for seg = 1:length(heights)
     disp(['Obtaining orientation of segment ' num2str(seg) '...'])
     base = min(1,round(heights(seg)/5));
     T = CreateTailTemplate(base,heights(seg),templateGradient);
-    lineInds = cell(size(imgInds));
-    tic    
+    lineInds = cell(size(imgInds));      
     if seg ==1
         startPts_now = fishPos;
         startPts_prev = nan(size(fishPos)) ;
@@ -72,16 +72,29 @@ for seg = 1:length(heights)
     height = heights(seg);
     dispChunk = ceil(size(IM,3)/5);
     parfor imgNum = imgInds
-        if mod(imgNum,r)==0
+        if mod(imgNum,dispChunk)==0
             disp(imgNum)
         end
         img = IM(:,:,imgNum);
         lineInds{imgNum} = GetML(img,startPts_now(imgNum,:), startPts_prev(imgNum,:), dTh, height, T);
         [row,col] = ind2sub(size(img),lineInds{imgNum}(end));
         lineEndInds(imgNum,:) = [row,col];          
-    end
-     toc
+    end     
     midlineInds{seg} = lineInds;
+end
+
+toc
+end
+
+function midlineInds = Reconfigure(midlineInds)
+% Reconfigures midlineInds to make compatible with
+%   GetFishOrientationFromMidlineInds()
+mlInds ={};
+for imgNum  = 1:length(midlineInds{1})
+    segInds = cell(length(midlineInds),1);
+    for seg = 1:length(midlineInds)
+        segInds
+    end
 end
 end
 
@@ -140,9 +153,9 @@ end
 
 %## Find lines that pass through fish
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
-[mV,~] = RotateAndMatchTemplate(im,startPt,dTh,T);
+[mV,cV] = RotateAndMatchTemplate(im,startPt,dTh,T);
 [lps,~] = GetLineProfileSpread(rImg);
-nml = lps(:).*mV(:).^2;
+nml = lps(:).*(mV(:).^2).*cV(:);
 % nml = mV.^2;
 nml = nml(farInds);
 

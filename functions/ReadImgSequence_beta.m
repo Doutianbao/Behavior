@@ -7,7 +7,7 @@ function IM = ReadImgSequence_beta(imgDir,varargin)
 % imgExt - Extension of the img, e.g., {'jpg'} ['tif'] ['png']
 % imgInds - A vector of indices indicating which images in the entire
 %   sequence to read
-% 
+%
 % _beta: In this version, creating a mapped tensor object instead of
 %   actually reading the image stack into RAM
 
@@ -57,10 +57,10 @@ IM = MappedTensor(imSize(1),imSize(2),length(fNames));
 disp(['Reading all .' imgExt ' images from dir...'])
 
 if matlabpool('size')==0
-matlabpool(10)
+    matlabpool(10)
 end
 imgNums = 1:length(fNames);
-
+dispChunk = round(length(fNames)/5);
 parfor jj = imgNums
     img = imread(fullfile(imgDir,fNames{jj}));
     if length(size(img))==3
@@ -70,13 +70,10 @@ parfor jj = imgNums
         img = rgb2Gray(img);
     end
     IM(:,:,jj) = img;
-    tic
-    eTime = toc;
-    if mod(eTime,20)==0
-        disp(eTime)
-%         disp(['Img # ' num2str(jj)])
+    if mod(jj,dispChunk)==0
+        disp(jj)    
     end
-end 
+end
 toc
 
 end

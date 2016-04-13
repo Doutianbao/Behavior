@@ -25,22 +25,16 @@ function varargout = GetFishOrientationFromMidlineInds(midlineInds,imgDims, proc
 % origins - Coordinates in image space of the starting point of the
 %   orientation line;  N x 2 x S, where N = # of images, S = # of line
 %   segments
-
+if
+end
 if numel(imgDims)>2
     error('Image dimensions must be a 2 element vector')
 end
-
-if nargin ==2
-    processMethod = input('How were the midline indices generated? (p/s), p = parallel, s = serial: ','s');
-end
-
 tic
-if strcmpi(processMethod,'s')
-    [orientation, origins] = OrFromSerialInds(midlineInds,imgDims);
+if
 else
-    [orientation, origins] = OrFromParallelInds(midlineINds,imgDims);
 end
-
+[orientation, origins] = OrFromSerialInds(midlineInds,imgDims);
 toc
 varargout{1}= orientation;
 varargout{2} = origins;

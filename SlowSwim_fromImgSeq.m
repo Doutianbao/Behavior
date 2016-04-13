@@ -70,7 +70,7 @@ save(fullfile(outDir,[fName, '_imgDims_'  ts '.mat']),'imgDims')
 save(fullfile(outDir,[fName, '_midlineInds_' ts '.mat']),'midlineInds');
 save(fullfile(outDir,[fName, '_ref_' ts '.mat']),'ref');
 save(fullfile(outDir,[fName, '_tracexy_' ts '.mat']),'fishPos');
-save(fullfile(outDir,[fName '_motionInfo_' ts '.mat']),'motionInfo');
+% save(fullfile(outDir,[fName '_motionInfo_' ts '.mat']),'motionInfo');
 disp(['Saved orientation, imgDims ,midlineInds, ref, tracexy at ' outDir])
 %
 

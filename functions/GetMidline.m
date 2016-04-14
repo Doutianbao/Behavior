@@ -25,7 +25,7 @@ function midlineInds = GetMidline(IM,varargin)
 heights =  [18 16 14 10 8 8];
 imgExt = 'jpg';
 if nargin == 1
-    if isstr(IM) && isdir(IM)
+    if ischar(IM) && isdir(IM)
         IM  = ReadImgSequence(IM,imgExt);
     end
     fishPos = GetFishPos(ProcessImages(IM),50);
@@ -135,7 +135,6 @@ signalMat = rImg > 1*backgroundInt;
 rImg(rImg<0.5*backgroundInt)=min(rImg(:));
 nPxls = sum(signalMat,2);
 [lps,mr] = GetLineProfileSpread(rImg);
-
 nml = (nPxls(:).^1.5).*muPxls(:).*lps(:);
 nml(isinf(nml))= max(nml);
 nml = nml(farInds);
@@ -143,9 +142,9 @@ mr = mr(farInds);
 nml = Standardize(nml);
 mr = Standardize(mr);
 mr = nml;
-probInds = find(nml>0.4);
+probInds = find(nml>0.5);
 nml(probInds) = nml(probInds).*mr(probInds);
-thr = 0.4;
+thr = 0.5;
 probInds= find(nml>thr);
 count = 0;
 while (numel(probInds)<2) && (count <10)
@@ -178,12 +177,8 @@ end
 
 blockEndInds = blockInds + blockSizes - 1;
 blockMaxes = zeros(size(blockInds));
-for kk = 1:length(blockInds) 
-    try
-    blockMaxes(kk) = max(nml(blockInds(kk):blockEndInds(kk))); 
-    catch
-        a = 1;
-    end
+for kk = 1:length(blockInds)     
+    blockMaxes(kk) = max(nml(blockInds(kk):blockEndInds(kk)));    
 end
 
 %## For 1st line segment choose smaller block because head block will be
@@ -192,12 +187,7 @@ end
 %# Choose a block that has at at least a few lines and high max int, but weight max int more.
 [~,bigBlock]= max(blockSizes.*(2*blockMaxes)); 
 
-if numel(blockInds)> bigBlock
-    keepInds = blockInds(bigBlock):blockInds(bigBlock+1);
-else
-    keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
-end
-
+keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
 blahInds = blahInds(keepInds);
 try
     nml = nml(keepInds);

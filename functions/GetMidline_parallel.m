@@ -108,7 +108,7 @@ if isempty(dTh)
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-ker = gausswin(round(1))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
 rImg = conv2(rImg,ker,'same');
 
 if (isempty(prevStartPt)) || (any(isnan(prevStartPt)))
@@ -132,15 +132,20 @@ Standardize = @(x)(x-min(x))/(max(x)-min(x));
 muPxls = mean(rImg,2);
 backgroundInt = mean(muPxls);
 signalMat = rImg > 1*backgroundInt;
-rImg(rImg<backgroundInt)=min(rImg(:));
+rImg(rImg<0.5*backgroundInt)=min(rImg(:));
 nPxls = sum(signalMat,2);
 [lps,mr] = GetLineProfileSpread(rImg);
 nml = (nPxls(:).^1.5).*muPxls(:).*lps(:);
 nml(isinf(nml))= max(nml);
-nml = Standardize(nml);
 nml = nml(farInds);
-thr = 0.5;
+mr = mr(farInds);
+nml = Standardize(nml);
+mr = Standardize(mr);
+mr = nml;
 probInds = find(nml>0.5);
+nml(probInds) = nml(probInds).*mr(probInds);
+thr = 0.5;
+probInds= find(nml>thr);
 count = 0;
 while (numel(probInds)<2) && (count <10)
     thr = thr*0.9;
@@ -174,7 +179,7 @@ end
 %## bigger than tail block
 
 %# Choose a block that has at at least a few lines and high max int, but weight max int more.
-[~,bigBlock]= max((1./blockSizes).*(2*blockMaxes)); 
+[~,bigBlock]= max(blockSizes.*(2*blockMaxes)); 
 
 keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
 blahInds = blahInds(keepInds);

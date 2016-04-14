@@ -51,7 +51,10 @@ tic
 IM_orient = max(IM_proc(:))-IM_proc;
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 
-midlineInds = GetMidline(IM_orient,fishPos,[30 24 18]);
+break
+tic
+midlineInds_parallel = GetMidline_parallel(IM,fishPos,[30 24 18]);
+toc
 
 %    orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);

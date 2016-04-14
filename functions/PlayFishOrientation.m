@@ -18,13 +18,13 @@ lineLength = 25;
 skipFrames = 1;
 
 if nargin == 3
-    startFrame = 2;
-    endFrame = 1000;
+    startFrame = 1;
+    endFrame = size(IM,3);
     pauseDur = 0.1;
     
 elseif nargin == 4;
     startFrame = varargin{1};
-    endFrame = startFrame + 999;
+    endFrame = startFrame + size(IM,3);
     pauseDur = 0.1;
     
 elseif nargin == 5;
@@ -60,9 +60,12 @@ for imgNum = startFrame:skipFrames:endFrame
     thetas = repmat(theta,1,lineLength);
     [blahX,blahY] = pol2cart(thetas,rho);
     img = IM(:,:,imgNum);
-    
+    try
     blahX = blahX + fishPos(imgNum,1);
     blahY = blahY + fishPos(imgNum,2);
+    catch
+        a = 1;
+    end
     
     
     plot(blahX,blahY,'color','r','linewidth',2),drawnow

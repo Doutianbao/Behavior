@@ -52,8 +52,6 @@ if matlabpool('size') == 0
     matlabpool(poolSize)
 end
 imgInds = 1:size(IM,3);
-% startPts_now = nan(size(fishPos));
-% startPts_prev = startPts_now;
 midlineInds = cell(1,length(heights));
 lineEndInds = nan(size(fishPos));
 tic  
@@ -78,7 +76,7 @@ for seg = 1:length(heights)
         img = IM(:,:,imgNum);
         lineInds{imgNum} = GetML(img,startPts_now(imgNum,:), startPts_prev(imgNum,:), dTh, height, T);
         [row,col] = ind2sub(size(img),lineInds{imgNum}(end));
-        lineEndInds(imgNum,:) = [row,col];          
+        lineEndInds(imgNum,:) = [col,row];          
     end     
     midlineInds{seg} = lineInds;
 end
@@ -86,19 +84,6 @@ midlineInds = Reconfigure(midlineInds);
 toc
 end
 
-function midlineInds = Reconfigure(midlineInds)
-% Reconfigures midlineInds to make compatible with
-%   GetFishOrientationFromMidlineInds()
-mlInds =cell(length(midlineInds{1}),1);
-for imgNum  = 1:length(midlineInds{1})
-    segInds = cell(length(midlineInds),1);
-    for seg = 1:length(midlineInds)
-        segInds{seg} = midlineInds{seg}{imgNum};
-    end
-    mlInds{imgNum} = segInds;
-end
-midlineInds = mlInds;
-end
 
 function lineInds = GetML(im,startPt,varargin)
 % lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen,matchTemplate)
@@ -158,10 +143,8 @@ Standardize = @(x)(x-min(x))/(max(x)-min(x));
 [mV,cV] = RotateAndMatchTemplate(im,startPt,dTh,T);
 [lps,~] = GetLineProfileSpread(rImg);
 nml = lps(:).*(mV(:).^2).*cV(:);
-% nml = mV.^2;
-nml = nml(farInds);
-
 nml = Standardize(nml);
+nml = nml(farInds);
 thr = 0.4;
 probInds= find(nml>thr);
 count = 0;
@@ -207,7 +190,6 @@ end
 
 keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
 
-
 blahInds = blahInds(keepInds);
 
 nml = nml(keepInds);
@@ -215,7 +197,7 @@ zerInds = find(blahInds==0);
 blahInds(zerInds)=[];
 nml(zerInds) = [];
 ctrOfMassInd = round(sum((1:length(nml)).*nml(:)')/sum(nml));
-[~, maxInd] = max(nml);
+% [~, maxInd] = max(nml);
 
 realInd = blahInds(ctrOfMassInd);
 % realInd = blahInds(maxInd);
@@ -241,6 +223,19 @@ lineInds = indMat(realInd,:)';
 
 end
 
+function midlineInds = Reconfigure(midlineInds)
+% Reconfigures midlineInds to make compatible with
+%   GetFishOrientationFromMidlineInds()
+mlInds =cell(length(midlineInds{1}),1);
+for imgNum  = 1:length(midlineInds{1})
+    segInds = cell(length(midlineInds),1);
+    for seg = 1:length(midlineInds)
+        segInds{seg} = midlineInds{seg}{imgNum};
+    end
+    mlInds{imgNum} = segInds;
+end
+midlineInds = mlInds;
+end
 
 function [lps,mr] = GetLineProfileSpread(rImg)
 Y =  sort(rImg,2,'descend');

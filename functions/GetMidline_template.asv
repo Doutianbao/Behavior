@@ -53,7 +53,10 @@ for imgNum = 1:size(IM,3)
     startPt = fishPos(imgNum,:);   
     for seg = 1:length(heights)
         base = round(heights(seg)/5);
-        T = CreateTailTemplate(base,heights(seg),0.1);       
+        T = CreateTailTemplate(base,heights(seg),0.1);  
+        if seg==3 && imgNum==21
+            a = 1;
+        end
         if seg ==1             
             lineInds{seg} = GetML(img,startPt,[],5,heights(seg),T);
         else           
@@ -145,10 +148,11 @@ nPxls = sum(signalMat,2);
 [mV,cV] = RotateAndMatchTemplate(im,startPt,dTh,T);
 [lps,~] = GetLineProfileSpread(rImg);
 % nml = lps(:).*(mV(:).^1).*cV(:);
-nml = (mV(:).^1).*cV(:).*muPxls(:).*nPxls(:).^1.5;
+nml = (mV(:).^1).*cV(:).*(muPxls).();
 nml = conv2(nml(:),gausswin(dTh),'same');
 % nml = mV.^2;
 nml = nml(farInds);
+
 nml = Standardize(nml);
 thr = 0.4;
 probInds= find(nml>thr);

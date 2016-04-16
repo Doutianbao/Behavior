@@ -162,7 +162,10 @@ nml = nml(probInds);
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
-
+if isempty(blockSizes)
+    blockSizes = 1;
+    blockInds = 1;
+end
 %##Do not uncomment these lines, this could give an erorr
 %###############################################
 % blockInds(blockSizes==1)=[]; 

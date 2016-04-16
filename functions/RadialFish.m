@@ -44,7 +44,7 @@ end
 
 x = fishPos(:,1);
 y = fishPos(:,2);
-lineThetas = (0:dTh:360)*pi/180;
+lineThetas = ([0:dTh:360,0])*pi/180;
 th = {};
 cartCoords = {};
 orientation = zeros(size(x));

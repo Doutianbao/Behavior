@@ -15,7 +15,7 @@ pauseDur = 0.1;
 if nargin == 1
     fishPos = [];
 elseif nargin == 3;
-    frameInds = varargin{1};   
+    frameInds = varargin{1};
 elseif nargin == 4;
     frameInds = varargin{1};
     pauseDur = varargin{2};
@@ -25,6 +25,7 @@ end
 if isempty(frameInds);
     frameInds = 1:size(IM,3);
 end
+
 figure('Name', 'Fish Tracking')
 tic
 for imgNum = frameInds(:)'
@@ -32,11 +33,15 @@ for imgNum = frameInds(:)'
     imagesc(IM(:,:,imgNum)),axis image, axis off, colormap(gray), drawnow
     hold on
     if ~isempty(fishPos)
-    plot(fishPos(imgNum,1),fishPos(imgNum,2),'ro'), drawnow
-    end    
+        plot(fishPos(imgNum,1),fishPos(imgNum,2),'ro'), drawnow
+    end
     fps = (imgNum - frameInds(1))/toc;
     fps = round(fps*100)/100;
     title(['Frame: ' num2str(imgNum) ', Abs frame Rate: ' num2str(fps) ' fps'])
     shg
-    pause(pauseDur)   
+    if isempty(pauseDur)
+        pause()
+    else
+        pause(pauseDur)
+    end
 end

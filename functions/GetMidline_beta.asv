@@ -44,46 +44,63 @@ end
 if isempty(fishPos)
     fishPos = GetFishPos(ProcessImages(IM),50);
 end
-
-midlineInds = {};
+midlineInds = cell(size(IM,3),1);
 for imgNum = 1:size(IM,3)
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
-    lineInds = {};
-    startPt = fishPos(imgNum,:);
-    if imgNum ==7
-        a = 1;
-    end
     
-    [lineInds_all,optMat,indMat,parentMap] = GetMLs(img,startPt,dTh,heights); 
- 
-%     lineInds = cell(size(optMat,1),1);
-%     lineInds{1} = lineInds_all{1}(:,indMat{1});
-%     for seg = 2:length(optMat)  
-%         ind = indMat{seg};
-%         lineInds{seg} = lineInds_all{seg}(:,ind);       
-%     end
-   
-if (numel(parentMap{1})>1) || (numel(parentMap{2})>1)
-    a = 1;
-end
-   lineInds = cell(length(parentMap{end}),1);
+    [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
+    
+    midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);  
+    
+    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
 
-    midlineInds{imgNum} = lineInds;     
-    cla
-    for kk = 1:length(lineInds)
-        img(lineInds{kk}) = max(img(:));
-        imagesc(img),axis image
+end
+end
+
+%## Helper functions
+function PlotLineInds(img,fishPos,lineInds,imgNum)
+cla
+for kk = 1:length(lineInds)    
+    img(lineInds{kk}) = max(img(:));
+    imagesc(img),axis image
+end
+hold on
+plot(fishPos(1),fishPos(2),'ko')
+title(num2str(imgNum))
+shg
+pause(0.1)
+end
+function lineInds_best = GetBestLine(img,lineInds_all,parentMap)
+heights = nan(length(lineInds_all),1);
+for seg = 1:size(heights,1)
+    heights(seg) = size(lineInds_all{seg},1);
+end
+lineInds = nan(sum(heights),length(parentMap{end}));
+for ln = 1:size(lineInds,2)
+    strInd = parentMap{end}(ln);
+    blah = [];
+    for seg = 1:numel(strInd{1})
+        blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
     end
-    hold on
-    plot(fishPos(imgNum,1),fishPos(imgNum,2),'ko')
-    title(num2str(imgNum))
-    shg
-    pause(0.15)
+    lineInds(:,ln) = blah;
+end
+%   muPxls = mean(img(lineInds),1);
+lineGrad = 0.2*(1:sum(heights));
+muPxls = mean(repmat(lineGrad(:),1,size(lineInds,2)).*img(lineInds),1);
+lps = GetLineProfileSpread(img(lineInds)')';
+nml = muPxls.*lps;
+[~,ind] = max(nml);
+ind = ind(1);
+lineInds_best = cell(length(heights),1);
+lineInds_best{1} = lineInds(1:heights(1));
+for seg = 2:numel(heights)
+    inds = heights(seg-1)+1:heights(seg-1)+heights(seg);
+    lineInds_best{seg} = lineInds(inds);
 end
 end
 
-function [lineInds_all,optMat,indMat,parentMap] = GetMLs(im,fishPos,dTh,lineLens)
+function [lineInds_all,parentMap] = GetMLs(im,fishPos,dTh,lineLens)
 startPt = fishPos;
 prevStartPt  =[];
 lineInds_all = cell(numel(lineLens),1);
@@ -99,36 +116,35 @@ for seg = 2:numel(lineLens)
     lineInds_sub =[];
     numMap{seg}=[];
     count = 0;
-    for ln = 1:size(blah,2)        
+    for ln = 1:size(blah,2)
         lInds = blah(:,ln);
         startPt = IndToSub(im,lInds(end));
         prevStartPt = IndToSub(im,lInds(1));
         temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
         for kk = 1:size(temp,2)
-            parentMap{seg}{kk} = [num2str(ln) num2str(kk)];
+            count = count + 1;
+            parentMap{seg}{count} = [parentMap{seg-1}{ln} num2str(kk)];
         end
         numMap{seg} = [numMap{seg}, size(temp,2)];
-        lineInds_sub = [parentMap{seg-1}(, temp];        
+        lineInds_sub = [lineInds_sub, temp];
     end
     numMap{seg}  = cumsum(numMap{seg});
     lineInds_all{seg} = lineInds_sub;
 end
-[optMat,indMat,parentMap] = BestLineInds(lineInds_all,numMap);
+% [optMat,indMat] = BestLineInds(lineInds_all,numMap);
 
-    function [optMat,indMat,parentMap] = BestLineInds(lineInds_all,numMap)
+    function [optMat,indMat] = BestLineInds(lineInds_all,numMap)
         optMat = cell(size(lineInds_all));
         indMat = optMat;
-        parentMap = optMat;        
         for ln1 = 1:numel(lineInds_all(1))
             l1 = im(lineInds_all{1}(:,ln1));
-%             lineGrad = 0.2*(1:size(l1,1));
-            lineGrad = ones(size(l1));          
+            %             lineGrad = 0.2*(1:size(l1,1));
+            lineGrad = ones(size(l1));
             muPxls = repmat(lineGrad(:),1,size(l1,2));
             muPxls = mean(muPxls.*l1,1);
             lps = GetLineProfileSpread(l1');
             nml = muPxls(:).*lps(:);
             optMat{1}(ln1) = nml;
-            parentMap{1}{ln1} = num2str(ln1);
         end
         for seg = 2:numel(lineInds_all)
             lineAppends = [];
@@ -139,7 +155,7 @@ end
                 else
                     inds = numMap{seg}(ln1-1)+1:numMap{seg}(ln1);
                 end
-                count = count + 1;                
+                count = count + 1;
                 for ln2 = inds(:)'
                     %                     l1 = im(lineInds_all{seg-1}(:,ln1));
                     l2  = im(lineInds_all{seg}(:,ln2));
@@ -149,7 +165,7 @@ end
                     muPxls = mean(muPxls.*line_conc,1);
                     lps = GetLineProfileSpread(line_conc');
                     nml = muPxls(:).*lps(:);
-                    optMat{seg}(ln2) = nml;                   
+                    optMat{seg}(ln2) = nml;
                 end
                 [~,indMat{seg}(ln1)] = max(optMat{seg});
             end
@@ -162,7 +178,6 @@ end
         sub = [x,y];
     end
 end
-
 
 function lineInds = GetML(im,startPt,varargin)
 % lineInds = GetMidline(im,startInd,prevStartPt,dTh,lineLen)

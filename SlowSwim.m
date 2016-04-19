@@ -11,7 +11,7 @@ cd 'Z:\Avinash\Ablations & Behavior'
 
 readMode =  'fromImages'; %'fromMishVid';
 
-poolSize  = 10;
+poolSize  = 12;
 switch readMode
     case 'fromMishVid'
         [IM, outDir] = ReadMishVid();        
@@ -48,17 +48,14 @@ toc
 %% Fish Orientation
 disp('Getting fish orientation...')
 tic
-IM_orient = max(IM_proc(:))-IM_proc;
+% IM_orient = max(IM_proc(:))-IM_proc;
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 
-break
-tic
-midlineInds_parallel = GetMidline_parallel(IM,fishPos,[30 24 18]);
-toc
+midlineInds = GetMidline_beta_parallel(-IM_proc,fishPos,35);
 
 %    orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);
-orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2));
+orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';
 orientation_backup = orientation;
 toc
@@ -82,6 +79,7 @@ save(fullfile(outDir,[fName, '_tracexy_' ts '.mat']),'fishPos');
 disp(['Saved orientation, imgDims ,midlineInds, ref, tracexy at ' outDir])
 %
 
+break;
 %% Saving processed images
 saveOrNot = 'y';
 %         saveOrNot = input('Save the variables (y/n)?  ','s');

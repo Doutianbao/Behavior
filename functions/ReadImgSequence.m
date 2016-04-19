@@ -18,25 +18,26 @@ elseif nargin == 3
 end
 disp('Scanning all image files in the dir...')
 tic
-files = dir(imgDir);
+searchToken = ['*.' imgExt];
+files = dir(fullfile(imgDir,searchToken));
 fNames = {files.name};
 if isempty(fNames)
     error('No files found in directory, please check path!')
 end
-remInds = [];
-dispChunk = round(length(fNames)/30);
-for jj = 1:length(fNames)
-    if isempty(findstr(lower(fNames{jj}),lower(imgExt)))
-        remInds = [remInds;jj];
-    end
-    if mod(jj,dispChunk)==0
-        disp([ num2str(jj) '  images...'])
-    end
-end
-disp([num2str(length(fNames)) ' images found'])
-toc
-disp('Subsampling image sequence based on input indices...')
-fNames(remInds)=[];
+% remInds = [];
+% dispChunk = round(length(fNames)/30);
+% for jj = 1:length(fNames)
+%     if isempty(findstr(lower(fNames{jj}),lower(imgExt)))
+%         remInds = [remInds;jj];
+%     end
+%     if mod(jj,dispChunk)==0
+%         disp([ num2str(jj) '  images...'])
+%     end
+% end
+% disp([num2str(length(fNames)) ' images found'])
+% toc
+% disp('Subsampling image sequence based on input indices...')
+% fNames(remInds)=[];
 if ~isempty(imgInds)
     fNames = fNames(imgInds);
 end

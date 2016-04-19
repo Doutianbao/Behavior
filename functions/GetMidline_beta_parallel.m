@@ -25,6 +25,7 @@ function midlineInds = GetMidline_beta(IM,varargin)
 heights =  [18 16 14 10 8 8];
 dTh = 4;
 imgExt = 'jpg';
+nWorkers = 12;
 if nargin == 1
     if ischar(IM) && isdir(IM)
         IM  = ReadImgSequence(IM,imgExt);
@@ -46,19 +47,30 @@ if isempty(fishPos)
 end
 midlineInds = cell(size(IM,3),1);
 
-for imgNum = 1:size(IM,3)
+if matlabpool('size') == 0
+    matlabpool(nWorkers)
+end
+imgNumInds = 1:size(IM,3);
+tic
+disp(['Getting midline inds for ' num2str(size(IM,3)) ' images...'])
+dispChunk = ceil(size(IM,3)/5);
+parfor imgNum = imgNumInds
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     
-   [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights); 
- 
-   
+    [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
+    
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
-%     midlineInds = [lineInds_all{:}];
     
     PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
     
+    if mod(imgNum,dispChunk)==0
+        disp(num2str(imgNum))
+    end
+    
 end
+toc
+
 end
 
 %## Helper functions
@@ -75,9 +87,8 @@ hold on
 plot(fishPos(1),fishPos(2),'ko')
 title(num2str(imgNum))
 shg
-pause(0.1)
+% pause()
 end
-
 function lineInds_best = GetBestLine(img,lineInds_all,parentMap)
 heights = nan(length(lineInds_all),1);
 for seg = 1:size(heights,1)
@@ -85,13 +96,13 @@ for seg = 1:size(heights,1)
 end
 lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
-    strInd = parentMap{end}(ln); 
-      blah = []; 
-%     for comb = 1:length(parentMap{end})       
+    strInd = parentMap{end}(ln);     
+    for comb = 1:length(parentMap{end})
+        blah = [];  
         for seg = 1:length(parentMap)
             blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
         end
-%     end
+    end
     lineInds(:,ln) = blah;
 end
 %   muPxls = mean(img(lineInds),1);
@@ -105,10 +116,8 @@ ind = ind(1);
 lineInds = lineInds(:,ind);
 lineInds_best = cell(length(heights),1);
 lineInds_best{1} = lineInds(1:heights(1));
-startInd = 1;
 for seg = 2:numel(heights)
-    startInd = startInd + heights(seg-1);
-    segInds = startInd:+ startInd + heights(seg)-1;
+    segInds = heights(seg-1)+1:heights(seg-1)+heights(seg);
     lineInds_best{seg} = lineInds(segInds);
 end
 end

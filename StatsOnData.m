@@ -2,6 +2,12 @@ function data = StatsOnData(dataDir,varargin)
 %StatsOnData Reads relevant fish data files(.mat) in the input dir
 %  as long as the files are labeled in a certain way.
 % data = StatsOnData(dataDir, sideStems);
+% Inputs:
+% dataDir - Directory where group data is stored (requires fish pos, orientation,
+%   and ref image)
+% sideStems - File stem which indicates if ablation was to the left, right
+%   or if the data is from an control unablated fish; {'Left','Right'}, or
+%   {'Ctrl'}
 
 clear data
 % sideStems = {'Left','Right'};

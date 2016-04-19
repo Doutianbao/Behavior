@@ -23,6 +23,7 @@ else
 end
 
 IM = ReadImgStack(fPath,imgExt);
+
 IM = max(IM(:))-IM;
 
 %% Filter image stack

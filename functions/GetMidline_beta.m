@@ -50,15 +50,13 @@ for imgNum = 1:size(IM,3)
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     
-   [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights); 
- 
-   
+    [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
+    
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
-%     midlineInds = [lineInds_all{:}];
     
-    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
-    
+    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)    
 end
+
 end
 
 %## Helper functions
@@ -85,21 +83,23 @@ for seg = 1:size(heights,1)
 end
 lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
-    strInd = parentMap{end}(ln); 
-      blah = []; 
-%     for comb = 1:length(parentMap{end})       
-        for seg = 1:length(parentMap)
-            blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
-        end
-%     end
+    strInd = parentMap{end}(ln);
+    blah = [];
+    %     for comb = 1:length(parentMap{end})
+    for seg = 1:length(parentMap)
+        blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
+    end
+    %     end
     lineInds(:,ln) = blah;
 end
 %   muPxls = mean(img(lineInds),1);
 lineGrad = 0.2*(1:sum(heights));
 % muPxls = mean(repmat(lineGrad(:),1,size(lineInds,2)).*img(lineInds),1);
-muPxls = mean(img(lineInds));
-lps = GetLineProfileSpread(img(lineInds)')';
-nml = muPxls.*lps;
+lineProfiles = img(lineInds);
+muPxls = mean(lineProfiles,1);
+[lps,gof] = GetLineProfileSpread(lineProfiles');
+lps = lps';
+nml = muPxls.*lps.*gof;
 [~,ind] = max(nml);
 ind = ind(1);
 lineInds = lineInds(:,ind);
@@ -197,7 +197,7 @@ function lineInds = GetML(im,startPt,varargin)
 
 dTh = 4;
 lineLen = 15;
-grad = 0.2;
+grad = 0.1;
 if nargin < 2
     error('At least 2 inputs required!')
 elseif nargin ==2
@@ -241,14 +241,17 @@ end
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
 lineGrad = grad.*(1:size(rImg,2));
 muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
+% muPxls0 = mean(rImg,2);
+G = @(x)((prod(x,2)).^(1/size(x,1)));
+muPxls1 = G(rImg);
 backgroundInt = mean(muPxls);
 
 [lps,~] = GetLineProfileSpread(rImg);
-nml = muPxls(:).*lps(:);
+nml = muPxls(:).*lps(:).*muPxls1(:);
 nml = nml(farInds);
 nml = Standardize(nml);
 
-thr = 0.5;
+thr = 0.4;
 probInds= find(nml>thr);
 count = 0;
 while (numel(probInds)<2) && (count <10)
@@ -262,9 +265,7 @@ if isempty(probInds)
 else
     blahInds = farInds(probInds);
 end
-
 nml = nml(probInds);
-
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
@@ -274,13 +275,12 @@ if isempty(blockSizes)
 end
 blockEndInds = blockInds + blockSizes - 1;
 
-if numel(blockSizes)>1
-    a = 1;
-end
 comInds = nan(size(blockSizes));
 for blk = 1:numel(blockSizes)
     blkInds = blockInds(blk):blockEndInds(blk);
-    comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
+    %     comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
+    [~, ind] = max(nml);
+    comInds(blk) = blahInds(ceil(median(ind)));
 end
 
 lineInds = indMat(comInds,:)';
@@ -312,10 +312,10 @@ lineInds = indMat(comInds,:)';
     end
 end
 
-function [lps,mr] = GetLineProfileSpread(rImg)
+function [lps,gof] = GetLineProfileSpread(rImg)
 % Y =  sort(rImg,2,'descend');
 Y = sort(rImg,2,'ascend');
-blah = mean(Y(:,1:round(size(rImg,2)/2)),2);
+blah = mean(Y(:,1:round(size(rImg,2)/5)),2);
 lps = blah/sum(rImg(:));
 
 Y = rImg';
@@ -324,8 +324,6 @@ B = X\Y;
 m = abs(B(2,:));
 % b = B(1,:) ;
 Y_est = X*B;
-res = sqrt(sum((Y_est-Y).^2,1));
-m = max(m)-m;
-res =max(res)-res;
-mr = m(:).*res(:);
+gof = sqrt(sum((Y_est-Y).^2,1))./var(Y,[],1);
+
 end

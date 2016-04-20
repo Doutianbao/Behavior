@@ -10,6 +10,8 @@ function IM = ReadImgSequence(imgDir,varargin)
 
 imgInds = [];
 imgExt = 'jpg';
+poolSize = 20;
+
 if nargin == 2
     imgExt = varargin{1}
 elseif nargin == 3
@@ -24,22 +26,11 @@ fNames = {files.name};
 if isempty(fNames)
     error('No files found in directory, please check path!')
 end
-% remInds = [];
-% dispChunk = round(length(fNames)/30);
-% for jj = 1:length(fNames)
-%     if isempty(findstr(lower(fNames{jj}),lower(imgExt)))
-%         remInds = [remInds;jj];
-%     end
-%     if mod(jj,dispChunk)==0
-%         disp([ num2str(jj) '  images...'])
-%     end
-% end
-% disp([num2str(length(fNames)) ' images found'])
-% toc
-% disp('Subsampling image sequence based on input indices...')
-% fNames(remInds)=[];
+
 if ~isempty(imgInds)
     fNames = fNames(imgInds);
+else
+    fNaems = fNames;
 end
 
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
@@ -49,7 +40,7 @@ IM = zeros(imSize(1),imSize(2),length(fNames));
 disp(['Reading all .' imgExt ' images from dir...'])
 
 if matlabpool('size')==0
-matlabpool(10)
+matlabpool(poolSize)
 end
 imgNums = 1:length(fNames);
 
@@ -62,12 +53,6 @@ parfor jj = imgNums
         img = rgb2Gray(img);
     end
     IM(:,:,jj) = img;
-    tic
-    eTime = toc;
-    if mod(eTime,20)==0
-        disp(eTime)
-%         disp(['Img # ' num2str(jj)])
-    end
 end 
 toc
 

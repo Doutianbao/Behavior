@@ -275,8 +275,7 @@ function motionVecInfo = GetMotionVecInfo(fishPos)
 % Gets angle and magnitude of motion vectors
 
 [x,y] =  deal(fishPos(:,1),fishPos(:,2));
-R = @(x)(x + 1*(rand(size(x))-0.5));
-[x,y] = deal(R(x), R(y));
+r = 
 [dx,dy] = deal(diff(x),diff(y));
 motionVecs = dx + dy*1i;
 A = @(z)(angle(z(2:end).*conj(z(1:end-1))))*180/pi;

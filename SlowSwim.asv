@@ -9,12 +9,14 @@ close all
 
 cd 'Z:\Avinash\Ablations & Behavior'
 
-readMode =  'fromImages'; %'fromMishVid';
+% readMode =  'fromImages'; 
+readMode = 'fromMishVid';
 
 poolSize  = 12;
 switch readMode
     case 'fromMishVid'
-        [IM, outDir] = ReadMishVid();        
+        [IM, outDir] = ReadMishVid(); 
+        imgInds = 1:size(IM);
     case 'fromImages'
         imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
@@ -51,7 +53,7 @@ tic
 % IM_orient = max(IM_proc(:))-IM_proc;
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 
-midlineInds = GetMidline_beta_para(-IM_proc,fishPos,[35 30]);
+midlineInds = GetMidline_beta(-IM_proc,fishPos,[35 30]);
 
 %    orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);

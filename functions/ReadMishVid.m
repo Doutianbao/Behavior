@@ -51,7 +51,7 @@ h = fopen(dirFile);
 
 % Imaging parameters
 start_f = 1;
-dur_f =  duration*60;
+dur_f =  duration*60*30;
 samp_int = 1;
 stop_f =  start_f + dur_f;
 IM = zeros(h_axis,v_axis,ceil(dur_f/samp_int));

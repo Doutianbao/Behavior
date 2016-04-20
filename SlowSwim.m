@@ -9,12 +9,15 @@ close all
 
 cd 'Z:\Avinash\Ablations & Behavior'
 
-readMode =  'fromImages'; %'fromMishVid';
+% readMode =  'fromImages'; 
+readMode = 'fromMishVid';
 
 poolSize  = 12;
 switch readMode
     case 'fromMishVid'
-        [IM, outDir] = ReadMishVid();        
+        fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
+        [IM, outDir] = ReadMishVid(); 
+        imgInds = 1:size(IM);
     case 'fromImages'
         imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')

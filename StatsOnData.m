@@ -62,7 +62,11 @@ Plot1stOrderTurnAngleHists(data)
 
 % PlotTrajAngles(data,fldNames_orig)
 
+%# Plot head curvature histograms
 PlotCurvHist(data)
+
+%# Plot motion vec histograms
+PlotMotionVecHists(data)
 end
 
 function sideData = GetSideData(dataDir,sideStems)
@@ -240,7 +244,7 @@ prob_ipsi_mag = nan(length(fldNames),length(binVec1));
 vals_mag = nan(1,length(binVec1));
 prob_contra_mag = prob_ipsi_mag;
 
-binVec2 = 4:120;    
+binVec2 = 4:4:120;    
 prob_ipsi_ang = nan(length(fldNames),length(binVec2));
 prob_contra_ang = prob_ipsi_ang;
 vals_ang =nan(1,length(binVec2));
@@ -249,10 +253,11 @@ for fldNum  = 1:length(fldNames)
     fldName = fldNames{fldNum};
     mv = data.(fldName).motionInfo.motionVecs;
     %## Remove straight and noise trajectories
-    remInds1 = find(abs(mv(:,1))<=4 | abs(mv(:,1))>=120);
-    remInds2 = find(mv(:,2)<=motionThr | mv(:,2)>100);
-    remInds = union(remInds1, remInds2);
+    remInds = find(mv(:,2) <=motionThr | mv(:,2) > 100); % No motion and artifactual jump frames
     mv(remInds,:) = [];
+    remInds = find(abs(mv(:,1))<=4 | abs(mv(:,1))>=120); % Straight movt and artifactual turn frames
+    mv(remInds,:) = [];
+    
     if strfind(lower(fldName),'left')
         mv(:,1) = -mv(:,1);
     end
@@ -471,7 +476,80 @@ end
 
 end
 
+function PlotMotionVecHists(data)
+prob_contra = data.hist.motionVecAng_prob_contra;
+vals = data.hist.motionVecAng_vals;
+prob_ipsi = data.hist.motionVecAng_prob_ipsi;
 
+xLabel = 'Motion vec angle';
+yLabel = 'Prob';
+ttl = 'Histogram of motion vec angles';
+xLim = [0 70];
+PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
+PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
+
+prob_contra = data.hist.motionVecMag_prob_contra;
+vals = data.hist.motionVecMag_vals;
+prob_ipsi = data.hist.motionVecMag_prob_ipsi;
+
+xLabel = 'Motion vec angle';
+yLabel = 'Prob';
+ttl = 'Histogram of motion vec angles';
+xLim = [0 70];
+
+PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
+PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
+
+    function PlotGroupData(prob_contra, prob_ipsi,vals,xLabel,yLabel,ttl,xLim)        
+        prob_contra_mu = mean(prob_contra,1);
+        prob_contra_sig = std(prob_contra,[],1);
+        
+        prob_ipsi_mu = mean(prob_ipsi,1);
+        prob_ipsi_sig = std(prob_ipsi,[],1);
+        
+        s{1} = [prob_contra_mu - prob_contra_sig, ...
+            fliplr(prob_contra_mu + prob_contra_sig)];
+        
+        s{2} = [prob_ipsi_mu - prob_ipsi_sig, ...
+            fliplr(prob_ipsi_mu + prob_ipsi_sig)];
+        x =  [vals, fliplr(vals)];
+        
+        figure
+        fh{1} = fill(x,s{1},'b');
+        set(fh{1},'FaceAlpha',0.4)
+        hold on
+        fh{2} = fill(x,s{2},'r');
+        set(fh{2},'FaceAlpha',0.4)
+        plot(vals, prob_contra_mu,'k','linewidth',2)
+        plot(vals, prob_ipsi_mu,'k--','linewidth',2)
+        legend('Contra +/- std','Ipsi +/ std','Contra mean','Ipsi mean')
+        xlim(xLim)
+        ylim([-inf inf])
+        box off
+        set(gca,'tickdir','out')
+        xlabel(xLabel)
+        ylabel(yLabel)
+        title(ttl)
+        
+    end
+
+    function PlotFishData(prob_contra,prob_ipsi,vals,xLabel,yLabel,ttl, xLim)
+        plotAllFish = input('Plot all fish curvatures separately? (y/n): ','s');
+        if strcmpi(plotAllFish,'y')
+            for jj= 1:size(prob_contra,1)
+                figure('Name',['Fish # ' num2str(jj)])
+                title(['Fish # ', num2str(jj)])
+                plot(vals,prob_ipsi(jj,:),'b.-')
+                hold on;
+                plot(vals,prob_contra(jj,:),'r.-')
+                xlim(xLim)
+                xlabel(xLabel)
+                ylabel(yLabel)
+                title(ttl)
+            end
+        end
+    end
+end
 
 
 

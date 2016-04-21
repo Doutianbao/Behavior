@@ -46,24 +46,18 @@ if isempty(fishPos)
 end
 midlineInds = cell(size(IM,3),1);
 
-for imgNum = 1:size(IM,3)
+imgInds = 1:size(IM,3);
+parfor imgNum = imgInds;
     img = IM(:,:,imgNum);
-    img = max(img(:))-img;   
+    img = max(img(:))-img;
     
-    if imgNum ==107
-        a = 1;
-    end
-   [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights); 
-%    if size(lineInds_all{2},2)>1 && imgNum>107
-%        a = 1;
-%    end
-   
+    [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
+    
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
-%     midlineInds = [lineInds_all{:}];
     
-    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
-    
+    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)    
 end
+
 end
 
 %## Helper functions
@@ -90,13 +84,13 @@ for seg = 1:size(heights,1)
 end
 lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
-    strInd = parentMap{end}(ln); 
-      blah = []; 
-%     for comb = 1:length(parentMap{end})       
-        for seg = 1:length(parentMap)
-            blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
-        end
-%     end
+    strInd = parentMap{end}(ln);
+    blah = [];
+    %     for comb = 1:length(parentMap{end})
+    for seg = 1:length(parentMap)
+        blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
+    end
+    %     end
     lineInds(:,ln) = blah;
 end
 %   muPxls = mean(img(lineInds),1);
@@ -285,9 +279,9 @@ blockEndInds = blockInds + blockSizes - 1;
 comInds = nan(size(blockSizes));
 for blk = 1:numel(blockSizes)
     blkInds = blockInds(blk):blockEndInds(blk);
-%     comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
+    %     comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
     [~, ind] = max(nml);
-    comInds(blk) = blahInds(ceil(median(ind))); 
+    comInds(blk) = blahInds(ceil(median(ind)));
 end
 
 lineInds = indMat(comInds,:)';

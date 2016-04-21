@@ -46,7 +46,8 @@ if isempty(fishPos)
 end
 midlineInds = cell(size(IM,3),1);
 
-for imgNum = 1:size(IM,3)
+imgInds = 1:size(IM,3);
+for imgNum = imgInds;
     img = IM(:,:,imgNum);
     img = max(img(:))-img;
     

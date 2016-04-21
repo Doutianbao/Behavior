@@ -58,7 +58,7 @@ or = orientation(swimStartFrames,1);
 or = mod(or+180,360);
 or = 360-or;
 ker = gausswin(6); ker = ker/sum(ker);
-dOr = conv2((-DiffOrientation(orientation))*180/pi, ker(:),'same');
+dOr = conv2((-DiffOrientation(orientation(:,1)))*180/pi, ker(:),'same');
 
 
 %## Head curvature info

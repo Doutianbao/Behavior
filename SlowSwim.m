@@ -17,7 +17,7 @@ switch readMode
     case 'fromMishVid'
         fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
         [IM, outDir] = ReadMishVid(); 
-        imgInds = 1:size(IM);
+        imgInds = 1:size(IM,3);
     case 'fromImages'
         imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
@@ -42,7 +42,7 @@ IM_proc = ProcessImages(IM);
 
 %% Tracking the fish
 disp('Tracking fish...')
-fishPos = GetFishPos_parallel(IM_proc, 40);
+fishPos = GetFishPos_parallel(IM_proc, 60);
 toc
 disp('Creating mean reference frame...')
 ref = mean(IM,3);
@@ -54,7 +54,7 @@ tic
 % IM_orient = max(IM_proc(:))-IM_proc;
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 
-midlineInds = GetMidline_beta(-IM_proc,fishPos,[35 30]);
+midlineInds = GetMidline_beta_parallel(-IM_proc,fishPos,[35 30]);
 
 %    orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);

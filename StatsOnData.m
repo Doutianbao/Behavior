@@ -130,7 +130,7 @@ bv = nan(1,length(binVec)+1);
 nTrls = nan(length(fldNames),1);
 for fldNum = 1:length(fldNames)
     fldName = fldNames{fldNum};
-    angles = data.(fldName).motionInfo.traj_angle_lim;
+    angles = data.(fldName).motionInfo.traj_angle;
     nTrls(fldNum) = numel(angles);
     [rho_prob,theta_prob] = hist(angles,binVec);
     rho_prob = [rho_prob(:); rho_prob(1)];
@@ -161,11 +161,14 @@ for fldNum  = 1:length(fldNames)
     leftInds = find(angles > 5);
     rightInds = find(angles <5);
     [prob_left,vals] = hist(speed(leftInds),binVec);
-    prob_left = prob_left/sum(prob_left);
+%     prob_left = prob_left/sum(prob_left);
     
     [prob_right,~] = hist(speed(rightInds),binVec);
-    prob_right = prob_right/sum(prob_right);
-    
+%     prob_right = prob_right/sum(prob_right);
+
+%     N = sum(prob_right) + sum(prob_left);
+%    prob_left = prob_left/N;
+%    prob_right = prob_right/N;
     if ~isempty(strfind(lower(fldName),'left'))
         prob_contra(fldNum,:) = prob_right;
         prob_ipsi(fldNum,:) = prob_left;
@@ -197,13 +200,16 @@ for fldNum  = 1:length(fldNames)
     fldName = fldNames{fldNum};
     dOr = data.(fldName).motionInfo.dOr;
     dOr(abs(dOr)<4)=[]; dOr(abs(dOr)>120)=[];
-    var = -dOr(dOr<0);
-    [blah,~] = hist(var,binVec); % Sign already flipped based on 'left' or 'right' in filename
-    blah = blah/sum(blah);
+    y = -dOr(dOr<0);
+    [blah,~] = hist(y,binVec); % Sign already flipped based on 'left' or 'right' in filename
+%     blah = blah/sum(blah);
     prob_contra(fldNum,:) = blah;
     [blah,vals] = hist(dOr(dOr>0),binVec);
-    blah = blah/sum(blah);
+%     blah = blah/sum(blah);
     prob_ipsi(fldNum,:) = blah;
+%     N = sum(prob_contra(fldNum,:)) + sum(prob_ipsi(fldNum,:));
+%     prob_contra(fldNum,:) = prob_contra(fldNum,:)/N;
+%     prob_ipsi(fldNum,:) = prob_ipsi(fldNum,:)/N;
 end
 data.hist.turnAngle_prob_ipsi = prob_ipsi;
 data.hist.turnAngle_prob_contra = prob_contra;
@@ -223,13 +229,16 @@ for fldNum  = 1:length(fldNames)
         curv = -curv;
     end
     curv(abs(curv)<4)=[]; curv(abs(curv)>120)=[];
-    var = -curv(curv<0);
-    [blah,~] = hist(var,binVec); % Sign already flipped based on 'left' or 'right' in filename
-    blah = blah/sum(blah);
+    y = -curv(curv<0);
+    [blah,~] = hist(y,binVec); % Sign already flipped based on 'left' or 'right' in filename
+%     blah = blah/sum(blah);
     prob_contra(fldNum,:) = blah;
     [blah,vals] = hist(curv(curv>0),binVec);
-    blah = blah/sum(blah);
+%     blah = blah/sum(blah);
     prob_ipsi(fldNum,:) = blah;
+%     N = sum(prob_contra(fldNum,:)) + sum(prob_ipsi(fldNum,:));
+%     prob_contra(fldNum,:) = prob_contra(fldNum,:)/N;
+%     prob_ipsi(fldNum,:) = prob_ipsi(fldNum,:)/N;
 end
 data.hist.curv_prob_ipsi = prob_ipsi;
 data.hist.curv_prob_contra = prob_contra;
@@ -238,7 +247,7 @@ data.hist.curv_vals(1,:) = vals;
 end
 
 function data = AppendMotionVecInfo(data,fldNames)
-motionThr = 3;
+motionThr = 5;
 binVec1 = 2:100;  
 prob_ipsi_mag = nan(length(fldNames),length(binVec1));
 vals_mag = nan(1,length(binVec1));
@@ -263,19 +272,27 @@ for fldNum  = 1:length(fldNames)
     end
     %## Magnitudes      
     [blah,~] = hist(mv(mv(:,1)<0,2),binVec1); 
-    blah = blah/sum(blah);
+%     blah = blah/sum(blah);
     prob_contra_mag(fldNum,:) = blah;
     [blah,vals_mag] = hist(mv(mv(:,1)>0,2),binVec1);
-    blah = blah/sum(blah);
+%     blah = blah/sum(blah);
     prob_ipsi_mag(fldNum,:) = blah;
+    
+%     N = sum(prob_contra_mag(fldNum,:)) + sum(prob_ipsi_mag(fldNum,:)); 
+%     prob_contra_mag(fldNum,:) = prob_contra_mag(fldNum,:)/N;
+%     prob_ipsi_mag(fldNum,:) = prob_ipsi_mag(fldNum,:)/N;
     
     %## Angles
     [blah,~] = hist(-mv(mv(:,1)<0,1),binVec2); 
-    blah = blah/sum(blah);
+%     blah = blah/sum(blah);
     prob_contra_ang(fldNum,:) = blah;
     [blah,vals_ang] = hist(mv(mv(:,1)>0),binVec2);
-    blah = blah/sum(blah);
+%     blah = blah/sum(blah);
     prob_ipsi_ang(fldNum,:) = blah;
+    
+%     N  = sum(prob_contra_ang(fldNum,:)) + sum(prob_ipsi_ang(fldNum,:));
+%     prob_contra_ang(fldNum,:) = prob_contra_ang(fldNum,:)/N;
+%     prob_ipsi_ang(fldNum,:) = prob_ipsi_ang(fldNum,:)/N;
 end
 data.hist.motionVecMag_prob_ipsi = prob_ipsi_mag;
 data.hist.motionVecMag_prob_contra = prob_contra_mag;
@@ -333,36 +350,12 @@ prob_contra = data.hist.traj_speed_prob_contra;
 vals = data.hist.traj_speed_vals;
 prob_ipsi = data.hist.traj_speed_prob_ipsi;
 
-prob_contra_mu = mean(prob_contra,1);
-prob_contra_sig = std(prob_contra,[],1);
-
-prob_ipsi_mu = mean(prob_ipsi,1);
-prob_ipsi_sig = std(prob_ipsi,[],1);
-
-s{1} = [prob_contra_mu - prob_contra_sig, ...
-    fliplr(prob_contra_mu + prob_contra_sig)];
-
-s{2} = [prob_ipsi_mu - prob_ipsi_sig, ...
-    fliplr(prob_ipsi_mu + prob_ipsi_sig)];
-x =  [vals, fliplr(vals)];
-
-figure('Name','Ipsi and Contra Swim Speed Hist')
-fh{1} = fill(x,s{1},'b');
-set(fh{1},'FaceAlpha',0.4)
-hold on
-fh{2} = fill(x,s{2},'r');
-set(fh{2},'FaceAlpha',0.4)
-plot(vals, prob_contra_mu,'k','linewidth',2)
-plot(vals, prob_ipsi_mu,'k--','linewidth',2)
-legend('Contra +/- std','Ipsi +/ std','Contra mean','Ipsi mean')
-xlim([-inf 25])
-ylim([-inf inf])
-box off
-set(gca,'tickdir','out')
-xlabel('Swim speed (pxls/frame)')
-ylabel('Probability')
-title('Average swim speed for 1st 3 frames towards contra and ipsilateral to the side of ablation')
-
+xLabel = 'Swim speed';
+yLabel = 'Prob';
+ttl = 'Swim speed histogram';
+xLim = [0 25];
+PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
+PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
 end
 
 function Plot1stOrderTurnAngleHists(data)
@@ -370,35 +363,12 @@ prob_contra = data.hist.turnAngle_prob_contra;
 vals = data.hist.turnAngle_vals;
 prob_ipsi = data.hist.turnAngle_prob_ipsi;
 
-prob_contra_mu = mean(prob_contra,1);
-prob_contra_sig = std(prob_contra,[],1);
-
-prob_ipsi_mu = mean(prob_ipsi,1);
-prob_ipsi_sig = std(prob_ipsi,[],1);
-
-s{1} = [prob_contra_mu - prob_contra_sig, ...
-    fliplr(prob_contra_mu + prob_contra_sig)];
-
-s{2} = [prob_ipsi_mu - prob_ipsi_sig, ...
-    fliplr(prob_ipsi_mu + prob_ipsi_sig)];
-x =  [vals, fliplr(vals)];
-
-figure('Name','Ipsi and Contra Swim Speed Hist')
-fh{1} = fill(x,s{1},'b');
-set(fh{1},'FaceAlpha',0.4)
-hold on
-fh{2} = fill(x,s{2},'r');
-set(fh{2},'FaceAlpha',0.4)
-plot(vals, prob_contra_mu,'k','linewidth',2)
-plot(vals, prob_ipsi_mu,'k--','linewidth',2)
-legend('Contra +/- std','Ipsi +/ std','Contra mean','Ipsi mean')
-xlim([-inf 80])
-ylim([-inf inf])
-box off
-set(gca,'tickdir','out')
-xlabel('Turn angle (1-frame interval)')
-ylabel('Probability')
-title('1st order turn angle contra- or ipsilateral to the side of ablation')
+xLabel = '1st order turn angle';
+yLabel = 'Prob';
+ttl = '1st order turn angle hist';
+xLim = [0 70];
+PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
+PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
 
 end
 
@@ -432,47 +402,12 @@ prob_contra = data.hist.curv_prob_contra;
 vals = data.hist.curv_vals;
 prob_ipsi = data.hist.curv_prob_ipsi;
 
-prob_contra_mu = mean(prob_contra,1);
-prob_contra_sig = std(prob_contra,[],1);
-
-prob_ipsi_mu = mean(prob_ipsi,1);
-prob_ipsi_sig = std(prob_ipsi,[],1);
-
-s{1} = [prob_contra_mu - prob_contra_sig, ...
-    fliplr(prob_contra_mu + prob_contra_sig)];
-
-s{2} = [prob_ipsi_mu - prob_ipsi_sig, ...
-    fliplr(prob_ipsi_mu + prob_ipsi_sig)];
-x =  [vals, fliplr(vals)];
-
-figure('Name','Ipsi and Contra Swim Speed Hist')
-fh{1} = fill(x,s{1},'b');
-set(fh{1},'FaceAlpha',0.4)
-hold on
-fh{2} = fill(x,s{2},'r');
-set(fh{2},'FaceAlpha',0.4)
-plot(vals, prob_contra_mu,'k','linewidth',2)
-plot(vals, prob_ipsi_mu,'k--','linewidth',2)
-legend('Contra +/- std','Ipsi +/ std','Contra mean','Ipsi mean')
-xlim([-inf 70])
-ylim([-inf inf])
-box off
-set(gca,'tickdir','out')
-xlabel('Turn angle (1-frame interval)')
-ylabel('Probability')
-title('Head curvatures contra- or ipsilateral to the side of ablation')
-
-plotAllFish = input('Plot all fish curvatures separately? (y/n): ','s');
-if strcmpi(plotAllFish,'y')
-    for jj= 1:size(data.hist.turnAngle_prob_ipsi,1)
-        figure;
-        title(['Fish No ', num2str(jj)])
-        plot(data.hist.curv_vals,data.hist.turnAngle_prob_ipsi(jj,:),'b.-')
-        hold on;
-        plot(data.hist.curv_vals,data.hist.turnAngle_prob_contra(jj,:),'r.-')
-        xlim([-inf 70])
-    end
-end
+xLabel = 'Heading angles';
+yLabel = 'Prob';
+ttl = 'Head curvature histogram';
+xLim = [0 70];
+PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
+PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
 
 end
 
@@ -488,19 +423,29 @@ xLim = [0 70];
 PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
 PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
 
+
 prob_contra = data.hist.motionVecMag_prob_contra;
 vals = data.hist.motionVecMag_vals;
 prob_ipsi = data.hist.motionVecMag_prob_ipsi;
 
-xLabel = 'Motion vec angle';
+xLabel = 'Motion vec length';
 yLabel = 'Prob';
-ttl = 'Histogram of motion vec angles';
-xLim = [0 70];
+ttl = 'Histogram of motion vec lengths';
+xLim = [0 50];
 
 PlotGroupData(prob_contra, prob_ipsi, vals,xLabel,yLabel,ttl, xLim)
 PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
 
-    function PlotGroupData(prob_contra, prob_ipsi,vals,xLabel,yLabel,ttl,xLim)        
+end
+
+
+    function PlotGroupData(prob_contra, prob_ipsi,vals,xLabel,yLabel,ttl,xLim) 
+        N_vec = sum(prob_ipsi,2) + sum(prob_contra,2);
+        N = repmat(N_vec,1,size(prob_ipsi,2));
+        prob_ipsi = prob_ipsi./N;
+        prob_contra = prob_contra./N;
+        
+        
         prob_contra_mu = mean(prob_contra,1);
         prob_contra_sig = std(prob_contra,[],1);
         
@@ -522,6 +467,13 @@ PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
         set(fh{2},'FaceAlpha',0.4)
         plot(vals, prob_contra_mu,'k','linewidth',2)
         plot(vals, prob_ipsi_mu,'k--','linewidth',2)
+        
+        y = max([prob_contra_mu(:); prob_ipsi_mu(:)]);
+        y = y(1)*0.9;
+        x = ceil(max(vals)/3);
+        nTrls = round(2*sum(vals)*size(prob_contra,1));
+        text(x,y,num2str(nTrls))
+        
         legend('Contra +/- std','Ipsi +/ std','Contra mean','Ipsi mean')
         xlim(xLim)
         ylim([-inf inf])
@@ -534,14 +486,24 @@ PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
     end
 
     function PlotFishData(prob_contra,prob_ipsi,vals,xLabel,yLabel,ttl, xLim)
-        plotAllFish = input('Plot all fish curvatures separately? (y/n): ','s');
+        N_vec = sum(prob_ipsi,2) + sum(prob_contra,2);
+        N = repmat(N_vec,1,size(prob_ipsi,2));
+        prob_ipsi = prob_ipsi./N;
+        prob_contra = prob_contra./N;
+        plotAllFish = input('Plot motion vecs for all fish? (y/n): ','s');
         if strcmpi(plotAllFish,'y')
             for jj= 1:size(prob_contra,1)
                 figure('Name',['Fish # ' num2str(jj)])
                 title(['Fish # ', num2str(jj)])
-                plot(vals,prob_ipsi(jj,:),'b.-')
+                plot(vals,prob_contra(jj,:),'b.-')
                 hold on;
-                plot(vals,prob_contra(jj,:),'r.-')
+                plot(vals,prob_ipsi(jj,:),'r.-')
+                legend('Contra', 'Ipsi')
+                y = max([prob_contra(jj,:), prob_ipsi(jj,:)]);
+                y = y(1);
+                x = ceil(max(vals)/3);
+                nTrls = N_vec(jj);
+                text(x,y,num2str(nTrls))
                 xlim(xLim)
                 xlabel(xLabel)
                 ylabel(yLabel)
@@ -549,9 +511,5 @@ PlotFishData(prob_contra,prob_ipsi,vals, xLabel, yLabel, ttl, xLim)
             end
         end
     end
-end
-
-
-
 
 

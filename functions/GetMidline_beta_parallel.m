@@ -257,6 +257,8 @@ rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 [lps,~] = GetLineProfileSpread(rImg);
+% lps2 = GetLineProfileSpread(rImg2);
+% C = CorrC(rImg2,fliplr(lineGrad));
 % nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
 % nml = muPxls(:).*lps(:).*comInds(:);
 % nml = muPxls(:).*lps(:).*muPxls1(:);
@@ -323,12 +325,14 @@ lineInds = indMat(comInds,:)';
             C(row) = blah(2);
         end
     end
+    
 end
 
 function [lps,gof] = GetLineProfileSpread(rImg)
 Y = sort(rImg,2,'ascend');
 blah = mean(Y(:,1:round(size(rImg,2)/5)),2);
-lps = blah/sum(rImg(:));
+% lps = blah/sum(rImg(:));
+lps = blah;
 
 Y = rImg';
 X = [ones(size(Y,1),1), [1:size(Y,1)]'];
@@ -339,3 +343,4 @@ Y_est = X*B;
 gof = sqrt(sum((Y_est-Y).^2,1))./var(Y,[],1);
 
 end
+

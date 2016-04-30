@@ -50,10 +50,12 @@ midlineInds = cell(size(IM,3),1);
 
 imgInds = 1:size(IM,3);
 for imgNum = imgInds;
-    img = IM(:,:,imgNum);
-    if imgNum ==290
-        a = 1;
+    img = IM(:,:,imgNum);  
+    
+    if imgNum > 330
+        a =1;
     end
+    
     [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
     
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
@@ -249,9 +251,12 @@ rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 [lps,~] = GetLineProfileSpread(rImg);
+lps2 = GetLineProfileSpread(rImg2);
+C = CorrC(rImg2,fliplr(lineGrad));
 % nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
 % nml = muPxls(:).*lps(:).*comInds(:);
 % nml = muPxls(:).*lps(:).*muPxls1(:);
+nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:)).*Standardize(C(:));
 nml = nml(farInds);
 nml = Standardize(nml);
 
@@ -314,6 +319,7 @@ lineInds = indMat(comInds,:)';
             C(row) = blah(2);
         end
     end
+    
 end
 
 function [lps,gof] = GetLineProfileSpread(rImg)

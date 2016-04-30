@@ -7,6 +7,8 @@ function fishPos = GetFishPos_parallel(IM,varargin)
 % IM - Image stack
 % nPixels - # of bright pixels for centroid determination (default: 40)
 % method - Centroid detection method: {'median'}, ['mean']
+% 
+% Avinash Pujala, HHMI, 2016
 
 nPixels = 40;
 method = 'median';
@@ -43,8 +45,7 @@ parfor jj=imgFrames
     elseif strcmpi(method,'mean')
         r = round(mean(r));
         c = round(mean(c));
-    end
-    
+    end    
     x(jj) = r;
     y(jj) = c;
     if mod(jj,dispChunk)==0

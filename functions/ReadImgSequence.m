@@ -10,7 +10,7 @@ function IM = ReadImgSequence(imgDir,varargin)
 
 imgInds = [];
 imgExt = 'jpg';
-poolSize = 20;
+poolSize = 10;
 
 if nargin == 2
     imgExt = varargin{1}
@@ -30,7 +30,7 @@ end
 if ~isempty(imgInds)
     fNames = fNames(imgInds);
 else
-    fNaems = fNames;
+    fNames = fNames;
 end
 
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
@@ -40,7 +40,7 @@ IM = zeros(imSize(1),imSize(2),length(fNames));
 disp(['Reading all .' imgExt ' images from dir...'])
 
 if matlabpool('size')==0
-matlabpool(poolSize)
+    matlabpool(poolSize)
 end
 imgNums = 1:length(fNames);
 

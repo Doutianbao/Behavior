@@ -26,7 +26,7 @@ Standardize = @(x)(x-min(x(:)))/(max(x(:))-min(x(:)));
 [G,~]  = imgradient(refImg);
 G = Standardize(G);
 E = zeros(size(G));
-E(G>0.7)=1;
+E(G>0.4)=1;
 [eX,eY] = find(E);
 
 edgeInds = FitCircle([eX, eY],nIter);

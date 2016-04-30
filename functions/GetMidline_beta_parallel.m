@@ -21,6 +21,8 @@ function midlineInds = GetMidline_beta_parallel(IM,varargin)
 % midlineInds - Indices of the midline in the image series; L x T matrix
 %   where T is the number of images in the series and L is number of line
 %   indices. L = sum(lineLens).
+% 
+% Avinash Pujala, HHMI, 2016
 
 heights =  [18 16 14 10 8 8];
 dTh = 4;
@@ -52,15 +54,19 @@ if matlabpool('size')==0
     matlabpool(poolSize)
 end
 imgInds = 1:size(IM,3);
+dispChunk = round(size(IM,3)/5)+1;
 parfor imgNum = imgInds;
     img = IM(:,:,imgNum);
-    img = max(img(:))-img;
+%     img = max(img(:))-img;
     
     [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
     
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
     
-    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)    
+    if mod(imgNum,dispChunk)
+        disp(imgNum)
+        PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+    end
 end
 
 end

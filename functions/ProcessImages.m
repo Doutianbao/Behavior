@@ -8,7 +8,7 @@ function IM_proc = ProcessImages(varargin)
 %   subtraction. This is useful for considering only frames in which fish
 %   moves
 
-poolSize = 20;
+poolSize = 10;
 IM = varargin{1};
 disp('Computing smoothed mean frame...')
 tic
@@ -23,7 +23,8 @@ toc
 disp('Processing images...')
 tic
 if size(IM,3)>=500
-    IM_proc = ProcInParallel(IM,im,poolSize);
+%     IM_proc = ProcInParallel(IM,im,poolSize);
+    IM_proc = ProcInSerial(IM,im);
 else
     IM_proc = ProcInSerial(IM,im);
 end

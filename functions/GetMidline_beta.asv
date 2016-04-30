@@ -239,16 +239,13 @@ end
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
 lineGrad = grad.*(1:size(rImg,2));
 muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
-vPxls = var(rImg,[],2);
+
 G = @(x)((prod(x,2)).^(1/size(x,1)));
 muPxls1 = G(rImg);
 backgroundInt = mean(muPxls);
-rImg2 = sort(rImg,2,'descend');
-temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
-[~, comInds] = min(temp,[],2);
+comInds = min(rImg-repmat(mean(rImg,2),1,size(2)))
 [lps,~] = GetLineProfileSpread(rImg);
-nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
-% nml = muPxls(:).*lps(:).*muPxls1(:);
+nml = muPxls(:).*lps(:).*muPxls1(:);
 nml = nml(farInds);
 nml = Standardize(nml);
 

@@ -20,15 +20,12 @@ function varargout = GetFish2EdgeInfo(fishPos,orientation,edgeInds)
 
 S = nan(size(fishPos,1),1);
 O = S;
-O2 = S;
 E = nan(size(fishPos));
-E2 = E;
+
 eInds = edgeInds;
 eInds = [eInds(:,1)-mean(eInds(:,1)), eInds(:,2)-mean(eInds(:,2))];
 [th, rho] = cart2pol(eInds(:,1), eInds(:,2));
 th = th*180/pi;
-% th = PhaseToTangent(th*180/pi);
-% th = mod(th+90, 90);
 M = @(v)(sqrt(v(1)^2 + v(2)^2));
 A = @(v1,v2)acos((dot(v1,v2)/(M(v1)*M(v2))))*180/pi;
 disp('Getting dist and angle to nearest edge point...')
@@ -48,12 +45,8 @@ for jj = 1:size(fishPos,1)
     or = mod(orientation(jj)+180,360);
 
     [x,y] = pol2cart(or*pi/180,1);
-%     [v1(1),v1(2)] = pol2cart(th(ind1)*pi/180,1);
     v2 = [x,y];
-%     O(jj) = (180-A(v1,v2));
-    O(jj) = 90-PhaseToTangent(A(v2,tVec));
-    O2(jj) = angle(tVec(1) + tVec(2)*1i)*180/pi;
-    
+    O(jj) = 90-PhaseToTangent(A(v2,tVec));      
     if mod(jj,dispChunk)==0
         disp(['Frame # ' num2str(jj)])
     end
@@ -62,7 +55,7 @@ toc
 varargout{1} = S;
 varargout{2} = O;
 varargout{3} = E;
-varargout{4} = O2;
+
 end
 
 function [nearestInd,dist] = Dist2Nearest(v,V)
@@ -80,12 +73,6 @@ dist = sqrt(sum((V(nearestInd,:)-v).^2));
 
 end
 
-function c = Angle2Complex(angle)
-% Given an angle in degrees, returns a unit length complex # pointing in the
-% direction of the angle
-[x,y] = pol2cart(angle*pi/180,1);
-c = x + y*1i;
-end
 
 function theta = PhaseToTangent(theta)
 theta = asin(sin(theta.*pi/180)).*180/pi; 

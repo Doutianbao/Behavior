@@ -78,7 +78,6 @@ inds = [];
 for kk = 1:length(lineInds)
     inds = [inds; lineInds{kk}(:)];
 end
-% inds = [lineInds{:}];
 img(inds) = max(img(:));
 imagesc(img),axis image
 hold on
@@ -96,17 +95,14 @@ end
 lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
     strInd = parentMap{end}(ln);
-    blah = [];
-    %     for comb = 1:length(parentMap{end})
+    blah = [];   
     for seg = 1:length(parentMap)
         blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
-    end
-    %     end
+    end 
     lineInds(:,ln) = blah;
 end
-%   muPxls = mean(img(lineInds),1);
+
 lineGrad = 0.2*(1:sum(heights));
-% muPxls = mean(repmat(lineGrad(:),1,size(lineInds,2)).*img(lineInds),1);
 lineProfiles = img(lineInds);
 muPxls = mean(lineProfiles,1);
 [lps,gof] = GetLineProfileSpread(lineProfiles');
@@ -253,13 +249,18 @@ end
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
 lineGrad = grad.*(1:size(rImg,2));
 muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
-% muPxls0 = mean(rImg,2);
+vPxls = var(rImg,[],2);
 G = @(x)((prod(x,2)).^(1/size(x,1)));
-muPxls1 = G(rImg);
+muPxls1 = abs(G(rImg));
 backgroundInt = mean(muPxls);
-
+rImg2 = sort(rImg,2,'descend');
+temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
+[~, comInds] = min(temp,[],2);
 [lps,~] = GetLineProfileSpread(rImg);
-nml = muPxls(:).*lps(:).*muPxls1(:);
+% nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
+% nml = muPxls(:).*lps(:).*comInds(:);
+% nml = muPxls(:).*lps(:).*muPxls1(:);
+nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
 nml = nml(farInds);
 nml = Standardize(nml);
 
@@ -325,7 +326,6 @@ lineInds = indMat(comInds,:)';
 end
 
 function [lps,gof] = GetLineProfileSpread(rImg)
-% Y =  sort(rImg,2,'descend');
 Y = sort(rImg,2,'ascend');
 blah = mean(Y(:,1:round(size(rImg,2)/5)),2);
 lps = blah/sum(rImg(:));

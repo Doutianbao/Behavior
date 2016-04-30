@@ -42,7 +42,7 @@ IM_proc = ProcessImages(IM);
 
 %% Tracking the fish
 disp('Tracking fish...')
-fishPos = GetFishPos_parallel(IM_proc, 60);
+fishPos = GetFishPos(IM_proc, 60);
 toc
 disp('Creating mean reference frame...')
 ref = mean(IM,3);
@@ -53,7 +53,7 @@ disp('Getting fish orientation...')
 tic
 
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
-midlineInds = GetMidline_beta_parallel(IM_proc,fishPos,[32 20]);
+midlineInds = GetMidline_beta(IM_proc,fishPos,[32 20]);
 % midlineInds = GetMidline_beta(IM_proc,fishPos,[32 20]);
 
 %    orientation_corr = CorrectOrientation(orientation, 90);

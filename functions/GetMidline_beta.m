@@ -50,8 +50,7 @@ midlineInds = cell(size(IM,3),1);
 
 imgInds = 1:size(IM,3);
 for imgNum = imgInds;
-    img = IM(:,:,imgNum);
-    
+    img = IM(:,:,imgNum);   
     [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
     
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
@@ -241,14 +240,16 @@ lineGrad = grad.*(1:size(rImg,2));
 muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
 vPxls = var(rImg,[],2);
 G = @(x)((prod(x,2)).^(1/size(x,1)));
-muPxls1 = G(rImg);
+muPxls1 = abs(G(rImg));
 backgroundInt = mean(muPxls);
 rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 [lps,~] = GetLineProfileSpread(rImg);
-nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
+% nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
+% nml = muPxls(:).*lps(:).*comInds(:);
 % nml = muPxls(:).*lps(:).*muPxls1(:);
+nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
 nml = nml(farInds);
 nml = Standardize(nml);
 

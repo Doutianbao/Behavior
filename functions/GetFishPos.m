@@ -7,9 +7,11 @@ function fishPos = GetFishPos(IM,varargin)
 % IM - Image stack
 % nPixels - # of bright pixels for centroid determination
 % method - Centroid detection method: {'median'}, ['mean']
+% 
+% Avinash Pujala, HHMI, 2016
 
 nPixels = 30;
-method = 'median';
+method = 'mean';
 if nargin == 2
     nPixels = varargin{1};
 elseif nargin == 3
@@ -32,8 +34,11 @@ for jj=1:size(IM,3)
     end
 end
 fishPos = [x; y]';
+   
 
-    function [r,c] = FishPosInImg(img,nPixels,method)
+end
+
+ function [r,c] = FishPosInImg(img,nPixels,method)
         [~,maxInds] = sort(img(:),'descend');
         maxInds = maxInds(1:nPixels);
         [r,c] = ind2sub(size(img),maxInds);
@@ -55,6 +60,3 @@ fishPos = [x; y]';
         drawnow        
         shg
     end
-
-end
-

@@ -11,7 +11,7 @@ function fishPos = GetFishPos_parallel(IM,varargin)
 % Avinash Pujala, HHMI, 2016
 
 nPixels = 40;
-method = 'median';
+method = 'mean';
 poolSize = 10;
 if nargin == 2
     nPixels = varargin{1};
@@ -29,32 +29,42 @@ imgHeight = size(IM,1);
 imgWidth = size(IM,2);
 tic
 disp('Tracking fish...')
-openedPool = 0;
 if matlabpool('size')==0
-    matlabpool(poolSize)
-    openedPool = 1;
+    matlabpool(poolSize) 
 end
 parfor jj=imgFrames
-    ii= IM(:,:,jj);  
-    [~,maxInds] = sort(ii(:),'descend');
-    maxInds = maxInds(1:nPixels);
-    [r,c] = ind2sub([imgHeight, imgWidth],maxInds);
-    if strcmpi(method,'median')
-        r = round(median(r));
-        c = round(median(c));
-    elseif strcmpi(method,'mean')
-        r = round(mean(r));
-        c = round(mean(c));
-    end    
-    x(jj) = r;
-    y(jj) = c;
+  img= IM(:,:,jj);  
+    [r,c] = FishPosInImg(img,nPixels,method);
+    x(jj) = c;
+    y(jj) = r;
     if mod(jj,dispChunk)==0
         disp(['Img # ' num2str(jj)])
+        ShowFishPos(img,[r,c],jj)
     end
 end
-fishPos = [y; x]';
-if openedPool
-    matlabpool close
-end
+fishPos = [x; y]';
+
 end
 
+ function [r,c] = FishPosInImg(img,nPixels,method)
+        [~,maxInds] = sort(img(:),'descend');
+        maxInds = maxInds(1:nPixels);
+        [r,c] = ind2sub(size(img),maxInds);
+        if strcmpi(method,'median')
+            r = round(median(r));
+            c = round(median(c));
+        elseif strcmpi(method,'mean')
+            r = round(mean(r));
+            c = round(mean(c));
+        end
+        
+    end
+    function ShowFishPos(img,fishPos,imgNum)
+        cla
+        imagesc(img), axis image, colormap(gray)
+        hold on
+        plot(fishPos(2), fishPos(1),'ro')
+        title(['Frame # ' num2str(imgNum)])
+        drawnow        
+        shg
+    end

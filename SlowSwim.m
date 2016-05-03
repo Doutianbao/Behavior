@@ -42,7 +42,7 @@ IM_proc = ProcessImages(IM);
 
 %% Tracking the fish
 disp('Tracking fish...')
-fishPos = GetFishPos(IM_proc, 60);
+fishPos = GetFishPos(IM_proc, 40);
 toc
 disp('Creating mean reference frame...')
 ref = mean(IM,3);
@@ -53,8 +53,8 @@ disp('Getting fish orientation...')
 tic
 
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
-midlineInds = GetMidline_beta(IM_proc,fishPos,[32 20]);
-% midlineInds = GetMidline_beta(IM_proc,fishPos,[32 20]);
+midlineInds = GetMidline_beta_parallel(IM_proc,fishPos,[35 20]);
+% midlineInds = GetMidline_beta(IM_proc,fishPos,[35 20]);
 
 %    orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);
@@ -64,9 +64,9 @@ orientation_backup = orientation;
 toc
 
 %% Motion Info
-% motionThr = 5;
-% [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
-% motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
+motionThr = 4;
+[motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
+motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
 
 %% Save timeseries
 % fName = input('Enter fish name (e.g. Fish7): ','s');

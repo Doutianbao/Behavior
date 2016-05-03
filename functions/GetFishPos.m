@@ -20,27 +20,41 @@ end
 
 x = zeros(1,size(IM,3));
 y = x;
-
+dispChunk = round(size(IM,3)/50)+1;
 for jj=1:size(IM,3)
-    ii= IM(:,:,jj);  
-    [~,maxInds] = sort(ii(:),'descend');
-    maxInds = maxInds(1:nPixels);
-    [r,c] = ind2sub(size(ii),maxInds);
-    if strcmpi(method,'median')
-        r = round(median(r));
-        c = round(median(c));
-    elseif strcmpi(method,'mean')
-        r = round(mean(r));
-        c = round(mean(c));
-    end
-    
-    x(jj) = r;
-    y(jj) = c;
-    if mod(jj,100)==0
+    img= IM(:,:,jj);  
+    [r,c] = FishPosInImg(img,nPixels,method);
+    x(jj) = c;
+    y(jj) = r;
+    if mod(jj,dispChunk)==0
         disp(['Img # ' num2str(jj)])
+        ShowFishPos(img,[r,c],jj)
     end
 end
-fishPos = [y; x]';
+fishPos = [x; y]';
+
+    function [r,c] = FishPosInImg(img,nPixels,method)
+        [~,maxInds] = sort(img(:),'descend');
+        maxInds = maxInds(1:nPixels);
+        [r,c] = ind2sub(size(img),maxInds);
+        if strcmpi(method,'median')
+            r = round(median(r));
+            c = round(median(c));
+        elseif strcmpi(method,'mean')
+            r = round(mean(r));
+            c = round(mean(c));
+        end
+        
+    end
+    function ShowFishPos(img,fishPos,imgNum)
+        cla
+        imagesc(img), axis image, colormap(gray)
+        hold on
+        plot(fishPos(2), fishPos(1),'ro')
+        title(['Frame # ' num2str(imgNum)])
+        drawnow        
+        shg
+    end
 
 end
 

@@ -47,9 +47,7 @@ end
 D = @(v)sqrt(sum(diff(v,[],1).^2,2));
 x = fishPos(swimStartFrames,1);
 y = fishPos(swimStartFrames,2);
-% dS = sqrt(diff(x).^2 + diff(y).^2);
-dS = D(fishPos(swimStartFrames,:));
-dS_all = D(fishPos);
+dS = sqrt(diff(x).^2 + diff(y).^2);
 
 %## Orientation info
 if (size(orientation,1)==2) && (size(orientation,1) < size(orientation,2))
@@ -141,7 +139,6 @@ orientInfo = getOrInfo(orientation,motionFrames);
 motionInfo.motionFrames = motionFrames;
 motionInfo.swimStartFrames = swimStartFrames;
 motionInfo.dS = dS;
-motionInfo.dS_all = [0; dS_all(:)];
 motionInfo.or = or;
 motionInfo.dOr = dOr;
 motionInfo.curv = curv;

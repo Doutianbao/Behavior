@@ -1,4 +1,4 @@
-function midlineInds = GetMidline(IM,varargin)
+function midlineInds = GetMidline_template_parallel(IM,varargin)
 % GetMidLine - Given an image series or an image dir containing an image
 %   series, returns a series of indices corresponding to the midline of the
 %   the fish in each image
@@ -23,9 +23,13 @@ function midlineInds = GetMidline(IM,varargin)
 %   indices. L = sum(lineLens).
 
 heights =  [18 16 14 10 8 8];
+templateGradient = -0.2;
+dTh = 5;
+poolSize = 12;
+
 imgExt = 'jpg';
 if nargin == 1
-    if ischar(IM) && isdir(IM)
+    if isstr(IM) && isdir(IM)
         IM  = ReadImgSequence(IM,imgExt);
     end
     fishPos = GetFishPos(ProcessImages(IM),50);
@@ -44,63 +48,70 @@ if isempty(fishPos)
     fishPos = GetFishPos(ProcessImages(IM),50);
 end
 
-midlineInds = {};
-for imgNum = 1:size(IM,3)
-    img = IM(:,:,imgNum);
-    img = max(img(:))-img;
-    lineInds = {};
-    startPt = fishPos(imgNum,:);
-    for seg = 1:length(heights)
-        if seg ==1
-            lineInds{seg} = GetML(img,startPt,[],4,heights(seg));
-        else 
-            if imgNum == 149 && seg ==2
-                a = 1;
-            end
-            lineInds{seg} = GetML(img,startPt,prevStartPt,4,heights(seg));        
-        end       
-        si = lineInds{seg}(end);       
-        [r,c] = ind2sub(size(img),si);
-        x = c;
-        y = r;
-        prevStartPt = startPt;
-        startPt = [x,y];
-        
-        midlineInds{imgNum} = lineInds;
-    end
-    
-    cla
-    for kk = 1:length(lineInds)
-        img(lineInds{kk}) = max(img(:));
-        imagesc(img),axis image
-    end
-    hold on
-    plot(fishPos(imgNum,1),fishPos(imgNum,2),'ko')
-    title(num2str(imgNum))
-    shg
-    pause(0.15)
+if matlabpool('size') == 0
+    matlabpool(poolSize)
 end
+imgInds = 1:size(IM,3);
+midlineInds = cell(1,length(heights));
+lineEndInds = nan(size(fishPos));
+tic  
+for seg = 1:length(heights)
+    disp(['Obtaining orientation of segment ' num2str(seg) '...'])
+    base = min(1,round(heights(seg)/5));
+    T = CreateTailTemplate(base,heights(seg),templateGradient);
+    lineInds = cell(size(imgInds));      
+    if seg ==1
+        startPts_now = fishPos;
+        startPts_prev = nan(size(fishPos)) ;
+    else
+        startPts_prev = startPts_now;
+        startPts_now = lineEndInds;
+    end
+    height = heights(seg);
+    dispChunk = ceil(size(IM,3)/5);
+    parfor imgNum = imgInds
+        if mod(imgNum,dispChunk)==0
+            disp(imgNum)
+        end
+        img = IM(:,:,imgNum);
+        lineInds{imgNum} = GetML(img,startPts_now(imgNum,:), startPts_prev(imgNum,:), dTh, height, T);
+        [row,col] = ind2sub(size(img),lineInds{imgNum}(end));
+        lineEndInds(imgNum,:) = [col,row];          
+    end     
+    midlineInds{seg} = lineInds;
+end
+midlineInds = Reconfigure(midlineInds);
+toc
 end
 
+
 function lineInds = GetML(im,startPt,varargin)
-% lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen)
+% lineInds = GetMidline(im,startInd,prevStartInd,dTh,lineLen,matchTemplate)
 
 dTh = 4;
 lineLen = 15;
-grad = 0.2;
 if nargin < 2
     error('At least 2 inputs required!')
 elseif nargin ==2
     prevStartPt = [];
+    T = CreateTailTemplate(6,30,-0.15);
 elseif nargin == 3
     prevStartPt = varargin{1};
+    T = CreateTailTemplate(6,30,-0.15);
 elseif nargin ==4
     prevStartPt = varargin{1};
     dTh = varargin{2};
+    T = CreateTailTemplate(6,30,-0.15);
 elseif nargin == 5
     prevStartPt = varargin{1};
     dTh = varargin{2};
     lineLen = varargin{3};
+    T = CreateTailTemplate(6,30,-0.15);
+elseif nargin ==6;
+    prevStartPt = varargin{1};
+    dTh = varargin{2};
+    lineLen = varargin{3};
+    T = varargin{4};
 end
 
 if isempty(dTh)
@@ -111,7 +122,7 @@ end
 ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
 rImg = conv2(rImg,ker,'same');
 
-if isempty(prevStartPt)
+if (isempty(prevStartPt)) || (any(isnan(prevStartPt)))
     farInds = 1:size(indMat,1);
 else
     lastInds = indMat(:,end);
@@ -123,42 +134,18 @@ else
     postVecs = [x y] - repmat(startPt,length(x),1);
     postVecs = postVecs(:,1) + postVecs(:,2)*1i;
     dAngles = angle(repmat(preVec,length(x),1).*conj(postVecs)) *(180/pi);
-    farInds = find(abs(dAngles)<=130);
+    farInds = find(abs(dAngles)<=90);
 end
 
 
 %## Find lines that pass through fish
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
-% lineGrad = repmat(grad.*(1:size(rImg,2)),size(rImg,1),1);
-lineGrad = grad.*(1:size(rImg,2));
-cc = nan(size(rImg,1),1);
-for jj = 1:size(rImg,1)
-    blah = corrcoef(rImg(jj,:),lineGrad);
-    cc(jj) = blah(2);
-end
-muPxls = mean(rImg,2);
-backgroundInt = mean(muPxls);
-signalMat = rImg > 1*backgroundInt;
-rImg(rImg<0.5*backgroundInt)=min(rImg(:));
-nPxls = sum(signalMat,2);
-nPxls = conv2(nPxls(:),gausswin(3),'same');
-[lps,mr] = GetLineProfileSpread(rImg);
-muPxls = Standardize(muPxls);
-nPxls = Standardize(nPxls);
-lps = Standardize(lps);
-cc = Standardize(cc);
-% nml = (nPxls(:).^1.5).*muPxls(:).*lps(:);
-nml = nPxls(:).^0.5.*muPxls(:).*lps(:).*(cc(:));
-% nml = (nPxls(:).^1.5).*muPxls(:);
-nml(isinf(nml))= max(nml);
-nml = nml(farInds);
-mr = mr(farInds);
+[mV,cV] = RotateAndMatchTemplate(im,startPt,dTh,T);
+[lps,~] = GetLineProfileSpread(rImg);
+nml = lps(:).*(mV(:).^2).*cV(:);
 nml = Standardize(nml);
-mr = Standardize(mr);
-mr = nml;
-probInds = find(nml>0.5);
-nml(probInds) = nml(probInds).*mr(probInds);
-thr = 0.5;
+nml = nml(farInds);
+thr = 0.4;
 probInds= find(nml>thr);
 count = 0;
 while (numel(probInds)<2) && (count <10)
@@ -199,9 +186,10 @@ end
 %## bigger than tail block
 
 %# Choose a block that has at at least a few lines and high max int, but weight max int more.
-[~,bigBlock]= max(blockSizes.*(2*blockMaxes));
+[~,bigBlock]= max((1./blockSizes).*(2*blockMaxes));
 
 keepInds = blockInds(bigBlock):blockEndInds(bigBlock);
+
 blahInds = blahInds(keepInds);
 
 nml = nml(keepInds);
@@ -209,10 +197,11 @@ zerInds = find(blahInds==0);
 blahInds(zerInds)=[];
 nml(zerInds) = [];
 ctrOfMassInd = round(sum((1:length(nml)).*nml(:)')/sum(nml));
+% [~, maxInd] = max(nml);
 
 realInd = blahInds(ctrOfMassInd);
+% realInd = blahInds(maxInd);
 lineInds = indMat(realInd,:)';
-
 
     function [blockSizes, blockInds] = GetContiguousBlocks(values)
         % Given a set of values, returns the sizes of contiguous blocks and the
@@ -231,25 +220,33 @@ lineInds = indMat(realInd,:)';
         end
         blockSizes = [blockSizes; count];
     end
-    function C = CorrC(mtrx, vctr)
-        C = nan(size())
-        for
-        end
-    end
+
 end
 
+function midlineInds = Reconfigure(midlineInds)
+% Reconfigures midlineInds to make compatible with
+%   GetFishOrientationFromMidlineInds()
+mlInds =cell(length(midlineInds{1}),1);
+for imgNum  = 1:length(midlineInds{1})
+    segInds = cell(length(midlineInds),1);
+    for seg = 1:length(midlineInds)
+        segInds{seg} = midlineInds{seg}{imgNum};
+    end
+    mlInds{imgNum} = segInds;
+end
+midlineInds = mlInds;
+end
 
 function [lps,mr] = GetLineProfileSpread(rImg)
-% Y =  sort(rImg,2,'descend');
-Y = sort(rImg,2,'ascend');
+Y =  sort(rImg,2,'descend');
 blah = mean(Y(:,1:round(size(rImg,2)/5)),2);
-lps = blah/sum(rImg(:));
+lps = sum(rImg,2)./blah;
 
 Y = rImg';
 X = [ones(size(Y,1),1), [1:size(Y,1)]'];
 B = X\Y;
 m = abs(B(2,:));
-% b = B(1,:) ;
+b = B(1,:) ;
 Y_est = X*B;
 res = sqrt(sum((Y_est-Y).^2,1));
 m = max(m)-m;

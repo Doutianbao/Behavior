@@ -1,17 +1,18 @@
-function fishPos = GetFishPos(IM,varargin)
+function fishPos = GetFishPos_parallel(IM,varargin)
 %GetFishPos Give an image stack returns the x,y coordinates of the fish in
 %   each of the images of the stack
 % fishPos = GetFishPos(IM);
 % fishpos = GetFishPos(IM,nPixels,method)
 % Inputs:
 % IM - Image stack
-% nPixels - # of bright pixels for centroid determination
+% nPixels - # of bright pixels for centroid determination (default: 40)
 % method - Centroid detection method: {'median'}, ['mean']
 % 
 % Avinash Pujala, HHMI, 2016
 
-nPixels = 30;
+nPixels = 40;
 method = 'mean';
+poolSize = 10;
 if nargin == 2
     nPixels = varargin{1};
 elseif nargin == 3
@@ -22,9 +23,17 @@ end
 
 x = zeros(1,size(IM,3));
 y = x;
-dispChunk = round(size(IM,3)/50)+1;
-for jj=1:size(IM,3)
-    img= IM(:,:,jj);  
+imgFrames = 1:size(IM,3);
+dispChunk= round(numel(imgFrames)/30);
+imgHeight = size(IM,1);
+imgWidth = size(IM,2);
+tic
+disp('Tracking fish...')
+if matlabpool('size')==0
+    matlabpool(poolSize) 
+end
+parfor jj=imgFrames
+  img= IM(:,:,jj);  
     [r,c] = FishPosInImg(img,nPixels,method);
     x(jj) = c;
     y(jj) = r;
@@ -34,7 +43,6 @@ for jj=1:size(IM,3)
     end
 end
 fishPos = [x; y]';
-   
 
 end
 

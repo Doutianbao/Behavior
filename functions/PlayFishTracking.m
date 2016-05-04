@@ -1,43 +1,47 @@
-function PlayFishTracking(IM,fishPosVec,varargin)
+function PlayFishTracking(IM,fishPos,varargin)
 % PlayFishTracking - Plays the video of the fish being tracked
 % PlayFishTracking(IM, fishPos,startFrame,endFrame,pauseDur)
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image
 %   width, T = # of time points
-% fishPosVec - T x 2 vec where 1st & 2nd cols contain row & col positions
+% fishPos - T x 2 vec where 1st & 2nd cols contain row & col positions.
+%   fishPos = [], results in playing the frames without position tracking
 %   of the fish in the images
-% startFrame - Frame from which to display video
-% endFrame - Last Frame of video display
+% frameInds - Indices of frames to play; frameInds  = [] results in playing all frames
 % pauseDur - Duration of pause between subsequent frames
 
-if nargin == 2
-    startFrame = 1;
-    endFrame = size(IM,3);
-    pauseDur = 0.1;
+frameInds = 1:size(IM,3);
+pauseDur = 0.1;
+if nargin == 1
+    fishPos = [];
 elseif nargin == 3;
-    startFrame = varargin{1};
-    endFrame = startFrame + 999;
-    pauseDur = 0.1;
+    frameInds = varargin{1};
 elseif nargin == 4;
-    startFrame = varargin{1};
-    endFrame = varargin{2};
-    pauseDur = 0.1;
-elseif nargin == 5
-    startFrame = varargin{1};
-    endFrame = varargin{2};
-    pauseDur = varargin{3};
-else
+    frameInds = varargin{1};
+    pauseDur = varargin{2};
+elseif nargin > 4
     error('Too many inputs!')
+end
+if isempty(frameInds);
+    frameInds = 1:size(IM,3);
 end
 
 figure('Name', 'Fish Tracking')
 tic
-for imgNum = startFrame:endFrame
+for imgNum = frameInds(:)'
     cla
     imagesc(IM(:,:,imgNum)),axis image, axis off, colormap(gray), drawnow
     hold on
-    plot(fishPosVec(imgNum,1),fishPosVec(imgNum,2),'ro'), drawnow
-    title(['Frame: ' num2str(imgNum) ', Frame Rate: ' num2str((round(10*((imgNum+1-startFrame)/toc)))/10) ' fps'])
+    if ~isempty(fishPos)
+        plot(fishPos(imgNum,1),fishPos(imgNum,2),'ro'), drawnow
+    end
+    fps = (imgNum - frameInds(1))/toc;
+    fps = round(fps*100)/100;
+    title(['Frame: ' num2str(imgNum) ', Abs frame Rate: ' num2str(fps) ' fps'])
     shg
-    pause(pauseDur)   
+    if isempty(pauseDur)
+        pause()
+    else
+        pause(pauseDur)
+    end
 end

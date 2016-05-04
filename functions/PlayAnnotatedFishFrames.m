@@ -1,6 +1,6 @@
 function PlayAnnotatedFishFrames(IM,varargin)
 % PlayAnnotatedFishFrames - Plays fish frames with annotation
-% PlayAnnotatedFishFrames(IM, 'frames',frames,'fishPos',fishPos,'fishOrientation',fishOrientation)
+% PlayAnnotatedFishFrames(IM, 'frames',frames,'fishPos',fishPos,'fishOrientation',fishOrientation,'pauseDur',[])
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image
 %   width, T = # of time points
@@ -13,7 +13,7 @@ function PlayAnnotatedFishFrames(IM,varargin)
 frames = [];
 fishpos = [];
 fishorientation = [];
-pausedur = nan;
+pausedur = 0;
 pathlength = 30;
 
 nArgs = nargin;
@@ -30,10 +30,11 @@ end
 
 if isnan(pausedur)
     pausedur = 0.1;
-elseif isempty(pausedur)
-    pausedur = [];
 end
 
+if isempty(frames)
+    frames = 1:size(IM,3);
+end
 turnInds = getTurnInds(fishpos,frames);
 
 figure('Name', 'Annotated Fish Tracking')

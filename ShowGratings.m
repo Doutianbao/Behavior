@@ -103,12 +103,12 @@ for f = F(:)'
                 cla
                 imagesc(G),colormap(gray), %axis image
                 axis off
-                title(['Frame # ' num2str(count) ', freq = ' num2str(f) ', angle = ' num2str(a) ', vel = ' num2str(v)])
+%                 title(['Frame # ' num2str(count) ', freq = ' num2str(f) ', angle = ' num2str(a) ', vel = ' num2str(v)])
                 drawnow
                 shg
 %                 pause(0.1)
             end
-            endP
+        end
     end
 end
 
@@ -141,8 +141,8 @@ end
 G = imrotate(G,gAngle,'crop');
 xInds = ceil([(size(G,1)-gDims(1))/2, gDims(1)+(size(G,1)-gDims(1))/2]);
 yInds = ceil([(size(G,2)-gDims(2))/2, gDims(2)+(size(G,2)-gDims(2))/2]);
-G = G(xInds(1):xInds(2)-1,:);
-G = G(:,yInds(1):yInds(2)-1);
+% G = G(xInds(1):xInds(2)-1,:);
+% G = G(:,yInds(1):yInds(2)-1);
 
 
 end

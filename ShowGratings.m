@@ -19,7 +19,8 @@ function varargout = ShowGratings(varargin)
 %   respectively.
 % 
 % Avinash Pujala, HHMI, 2016
-gDims = [600, 600];
+
+gDims = [600, 600]; % Grating dimensions
 F = 10; % Grating spatial frequency
 A = 0; % Grating angle in degrees
 V = 1; % Grating velocity in units of phase shift
@@ -82,7 +83,7 @@ for f = F(:)'
                 cla
                 imagesc(G),axis image,colormap(gray)
                 axis off
-                title(['Frame # ' num2str(count) ', f = ' num2str(f) ', a = ' num2str(a) ', v = ' num2str(v)])
+                title(['Frame # ' num2str(count) ', freq = ' num2str(f) ', angle = ' num2str(a) ', vel = ' num2str(v)])
                 drawnow
                 shg
                 pause(0.1)

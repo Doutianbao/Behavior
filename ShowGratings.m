@@ -26,35 +26,44 @@ A = 0; % Grating angle in degrees
 V = 1; % Grating velocity in units of phase shift
 D = 10; % Duration in seconds
 gType = 'square'; % Grating type
+testMode = 0;
 
 if nargin ==1
     gDims = varargin{1};
-elseif nargin ==2
+elseif nargin == 2
     gDims = varargin{1};
     F = varargin{2};
-elseif nargin ==3;
+elseif nargin  == 3;
     gDims = varargin{1};
     F = varargin{2};
     A = varargin{3};
-elseif nargin == 4
+elseif nargin  ==4
     gDims = varargin{1};
     F = varargin{2};
     A = varargin{3};
     V = varargin{4};
-elseif nargin == 5
+elseif nargin ==5
     gDims = varargin{1};
     F = varargin{2};
     A = varargin{3};
     V = varargin{4};
     D = varargin{5};
-elseif nargin == 6
+elseif nargin ==6
     gDims = varargin{1};
     F = varargin{2};
     A = varargin{3};
     V = varargin{4};
     D = varargin{5};
     gType = varargin{6};
-elseif nargin > 6
+elseif nargin == 7
+    gDims = varargin{1};
+    F = varargin{2};
+    A = varargin{3};
+    V = varargin{4};
+    D = varargin{5};
+    gType = varargin{6};
+    testMode = varargin{7};
+elseif nargin > 7
     error('Too many inputs!')
 end
 
@@ -62,13 +71,24 @@ if isempty(gDims)
     gDims =[600, 600];
 end
 
+if isempty(gType)
+    gType = 'square';
+end
+
+if isempty(testMode)
+    testMode = 0;
+end
 if mod(D,1)~=0
     error('Duration must be specified as number of frames, and must be an integer!')
 end
 
 count = 0;
 pVec = zeros(length(F)*length(A)*length(V)*D,3);
-figure
+fh = figure;
+set(fh,'units','normalized','menubar','none','NumberTitle','off');
+if testMode == 0;
+    set(fh,'position',[0.9 0 1 1])
+end
 for f = F(:)'
     for a = A(:)'
         for v = V(:)'
@@ -79,16 +99,16 @@ for f = F(:)'
                 count = count + 1;
                 pVec(count,1) = f; 
                 pVec(count,2)  = a;
-                pVec(count,3)= v;
+                pVec(count,3)= v;                
                 cla
-                imagesc(G),axis image,colormap(gray)
+                imagesc(G),colormap(gray), %axis image
                 axis off
                 title(['Frame # ' num2str(count) ', freq = ' num2str(f) ', angle = ' num2str(a) ', vel = ' num2str(v)])
                 drawnow
                 shg
-                pause(0.1)
+%                 pause(0.1)
             end
-        end
+            endP
     end
 end
 
@@ -118,7 +138,7 @@ elseif strcmpi(gType,'sine')
 end
 
 [~,G] = meshgrid(x,y);
-G= imrotate(G,gAngle,'crop');
+G = imrotate(G,gAngle,'crop');
 xInds = ceil([(size(G,1)-gDims(1))/2, gDims(1)+(size(G,1)-gDims(1))/2]);
 yInds = ceil([(size(G,2)-gDims(2))/2, gDims(2)+(size(G,2)-gDims(2))/2]);
 G = G(xInds(1):xInds(2)-1,:);

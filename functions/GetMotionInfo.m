@@ -36,7 +36,7 @@ trajPlot = 0; % 1 results in plotting of trajectories
 motionThr = 5;
 
 if nargin ==4
-   motionThr = varargin{1};
+    motionThr = varargin{1};
 elseif nargin ==5
     motionThr = varargin{1};
     trajPlot = varargin{2};
@@ -84,11 +84,11 @@ traj_angle = zeros(size(swimStartFrames));
 
 if trajPlot
     figure
-%     axis image
+    %     axis image
 end
 for jj = 2:length(swimStartFrames)-1
     epInds{jj} = swimStartFrames(jj):swimStartFrames(jj+1)-1;
-    xx = fishPos(epInds{jj},1);    
+    xx = fishPos(epInds{jj},1);
     yy  = imgLen-fishPos(epInds{jj},2);
     
     %## Compute starting position and orientation adjusted trajectory
@@ -96,7 +96,7 @@ for jj = 2:length(swimStartFrames)-1
     traj_trans{jj} = [xx(:)-xx(1), yy(:)-yy(1)];
     [theta,rho] = cart2pol(traj_trans{jj}(:,1),traj_trans{jj}(:,2));
     theta = theta-(or(jj)*pi/180)-pi/2;
-    [xx_or, yy_or] = pol2cart(theta,rho);    
+    [xx_or, yy_or] = pol2cart(theta,rho);
     traj_adj{jj} = [xx_or(:) yy_or(:)];
     
     %## Traj angle (angle of vector connecting start and end pt of traj)
@@ -106,26 +106,26 @@ for jj = 2:length(swimStartFrames)-1
     else
         traj_angle(jj) = angle(c)*180/pi;
     end
-%     traj_angle(jj)  = GetTrajAngle(traj_adj);
-
+    %     traj_angle(jj)  = GetTrajAngle(traj_adj);
+    
     %## Traj speed (Mean of speed in first 3 frames or fewer; since frame rate is
     %## fixed, using dist as proxy for speed), vel, angular vel
-    nPts = min(size(traj_adj{jj},1),4);   
+    nPts = min(size(traj_adj{jj},1),4);
     blah = traj_adj{jj}(1:nPts,:);
     speed(jj) = sum(sqrt(sum((diff(blah)).^2,2)),1)/(nPts-1);
     vel(jj) = abs(blah(end,1) + blah(end,2)*1i)/(nPts-1);
     angVel(jj) = (angle(blah(end,1) + blah(end,2)*1i)*180/pi)/(nPts-1);
     if length(blah)>2
-         traj_angle_lim(jj) = angle(blah(2,1) + blah(2,2)*1i)*180/pi;
+        traj_angle_lim(jj) = angle(blah(2,1) + blah(2,2)*1i)*180/pi;
     end
-   
+    
     
     %## Plot trajectories if specified
     if trajPlot
         hold on
         plot(traj_adj{jj}(:,1),traj_adj{jj}(:,2),'.-','color',rand(1,3)), drawnow
         axis image
-%         pause(0.1)
+        %         pause(0.1)
         xlim([-inf inf])
         ylim([-inf inf])
         shg
@@ -196,7 +196,7 @@ for jj = 2:length(motFrames)
     if motFrames(jj)-motFrames(jj-1) > 1
         initInd = motFrames(jj-1);
         nextInd = motFrames(jj);
-        startInds = [startInds; initInd;nextInd]; 
+        startInds = [startInds; initInd;nextInd];
     end
 end
 startInds = unique(startInds);
@@ -251,14 +251,14 @@ end
 
 function curv = GetCurvInfo(orientation)
 if (size(orientation,1)==2) && (size(orientation,1)<size(orientation,2))
-    orientation = orientation';  
+    orientation = orientation';
 end
 toVec = @(x)[pol2cart(x*pi/180,1)];;
 curv = nan(size(orientation,1),1);
 for tt = 1:size(orientation,1)
     [x1,y1] = toVec(orientation(tt,1));
     [x2,y2] = toVec(orientation(tt,2));
-    curv(tt,1) = angle([x1 + y1*1i]*conj([x2 + y2*1i]));   
+    curv(tt,1) = angle([x1 + y1*1i]*conj([x2 + y2*1i]));
 end
 curv = -curv*180/pi;
     function vec = angleToUnitVec(angle)
@@ -285,7 +285,7 @@ R = @(x)(x + 1*(rand(size(x))-0.5));
 motionVecs = dx + dy*1i;
 A = @(z)(angle(z(2:end).*conj(z(1:end-1))))*180/pi;
 motionAngles = A(motionVecs);
-motionLengths = abs(motionVecs(2:end)); 
+motionLengths = abs(motionVecs(2:end));
 motionVecInfo = [motionAngles, motionLengths];
 end
 

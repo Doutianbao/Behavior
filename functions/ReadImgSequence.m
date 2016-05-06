@@ -7,33 +7,22 @@ function IM = ReadImgSequence(imgDir,varargin)
 % Inputs:
 % imgDir - Directory where images are stored
 % imgExt - Extension of the img, e.g., {'jpg'} ['tif'] ['png']
-<<<<<<< HEAD
 % imgNums - Vector specifying the subset of images to read from all the
 %   images in the directory. For e.g., imgNuums = [1 3 5], will only cause
 %   the images 1, 3, and 5 to be read from the image sequence
-=======
 % imgInds - A vector of indices indicating which images in the entire
 %   sequence to read
->>>>>>> b36ef4e540ed2797be7e39d88a2e3903222e4375
+
 
 imgInds = [];
 imgExt = 'jpg';
-<<<<<<< HEAD
+poolSize = 10;
 imgNums = [];
 if nargin == 2
     imgExt = varargin{1};
 elseif nargin ==3
     imgExt = varargin{1};
     imgNums = varargin{2};
-=======
-poolSize = 10;
-
-if nargin == 2
-    imgExt = varargin{1}
-elseif nargin == 3
-    imgExt = varargin{1};
-    imgInds = varargin{2};
->>>>>>> b36ef4e540ed2797be7e39d88a2e3903222e4375
 end
 disp('Scanning all image files in the dir...')
 tic
@@ -49,14 +38,8 @@ if ~isempty(imgInds)
 else
     fNames = fNames;
 end
-<<<<<<< HEAD
-fNames(remInds)=[];
-if ~isempty(imgNums)
-    fNames = fNames(imgNums);
-end
-=======
 
->>>>>>> b36ef4e540ed2797be7e39d88a2e3903222e4375
+
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
 imSize = [imgInfo.Height imgInfo.Width];
 IM = zeros(imSize(1),imSize(2),length(fNames));

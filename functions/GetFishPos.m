@@ -46,8 +46,10 @@ end
             r = round(median(r));
             c = round(median(c));
         elseif strcmpi(method,'mean')
-            r = round(mean(r));
-            c = round(mean(c));
+%             r = round(mean(r));
+%             c = round(mean(c));
+            r = round(sum(r(:).*img(maxInds))/sum(img(maxInds)));
+            c = round(sum(c(:).*img(maxInds))/sum(img(maxInds)));
         end
         
     end

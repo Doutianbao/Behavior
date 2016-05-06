@@ -23,8 +23,7 @@ toc
 disp('Processing images...')
 tic
 if size(IM,3)>=500
-%     IM_proc = ProcInParallel(IM,im,poolSize);
-    IM_proc = ProcInSerial(IM,im);
+    IM_proc = ProcInParallel(IM,im,poolSize);
 else
     IM_proc = ProcInSerial(IM,im);
 end

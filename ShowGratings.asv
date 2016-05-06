@@ -23,7 +23,7 @@ function varargout = ShowGratings(varargin)
 gDims = [600, 600]; % Grating dimensions
 F = 10; % Grating spatial frequency
 A = 0; % Grating angle in degrees
-V = 15; % Grating velocity (Inverse of pause duration before showing gratings circshifted by 1 pixel)
+V = 1; % Grating velocity in units of phase shift
 D = 10; % Duration in seconds
 gType = 'square'; % Grating type
 testMode = 0;
@@ -105,7 +105,7 @@ for f = F(:)'
             %                 title(['Frame # ' num2str(count) ', freq = ' num2str(f) ', angle = ' num2str(a) ', vel = ' num2str(v)])
             drawnow
             shg
-            pause(1/v)
+            pause(1000/v)
             end
         end
     end

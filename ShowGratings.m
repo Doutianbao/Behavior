@@ -82,6 +82,7 @@ if mod(D,1)~=0
     error('Duration must be specified as number of frames, and must be an integer!')
 end
 
+V = round(V*(gDims(1)/100));
 count = 0;
 pVec = zeros(length(F)*length(A)*length(V)*D,3);
 fh = figure;

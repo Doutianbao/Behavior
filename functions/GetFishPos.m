@@ -42,8 +42,8 @@ y = x;
 if filterFlag
     [~,flt] = gaussianbpf(IM(:,:,1),bp(1),bp(2));
 end
+dispChunk = round(size(IM,3)/50)+1;
 if strcmpi(process,'serial')
-    dispChunk = round(size(IM,3)/50)+1;
     disp('Tracking fish...')
     tic
     for jj=1:size(IM,3)
@@ -75,7 +75,10 @@ elseif strcmpi(process, 'parallel')
         end
         [r,c] = FishPosInImg(img,nPixels,method);
         x(jj) = c;
-        y(jj) = r;       
+        y(jj) = r; 
+         if mod(jj,dispChunk)==0
+            disp(['Img # ' num2str(jj)])            
+        end
     end
     fishPos = [x; y]';
 end

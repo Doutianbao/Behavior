@@ -3,13 +3,15 @@ function spotlightImg = SpotlightFish(im,varargin)
 % SpotlightFish - Returns an image where pixels outside a radius from fish
 %   head centroid are set to 0
 % spotLightImg = SpotlightFish(im)
-% radialImg = SpotlightFish(im,fishPos)
-% radialImg = RadialFish(...,radius)
+% spotLightImg = SpotlightFish(im,fishPos)
+% spotLightImg = SpotlightFish(...,radius)
 % Inputs:
 % im - Image containing fish
 % fishPos - x,y coordinates of head centroid. If not specified or [], then
 %   automatically determines fish pos
 % radius - Spotlight radius (default = 70)
+% 
+% Avinash Pujala, HHMI, 2016
 
 
 radius = 70;

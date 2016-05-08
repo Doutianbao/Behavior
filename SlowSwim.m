@@ -9,23 +9,27 @@ close all
 
 cd 'Z:\Avinash\Ablations & Behavior'
 
-readMode =  'fromImages'; 
+readMode =  'fromImages';
 % readMode = 'fromMishVid';
 
 poolSize  = 12;
 switch readMode
     case 'fromMishVid'
         fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
-        [IM, outDir] = ReadMishVid(); 
+        [IM, outDir] = ReadMishVid();
         imgInds = 1:size(IM,3);
     case 'fromImages'
         imgDir = input('Enter image dir path:  ', 's')
         imgExt = input('Enter image extension, e.g. jpg:  ','s')
         imgInds = input('Enter indices of images to read as a vector:  ');
         fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
-%         IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
-         IM = ReadImgSequence(imgDir,imgExt,imgInds);
-         outDir = fullfile(imgDir,'spont');
+        bpMessg =['Filter bandpass for finding fish pos, e.g. [15 25]. ' ...
+            'Press enter [] to skip (filtering is recommended if using collimated ' ...
+            'light during behavior): '];
+        bp = input(bpMessg);
+        %         IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
+        IM = ReadImgSequence(imgDir,imgExt,imgInds);
+        outDir = fullfile(imgDir,'spont');
 end
 
 if exist(outDir)~=7
@@ -43,8 +47,14 @@ IM_proc = ProcessImages(IM);
 break;
 
 %% Tracking the fish
-fishPos = GetFishPos_parallel(IM_proc, 100);
-% fishPos = GetFishPos(IM_proc,100);
+if ~isempty(bp)
+    fishPos = GetFishPos(IM_proc, 40,'filter',[10 25],'process','parallel');
+%     fishPos = GetFishPos(IM_proc, 40,'filter',[10 25],'process','serial');
+else
+    fishPos = GetFishPos(IM_proc, 40,'process','parallel');
+    %     fishPos = GetFishPos(IM_proc, 40,'process','serial');
+end
+
 toc
 disp('Creating mean reference frame...')
 ref = mean(IM,3);
@@ -90,8 +100,8 @@ saveOrNot = 'y';
 %         saveOrNot = input('Save the variables (y/n)?  ','s');
 tic
 if strcmpi('y',saveOrNot)
-    disp('Saving relevant variables...') 
-    savefast(fullfile(outDir,[fName, '_IM_proc.mat']),'IM_proc');    
+    disp('Saving relevant variables...')
+    savefast(fullfile(outDir,[fName, '_IM_proc.mat']),'IM_proc');
 else
     disp('Data not saved!')
 end

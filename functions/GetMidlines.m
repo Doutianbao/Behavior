@@ -24,8 +24,8 @@ function midlineInds = GetMidlines(IM,varargin)
 % 
 % Avinash Pujala, HHMI, 2016
 
-heights =  [18 16 14 10 8 8];
-dTh = 4;
+heights =  [18 16 14 10];
+dTh = 2;
 imgExt = 'jpg';
 if nargin == 1
     if ischar(IM) && isdir(IM)

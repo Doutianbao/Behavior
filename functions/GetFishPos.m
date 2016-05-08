@@ -17,6 +17,7 @@ nPixels = 30;
 method = 'mean';
 process = 'serial';
 filterFlag = 0;
+poolSize = 12;
 
 nArgs = length(varargin);
 for jj = 1:nArgs

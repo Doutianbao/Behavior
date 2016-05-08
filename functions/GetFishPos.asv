@@ -16,19 +16,17 @@ function fishPos = GetFishPos(IM,varargin)
 nPixels = 30;
 method = 'mean';
 process = 'serial';
-filterFlag = 0;
 
 nArgs = length(varargin);
 for jj = 1:nArgs
     if strcmpi(varargin{jj},'method')
         method =  varargin{jj+1};
     end
-    if strcmpi(varargin{jj},'filter')
-        bp =  varargin{jj+1};
-        filterFlag = 1;
+    if strcmpi(varargin{jj},'filter')     
+        bp =  varargin{jj+1};        
     end
-    if strcmpi(varargin{jj},'process')
-        process =  varargin{jj+1};
+     if strcmpi(varargin{jj},'process')     
+        process =  varargin{jj+1};        
     end
 end
 if nargin > 1
@@ -38,46 +36,21 @@ end
 
 x = zeros(1,size(IM,3));
 y = x;
-if filterFlag
-    [~,flt] = gaussianbpf(IM(:,:,1),bp(1),bp(2));
+dispChunk = round(size(IM,3)/50)+1;
+disp('Tracking fish...')
+tic
+for jj=1:size(IM,3)
+    img= IM(:,:,jj);
+    [r,c] = FishPosInImg(img,nPixels,method);
+    x(jj) = c;
+    y(jj) = r;
+    if mod(jj,dispChunk)==0
+        disp(['Img # ' num2str(jj)])
+        ShowFishPos(img,[r,c],jj)
+    end
 end
-if strcmpi(process,'serial')
-    dispChunk = round(size(IM,3)/50)+1;
-    disp('Tracking fish...')
-    tic
-    for jj=1:size(IM,3)
-        img= IM(:,:,jj);
-        if filterFlag
-            img = gaussianbpf(img,flt);
-        end
-        [r,c] = FishPosInImg(img,nPixels,method);
-        x(jj) = c;
-        y(jj) = r;
-        if mod(jj,dispChunk)==0
-            disp(['Img # ' num2str(jj)])
-            ShowFishPos(img,[r,c],jj)
-        end
-    end
-    fishPos = [x; y]';
-    toc
-elseif strcmpi(process, 'parallel')
-    imgFrames = 1:size(IM,3);    d
-    tic
-    disp('Tracking fish...')
-    if matlabpool('size')==0
-        matlabpool(poolSize)
-    end
-    parfor jj=imgFrames
-        img= IM(:,:,jj);
-        if filterFlag
-            img = gaussianbpf(img,flt);
-        end
-        [r,c] = FishPosInImg(img,nPixels,method);
-        x(jj) = c;
-        y(jj) = r;       
-    end
-    fishPos = [x; y]';
-end
+fishPos = [x; y]';
+toc
 
 end
 
@@ -105,3 +78,5 @@ title(['Frame # ' num2str(imgNum)])
 drawnow
 shg
 end
+
+function fishPos = ProcInSerial(IM)

@@ -44,7 +44,8 @@ break;
 
 %% Tracking the fish
 disp('Tracking fish...')
-fishPos = GetFishPos_parallel(IM_proc, 100);
+% fishPos = GetFishPos_parallel(IM_proc, 100);
+fishPos = GetFishPos(IM_proc,100);
 toc
 disp('Creating mean reference frame...')
 ref = mean(IM,3);

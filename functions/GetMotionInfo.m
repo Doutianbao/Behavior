@@ -30,7 +30,8 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 %   .traj_angle_lim - Limited traj angle computed over 1st ...
 %   .turnInfo - ?? (later)
 %   .orientInfo - ?? (later)
-
+% 
+% Avinash Pujala, HHMI, 2016
 
 trajPlot = 0; % 1 results in plotting of trajectories
 motionThr = 5;

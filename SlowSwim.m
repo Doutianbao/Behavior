@@ -25,7 +25,7 @@ switch readMode
         fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
 %         IM = ReadImgSequence_beta(imgDir,imgExt,imgInds);
          IM = ReadImgSequence(imgDir,imgExt,imgInds);
-        outDir = fullfile(imgDir,'spont');
+         outDir = fullfile(imgDir,'spont');
 end
 
 if exist(outDir)~=7
@@ -43,8 +43,8 @@ IM_proc = ProcessImages(IM);
 break;
 
 %% Tracking the fish
-disp('Tracking fish...')
 fishPos = GetFishPos_parallel(IM_proc, 100);
+% fishPos = GetFishPos(IM_proc,100);
 toc
 disp('Creating mean reference frame...')
 ref = mean(IM,3);
@@ -55,8 +55,8 @@ disp('Getting fish orientation...')
 tic
 
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
-midlineInds = GetMidline_beta(IM_proc,fishPos,[35 20]);
-% midlineInds = GetMidline_beta(IM_proc,fishPos,[35 20]);
+midlineInds = GetMidline_beta(IM_proc,fishPos,[26 20 15]);
+% midlineInds = GetMidline_beta_parallel(IM_proc,fishPos,[35 20 10]);
 
 %    orientation_corr = CorrectOrientation(orientation, 90);
 imgDims = size(IM_proc);

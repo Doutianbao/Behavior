@@ -1,7 +1,7 @@
-function midlineInds = GetMidline_beta_parallel(IM,varargin)
-% GetMidLine - Given an image series or an image dir containing an image
+function midlineInds = GetMidlines_parallel(IM,varargin)
+% GetMidLines_parallel - Given an image series or an image dir containing an image
 %   series, returns a series of indices corresponding to the midline of the
-%   the fish in each image
+%   the fish in each image (Parallel version of GetMidlines)
 % midlineInds = GetMidline(IM);
 % midlineInds = GetMidline(..., fishPos);
 % midlineInds = GetMidline(IM,fishPos,lineLens);

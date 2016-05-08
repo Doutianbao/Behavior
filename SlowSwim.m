@@ -63,12 +63,11 @@ toc
 %% Fish Orientation
 disp('Getting fish orientation...')
 tic
-
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
-midlineInds = GetMidline_beta(IM_proc,fishPos,[26 20 15]);
-% midlineInds = GetMidline_beta_parallel(IM_proc,fishPos,[35 20 10]);
 
-%    orientation_corr = CorrectOrientation(orientation, 90);
+midlineInds = GetMidlines(IM_proc,fishPos,[26 20 15]);
+% midlineInds = GetMidlines_parallel(IM_proc,fishPos,[35 20 10]);
+
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';

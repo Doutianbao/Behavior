@@ -65,8 +65,8 @@ disp('Getting fish orientation...')
 tic
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 
-% midlineInds = GetMidlines(IM_proc,fishPos,[30 20 15]);
-midlineInds = GetMidlines_parallel(IM_proc,fishPos,[35 20 10]);
+% midlineInds = GetMidlines(IM_proc,fishPos,[25 25 20]);
+midlineInds = GetMidlines_parallel(IM_proc,fishPos,[25 25 20]);
 
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
@@ -81,6 +81,9 @@ motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
 
 %% Save timeseries
 % fName = input('Enter fish name (e.g. Fish7): ','s');
+if isempty(imgInds)
+    imgInds = 1:size(IM,3);
+end
 fName_suffix = [num2str(round(imgInds(1)/60/30)) '-' num2str(round(imgInds(end)/60/30)) 'mins'];
 fName = strcat(fName_prefix,'_',fName_suffix);
 ts = datestr(now,30);

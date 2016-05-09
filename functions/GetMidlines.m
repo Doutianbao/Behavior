@@ -53,7 +53,7 @@ for imgNum = imgInds;
     img = IM(:,:,imgNum);    
     
     [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
-    
+
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
     
     PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)    
@@ -62,19 +62,154 @@ end
 end
 
 %## Helper functions
+
+function lineInds = GetML(im,startPt,varargin)
+% lineInds = GetMidline(im,startInd,prevStartPt,dTh,lineLen)
+
+dTh = 2;
+lineLen = 15;
+grad = 0.1;
+if nargin < 2
+    error('At least 2 inputs required!')
+elseif nargin ==2
+    prevStartPt = [];
+elseif nargin == 3
+    prevStartPt = varargin{1};
+elseif nargin ==4
+    prevStartPt = varargin{1};
+    dTh = varargin{2};
+elseif nargin == 5
+    prevStartPt = varargin{1};
+    dTh = varargin{2};
+    lineLen = varargin{3};
+end
+
+if isempty(dTh)
+    dTh  = 2;
+end
+
+[rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
+ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+rImg = conv2(rImg,ker,'same');
+
+if isempty(prevStartPt)
+    farInds = 1:size(indMat,1);
+else
+    lastInds = indMat(:,end);
+    [rL,cL] = ind2sub(size(im),lastInds);
+    x = cL; y = rL;
+    preVec = startPt-prevStartPt;
+    preVec = preVec(1) + preVec(2)*1i;
+    
+    postVecs = [x y] - repmat(startPt,length(x),1);
+    postVecs = postVecs(:,1) + postVecs(:,2)*1i;
+    dAngles = angle(repmat(preVec,length(x),1).*conj(postVecs)) *(180/pi);
+    farInds = find(abs(dAngles)<=130);
+end
+
+
+%## Find lines that pass through fish
+Standardize = @(x)(x-min(x))/(max(x)-min(x));
+lineGrad = grad.*(1:size(rImg,2));
+muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
+vPxls = var(rImg,[],2);
+G = @(x)((prod(x,2)).^(1/size(x,1)));
+muPxls1 = abs(G(rImg));
+backgroundInt = mean(muPxls);
+rImg2 = sort(rImg,2,'descend');
+temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
+[~, comInds] = min(temp,[],2);
+[lps,~] = GetLineProfileSpread(rImg);
+% lps2 = GetLineProfileSpread(rImg2);
+% C = CorrC(rImg2,fliplr(lineGrad));
+% nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
+% nml = muPxls(:).*lps(:).*comInds(:);
+% nml = muPxls(:).*lps(:).*muPxls1(:);
+nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
+nml = nml(farInds);
+nml = Standardize(nml);
+
+thr = 0.4;
+probInds= find(nml>thr);
+count = 0;
+while (numel(probInds)<2) && (count <10)
+    thr = thr*0.9;
+    probInds = find(nml > thr);
+    disp('Lowering threshold to find segment...')
+    count = count + 1;
+end
+if isempty(probInds)
+    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
+else
+    blahInds = farInds(probInds);
+end
+nml = nml(probInds);
+
+%## Find lines that are not contiguous blocks (i.e. islands) and eliminate
+[blockSizes,blockInds] = GetContiguousBlocks(blahInds);
+if isempty(blockSizes)
+    blockSizes = 1;
+    blockInds = 1;
+end
+blockEndInds = blockInds + blockSizes - 1;
+
+comInds = nan(size(blockSizes));
+for blk = 1:numel(blockSizes)
+    blkInds = blockInds(blk):blockEndInds(blk);
+    %     comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
+     nPts = ceil(2/dTh);
+    [~, ind] = max(nml);
+    inds = max(ind-nPts,1):min(ind+nPts,length(nml));
+    inds = inds(:); nml = nml(:);
+    if numel(inds)>=length(nml)
+         ind  = round(sum(inds.*nml(inds))/(sum(nml(inds))));      
+    end
+    comInds(blk)= blahInds(ind);
+%     comInds(blk) = blahInds(ceil(median(ind)));
+end
+
+lineInds = indMat(comInds,:)';
+
+
+    function [blockSizes, blockInds] = GetContiguousBlocks(values)
+        % Given a set of values, returns the sizes of contiguous blocks and the
+        %   block start indices
+        blockInds = 1;
+        blockSizes = [];
+        count = 1;
+        for jj = 1:length(values)-1
+            if (values(jj+1)-values(jj))==1
+                count = count+1;
+            else
+                blockSizes = [blockSizes; count];
+                count = 1;
+                blockInds =[blockInds; jj+1];
+            end
+        end
+        blockSizes = [blockSizes; count];
+    end
+    function C = CorrC(mtrx, vctr)
+        C = nan(size(mtrx,1),1);
+        for row = 1:size(mtrx,1)
+            blah = corrcoef(mtrx(row,:),vctr(:)');
+            C(row) = blah(2);
+        end
+    end
+    
+end
+
 function PlotLineInds(img,fishPos,lineInds,imgNum)
 cla
 inds = [];
 for kk = 1:length(lineInds)
     inds = [inds; lineInds{kk}(:)];
 end
-img(inds) = max(img(:));
+img(inds) = max(img(:))*1.5;
 imagesc(img),axis image
 hold on
 plot(fishPos(1),fishPos(2),'ko')
 title(num2str(imgNum))
 shg
-pause(0.1)
 end
 
 function lineInds_best = GetBestLine(img,lineInds_all,parentMap)
@@ -188,134 +323,6 @@ end
         x = c; y = r;
         sub = [x,y];
     end
-end
-
-function lineInds = GetML(im,startPt,varargin)
-% lineInds = GetMidline(im,startInd,prevStartPt,dTh,lineLen)
-
-dTh = 4;
-lineLen = 15;
-grad = 0.1;
-if nargin < 2
-    error('At least 2 inputs required!')
-elseif nargin ==2
-    prevStartPt = [];
-elseif nargin == 3
-    prevStartPt = varargin{1};
-elseif nargin ==4
-    prevStartPt = varargin{1};
-    dTh = varargin{2};
-elseif nargin == 5
-    prevStartPt = varargin{1};
-    dTh = varargin{2};
-    lineLen = varargin{3};
-end
-
-if isempty(dTh)
-    dTh  = 4;
-end
-
-[rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
-rImg = conv2(rImg,ker,'same');
-
-if isempty(prevStartPt)
-    farInds = 1:size(indMat,1);
-else
-    lastInds = indMat(:,end);
-    [rL,cL] = ind2sub(size(im),lastInds);
-    x = cL; y = rL;
-    preVec = startPt-prevStartPt;
-    preVec = preVec(1) + preVec(2)*1i;
-    
-    postVecs = [x y] - repmat(startPt,length(x),1);
-    postVecs = postVecs(:,1) + postVecs(:,2)*1i;
-    dAngles = angle(repmat(preVec,length(x),1).*conj(postVecs)) *(180/pi);
-    farInds = find(abs(dAngles)<=130);
-end
-
-
-%## Find lines that pass through fish
-Standardize = @(x)(x-min(x))/(max(x)-min(x));
-lineGrad = grad.*(1:size(rImg,2));
-muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
-vPxls = var(rImg,[],2);
-G = @(x)((prod(x,2)).^(1/size(x,1)));
-muPxls1 = abs(G(rImg));
-backgroundInt = mean(muPxls);
-rImg2 = sort(rImg,2,'descend');
-temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
-[~, comInds] = min(temp,[],2);
-[lps,~] = GetLineProfileSpread(rImg);
-% lps2 = GetLineProfileSpread(rImg2);
-% C = CorrC(rImg2,fliplr(lineGrad));
-% nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
-% nml = muPxls(:).*lps(:).*comInds(:);
-% nml = muPxls(:).*lps(:).*muPxls1(:);
-nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
-nml = nml(farInds);
-nml = Standardize(nml);
-
-thr = 0.4;
-probInds= find(nml>thr);
-count = 0;
-while (numel(probInds)<2) && (count <10)
-    thr = thr*0.9;
-    probInds = find(nml > thr);
-    disp('Lowering threshold to find segment...')
-    count = count + 1;
-end
-if isempty(probInds)
-    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
-else
-    blahInds = farInds(probInds);
-end
-nml = nml(probInds);
-
-%## Find lines that are not contiguous blocks (i.e. islands) and eliminate
-[blockSizes,blockInds] = GetContiguousBlocks(blahInds);
-if isempty(blockSizes)
-    blockSizes = 1;
-    blockInds = 1;
-end
-blockEndInds = blockInds + blockSizes - 1;
-
-comInds = nan(size(blockSizes));
-for blk = 1:numel(blockSizes)
-    blkInds = blockInds(blk):blockEndInds(blk);
-    %     comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
-    [~, ind] = max(nml);
-    comInds(blk) = blahInds(ceil(median(ind)));
-end
-
-lineInds = indMat(comInds,:)';
-
-
-    function [blockSizes, blockInds] = GetContiguousBlocks(values)
-        % Given a set of values, returns the sizes of contiguous blocks and the
-        %   block start indices
-        blockInds = 1;
-        blockSizes = [];
-        count = 1;
-        for jj = 1:length(values)-1
-            if (values(jj+1)-values(jj))==1
-                count = count+1;
-            else
-                blockSizes = [blockSizes; count];
-                count = 1;
-                blockInds =[blockInds; jj+1];
-            end
-        end
-        blockSizes = [blockSizes; count];
-    end
-    function C = CorrC(mtrx, vctr)
-        C = nan(size(mtrx,1),1);
-        for row = 1:size(mtrx,1)
-            blah = corrcoef(mtrx(row,:),vctr(:)');
-            C(row) = blah(2);
-        end
-    end
-    
 end
 
 function [lps,gof] = GetLineProfileSpread(rImg)

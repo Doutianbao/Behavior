@@ -55,6 +55,7 @@ if matlabpool('size')==0
 end
 imgInds = 1:size(IM,3);
 dispChunk = round(size(IM,3)/5)+1;
+tic
 parfor imgNum = imgInds;
     img = IM(:,:,imgNum);
 %     img = max(img(:))-img;  
@@ -68,7 +69,7 @@ parfor imgNum = imgInds;
         PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
     end
 end
-
+toc
 end
 
 %## Helper functions

@@ -111,6 +111,43 @@ if matlabpool('size')>0
     matlabpool close
 end
 
+%% Plot max-int projected fish images for tap and dark flash trls
+periPxls = 100;
+nFramesInTrl = 500;
+nTrls = size(IM_proc,3)/nFramesInTrl;
+trls.tap = 1:2:nTrls;
+trls.dark = 2:2:nTrls;
+maxImgStacks = cell(2,1);
+fldNames = fieldnames(trls);
+for stim = 1:length(fldNames)
+    N = length(trls.(fldNames{stim}));
+    maxImgStacks{stim} = zeros(2*periPxls+1,2*periPxls+1,N);
+    fh = figure('Name',fldNames{stim})   
+    nRows = 3;
+    nCols = ceil(N/3);
+    disp(['Stim: ' fldNames{stim}])
+    count = 0;
+    for trl = trls.(fldNames{stim})
+        count = count + 1;
+        disp(['Trl: ' num2str(trl)])
+        inds = (nFramesInTrl*(trl-1)+1:nFramesInTrl*trl); 
+        IM_fix = PlayFixedFish(IM_proc(:,:,inds),fishPos(inds,:),orientation(1,inds)+180, ...
+            'periPxls',periPxls,'dispBool',0);
+         maxImg = max(IM_fix,[],3);
+         maxImgStacks{stim}(:,:,count)= maxImg;
+         figure(fh)
+         subaxis(nRows,nCols,count,'SpacingHoriz',0, 'SpacingVert',0.05)
+         imagesc(imNormalize999(maxImg)), axis image, colormap(gray), axis off 
+         set(gca,'clim',[0 0.9])
+         title(num2str(trl))        
+         drawnow 
+         
+    end
+end
+saveOrNot = input('Save max img stacks (y/n)?:', 's');
+if strcmpi(saveOrNot,'y')
+    save(fullfile(outDir,'Max img stacks for different trls.m'),'maxImgStacks');
+end
 
 
 %% Turn angles during swims and histogram

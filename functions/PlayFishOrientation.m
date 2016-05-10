@@ -1,8 +1,8 @@
 function PlayFishOriention(IM,fishPos,orientation,varargin)
 % PlayFishOrientation - Plays the video of the fish along with orientation
 %   line
-% PlayFishOrientation(IM, fishPos,orientation, startFrame,endFrame,pauseDur)
-% PlayFishOrientation(IM,fishPos,midlineInds,startFrame,endFrame,pauseDur)
+% PlayFishOrientation(IM, fishPos,orientation, 'startFrame',startFrame,'endFrame',endFrame,'pauseDur',pauseDur,'curv',curv)
+%
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image
 %   width, T = # of time points
@@ -10,35 +10,30 @@ function PlayFishOriention(IM,fishPos,orientation,varargin)
 %   of the fish in the images
 % orientation - Orientation of the fish in degrees
 % midlineInds - Indices of the fish midline in the image
-% startFrame - Frame from which to display video
-% endFrame - Last Frame of video display
+% frameInds - Indices of frames to display
 % pauseDur - Duration of pause between subsequent frames
+% plotCurv - 0 or 1, 0 results in plotting of curvatures
+
 
 lineLength = 25;
 skipFrames = 1;
+plotCurv = 0;
+frameInds  = [];
 
-if nargin == 3
-    startFrame = 1;
-    endFrame = size(IM,3);
-    pauseDur = 0.1;
-    
-elseif nargin == 4;
-    startFrame = varargin{1};
-    endFrame = startFrame + size(IM,3);
-    pauseDur = 0.1;
-    
-elseif nargin == 5;
-    startFrame = varargin{1};
-    endFrame = varargin{2};
-    pauseDur = 0.1;
-    
-elseif nargin == 6
-    startFrame = varargin{1};
-    endFrame = varargin{2};
-    pauseDur = varargin{3};
-    
-elseif nargin >6
-    error('Too many inputs!')
+if nargin < 3
+    error('3 inputs required!')
+end
+for jj = 1:numel(varargin)
+    if strcmpi(varargin{jj},'frameInds')
+        frameInds = varargin{jj+1};
+    end
+    if strcmpi(varargin{jj},'pauseDur')
+        pauseDur = varargin{jj+1};
+    end
+    if strcmpi(varargin{jj},'plotCurv')
+        plotCurv = varargin{jj+1};
+        curv = GetCurvInfo(orientation);
+    end
 end
 
 
@@ -46,24 +41,56 @@ if iscell(orientation) % Implies this input is midlineInds, rather than orientat
     imgDims = size(IM);
     [orientation, origins] = GetFishOrientationFromMidlineInds(orientation,imgDims(1:2),'s');
 end
+orientation = orientation';
 
 figure('Name', 'Fish Tracking')
 tic
-% rho = 0:lineLength-1;
-for imgNum = startFrame:skipFrames:endFrame
-    cla
-    imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray), drawnow
-    hold on 
-    [x,y] = Or2LnInds(orientation(imgNum),lineLength);
+if isempty(frameInds)
+    frameInds = 1:size(IM,3);
+end
+for imgNum = frameInds(:)'
+    [x,y] = Or2LnInds(orientation(imgNum,1),lineLength);
     x = x + fishPos(imgNum,1);
-    y = y + fishPos(imgNum,2);    
-    
-    plot(x,y,'color','r','linewidth',2),drawnow
-    title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(orientation(imgNum))) '^o ' ...
-        ', Frame Rate: ' num2str((round(10*((imgNum+1-startFrame)/toc)))/10) ' fps'])
-    shg
-    pause(pauseDur)
-    % pause()    
+    y = y + fishPos(imgNum,2);
+    if plotCurv
+        subplot(2,1,1)
+        cla
+        imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
+        hold on
+        plot(x,y,'color','r','linewidth',2),drawnow
+        eTime = toc;
+        title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(orientation(imgNum))) '^o ' ...
+            ', Frame rate = ' num2str(round(1/eTime)) ' fps'])
+        subplot(2,1,2)
+        if imgNum >= 100
+            cla
+            set(gca,'color','k'), hold on
+            plot(imgNum-99:imgNum,curv(imgNum-99:imgNum,1),'r')
+            plot(imgNum-99:imgNum,curv(imgNum-99:imgNum,2),'g')
+            xlim([imgNum-99 imgNum])          
+            %             plot([imgNum, imgNum ],[-20,20],'c--')
+        else
+            cla
+            set(gca,'color','k'), hold on
+            plot(curv(1:imgNum,1),'r')
+            plot(curv(1:imgNum,2),'g')
+            xlim([0 imgNum])            
+        end
+        ylim([-120 120])
+        shg
+        pause(pauseDur)
+    else
+        cla
+        imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
+        hold on
+        plot(x,y,'color','r','linewidth',2),drawnow
+        eTime = toc;
+        title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(orientation(imgNum))) '^o ' ...
+            ', Frame rate = ' num2str(round(1/eTime)) ' fps'])
+        shg
+        pause(pauseDur)
+    end
+    tic
 end
 
 end
@@ -76,3 +103,16 @@ thetas = repmat(theta,1,lineLength);
 [x,y] = pol2cart(thetas,rho);
 end
 
+function curv = GetCurvInfo(orientation)
+if (size(orientation,1)<size(orientation,2))
+    orientation = orientation';
+end
+curv = nan(size(orientation,1),size(orientation,2)-1);
+toVec = @(x)pol2cart(x*pi/180,ones(size(x)));
+for seg = 1:size(curv,2)
+    [x1,y1] = toVec(orientation(:,seg));
+    [x2,y2] = toVec(orientation(:,seg+1));
+    curv(:,seg)= angle((x1(:) + y1(:)*1i).* conj(x2(:) + y2(:)*1i));
+end
+curv = -curv*180/pi;
+end

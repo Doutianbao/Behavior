@@ -19,6 +19,7 @@ function varargout= PlayFixedFish(IM,fishPos,varargin)
 % periPxls - # of pixels row and column pixels to keep on either side of
 %   the fish when cropping image. periPxls = [], results in displaying of
 %   full image
+% dispBool - 0 or 1; If 0, does not display images, if 1 does.
 % Outputs:
 % IM_adj = Adjusted IM, where each frame is transformed to account for
 %   position and orientation of fish
@@ -27,6 +28,7 @@ frameInds = 1:size(IM,3);
 pauseDur = 0.1;
 orientation = [];
 periPxls = [];
+dispBool = 1;
 if nargin < 2
     error('Minimum 2 inputs not entered!')
 elseif nargin > 2
@@ -46,6 +48,9 @@ for jj = 1:length(varargin)
     if strcmpi(varargin{jj},'periPxls')
         periPxls = round(varargin{jj+1});
     end
+    if strcmpi(varargin{jj},'dispBool')
+        dispBool = round(varargin{jj+1});
+    end
 end
 
 rMid = floor(size(IM,1)/2);
@@ -60,11 +65,16 @@ end
 
 if nargout > 0
     I_adj = zeros(size(IM,1),size(IM,2),numel(frameInds));
+    if ~isempty(periPxls)
+        I_adj = I_adj(rInds(1):rInds(2),cInds(1):cInds(2),:);
+    end
 end
-figure('Name','Fixed Fish Movie')
+if dispBool
+fh = figure('Name','Fixed Fish Movie');
+end
 count = 0;
-for imgNum = frameInds(:)'
-    cla
+cLim = [min(IM(:)) max(IM(:))*0.9];
+for imgNum = frameInds(:)'    
     im = IM(:,:,imgNum);
     if isempty(fishPos)
         im_trans = im;
@@ -81,10 +91,13 @@ for imgNum = frameInds(:)'
     %     im_trans_rot(im_trans_rot<-0.5) = nan;
     count = count + 1;
     im_trans_rot = im_trans_rot(rInds(1):rInds(2),cInds(1):cInds(2));
-    imagesc(im_trans_rot), axis image, drawnow, colormap(gray)
-    shg
-    title(num2str(imgNum))
-    pause(pauseDur)
+    if dispBool
+        cla
+        imagesc(im_trans_rot), axis image, colormap(jet), set(gca,'clim',cLim), drawnow
+        shg
+        title(num2str(imgNum))
+        pause(pauseDur)   
+    end
     if nargout > 0
         I_adj(:,:,count) = im_trans_rot;
     end

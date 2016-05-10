@@ -254,17 +254,14 @@ function curv = GetCurvInfo(orientation)
 if (size(orientation,1)==2) && (size(orientation,1)<size(orientation,2))
     orientation = orientation';
 end
-toVec = @(x)[pol2cart(x*pi/180,1)];;
-curv = nan(size(orientation,1),1);
-for tt = 1:size(orientation,1)
-    [x1,y1] = toVec(orientation(tt,1));
-    [x2,y2] = toVec(orientation(tt,2));
-    curv(tt,1) = angle([x1 + y1*1i]*conj([x2 + y2*1i]));
+curv = nan(size(orientation,1),size(orientation,2)-1);
+toVec = @(x)pol2cart(x*pi/180,ones(size(x)));
+for seg = 1:size(curv,2)
+    [x1,y1] = toVec(orientation(:,seg));
+    [x2,y2] = toVec(orientation(:,seg+1));
+    curv(:,seg)= angle((x1(:) + y1(:)*1i).* conj(x2(:) + y2(:)*1i));   
 end
 curv = -curv*180/pi;
-    function vec = angleToUnitVec(angle)
-        [x,y] = pol2cart(angle*pi/180, 1);
-    end
 end
 
 function traj_angle = GetTrajAngle(traj_adj)

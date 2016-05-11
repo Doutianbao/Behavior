@@ -25,6 +25,8 @@ function varargout = GetFishOrientationFromMidlineInds(midlineInds,imgDims, proc
 % origins - Coordinates in image space of the starting point of the
 %   orientation line;  N x 2 x S, where N = # of images, S = # of line
 %   segments
+% 
+% Avinash Pujala, Koyama lab/HHMI, 2016
 
 if numel(imgDims)>2
     error('Image dimensions must be a 2 element vector')

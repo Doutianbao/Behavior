@@ -35,6 +35,8 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 
 trajPlot = 0; % 1 results in plotting of trajectories
 motionThr = 5;
+lpf = 50; % Low pass filter for timeseries (only if sampling rate greater than 100 fps)
+frameRate = 500;
 
 if nargin ==4
     motionThr = varargin{1};
@@ -68,9 +70,21 @@ dOr = conv2((-DiffOrientation(orientation(:,1)))*180/pi, ker(:),'same');
 %## Head curvature info
 if size(orientation,2)>1
     curv = GetCurvInfo(orientation);
+    curv = [curv, sum(curv)]
+    curv = fix(curv/5)*5;
+    if frameRate < 100
+        for jj = 1:size(curv,2)
+            curv(:,jj) = conv2(curv(:,1),ker(:),'same');
+        end
+    else
+         for jj = 1:size(curv,2)
+            curv(:,jj) = chebfilt(curv(:,1),1/500,lpf,'low');
+        end
+    end
 else
     curv = NaN;
 end
+
 
 %## Motion vec info
 motionVecInfo = GetMotionVecInfo(fishPos);
@@ -254,22 +268,14 @@ function curv = GetCurvInfo(orientation)
 if (size(orientation,1)==2) && (size(orientation,1)<size(orientation,2))
     orientation = orientation';
 end
-curv = zeros(size(orientation,1),size(orientation,2)-1);
-toVec = @(x)[pol2cart(x*pi/180,ones(size(x)))];
+curv = nan(size(orientation,1),size(orientation,2)-1);
+toVec = @(x)pol2cart(x*pi/180,ones(size(x)));
 for seg = 1:size(curv,2)
-    [x,y] = toVec(orientation(:,seg));
-end
-
-curv = nan(size(orientation,1),1);
-for tt = 1:size(orientation,1)
-    [x1,y1] = toVec(orientation(tt,1));
-    [x2,y2] = toVec(orientation(tt,2));
-    curv(tt,1) = angle(x1 + y1*1i*conj(x2 + y2*1i));
+    [x1,y1] = toVec(orientation(:,seg));
+    [x2,y2] = toVec(orientation(:,seg+1));
+    curv(:,seg)= angle((x1(:) + y1(:)*1i).* conj(x2(:) + y2(:)*1i));   
 end
 curv = -curv*180/pi;
-    function vec = angleToUnitVec(angle)
-        [x,y] = pol2cart(angle*pi/180, 1);
-    end
 end
 
 function traj_angle = GetTrajAngle(traj_adj)

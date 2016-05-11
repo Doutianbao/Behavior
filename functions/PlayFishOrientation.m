@@ -33,6 +33,12 @@ for jj = 1:numel(varargin)
     if strcmpi(varargin{jj},'plotCurv')
         plotCurv = varargin{jj+1};
         curv = GetCurvInfo(orientation);
+        curv = fix(curv/8)*8;
+        ker = gausswin(6); ker = ker/sum(ker);
+        for kk = 1:size(curv,2)
+            curv(:,kk) = conv2(curv(:,kk),ker(:),'same');
+        end
+   
     end
 end
 
@@ -67,6 +73,8 @@ for imgNum = frameInds(:)'
             set(gca,'color','k'), hold on
             plot(imgNum-99:imgNum,curv(imgNum-99:imgNum,1),'r')
             plot(imgNum-99:imgNum,curv(imgNum-99:imgNum,2),'g')
+            plot(imgNum-99:imgNum,ones(1,100)*10,'w:')
+            plot(imgNum-99:imgNum,ones(1,100)*-10,'w:')
             xlim([imgNum-99 imgNum])          
             %             plot([imgNum, imgNum ],[-20,20],'c--')
         else
@@ -74,9 +82,13 @@ for imgNum = frameInds(:)'
             set(gca,'color','k'), hold on
             plot(curv(1:imgNum,1),'r')
             plot(curv(1:imgNum,2),'g')
+            plot(ones(imgNum,1)*10,'w:')
+            plot(ones(imgNum,1)*-10,'w:')
             xlim([0 imgNum])            
         end
         ylim([-120 120])
+        lh = legend('head','tail');
+        set(lh,'color','w','location','NorthWest')
         shg
         pause(pauseDur)
     else

@@ -35,6 +35,8 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 
 trajPlot = 0; % 1 results in plotting of trajectories
 motionThr = 5;
+lpf = 50; % Low pass filter for timeseries (only if sampling rate greater than 100 fps)
+frameRate = 500;
 
 if nargin ==4
     motionThr = varargin{1};
@@ -68,9 +70,21 @@ dOr = conv2((-DiffOrientation(orientation(:,1)))*180/pi, ker(:),'same');
 %## Head curvature info
 if size(orientation,2)>1
     curv = GetCurvInfo(orientation);
+    curv = [curv, sum(curv,2)];
+    curv = fix(curv/8)*8;
+    if frameRate < 100
+        for jj = 1:size(curv,2)
+            curv(:,jj) = conv2(curv(:,jj),ker(:),'same');
+        end
+    else
+         for jj = 1:size(curv,2)
+            curv(:,jj) = chebfilt(curv(:,jj),1/500,lpf,'low');
+        end
+    end
 else
     curv = NaN;
 end
+
 
 %## Motion vec info
 motionVecInfo = GetMotionVecInfo(fishPos);

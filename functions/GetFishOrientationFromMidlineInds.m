@@ -34,14 +34,13 @@ if nargin ==2
     processMethod = input('How were the midline indices generated? (p/s), p = parallel, s = serial: ','s');
 end
 
-tic
+
 if strcmpi(processMethod,'s')
     [orientation, origins] = OrFromSerialInds(midlineInds,imgDims);
 else
     [orientation, origins] = OrFromParallelInds(midlineINds,imgDims);
 end
 
-toc
 varargout{1}= orientation;
 varargout{2} = origins;
 

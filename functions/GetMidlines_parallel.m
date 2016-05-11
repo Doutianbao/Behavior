@@ -57,13 +57,12 @@ imgInds = 1:size(IM,3);
 dispChunk = round(size(IM,3)/5)+1;
 parfor imgNum = imgInds;
     img = IM(:,:,imgNum);
-%     img = max(img(:))-img;  
 
-    [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights); 
+    [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);   
+  
+    midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);   
     
-    midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
-    
-    if mod(imgNum,dispChunk)
+    if mod(imgNum,dispChunk)==0
         disp(imgNum)
         PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
     end
@@ -98,7 +97,7 @@ if isempty(dTh)
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-ker = gausswin(round(dTh))*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+ker = gausswin(round(dTh)*4)*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
 rImg = conv2(rImg,ker,'same');
 
 if isempty(prevStartPt)
@@ -119,34 +118,25 @@ end
 
 %## Find lines that pass through fish
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
-lineGrad = grad.*(1:size(rImg,2));
-muPxls = mean(rImg.*repmat(lineGrad,size(rImg,1),1),2);
-vPxls = var(rImg,[],2);
-G = @(x)((prod(x,2)).^(1/size(x,1)));
-muPxls1 = abs(G(rImg));
-backgroundInt = mean(muPxls);
-rImg2 = sort(rImg,2,'descend');
-temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
-[~, comInds] = min(temp,[],2);
-[lps,~] = GetLineProfileSpread(rImg);
-% lps2 = GetLineProfileSpread(rImg2);
-% C = CorrC(rImg2,fliplr(lineGrad));
-% nml = muPxls(:).*lps(:).*muPxls1(:).*comInds(:);
-% nml = muPxls(:).*lps(:).*comInds(:);
-% nml = muPxls(:).*lps(:).*muPxls1(:);
-nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
+nml = rImg2nml(rImg);
 nml = nml(farInds);
 nml = Standardize(nml);
 
 thr = 0.4;
-probInds= find(nml>thr);
+[maxtab,~] = peakdet(nml,thr);
 count = 0;
-while (numel(probInds)<2) && (count <10)
+while (isempty(maxtab)) && (count <10)
     thr = thr*0.9;
-    probInds = find(nml > thr);
+    [maxtab,~] = peakdet(nml,thr);
     disp('Lowering threshold to find segment...')
     count = count + 1;
 end
+nPts = round((4/dTh));
+probInds = GetPeriPts(maxtab(:,1),nPts);
+probInds(probInds<0) = 1;
+probInds(probInds > length(nml))= length(nml);
+probInds(probInds==0)=[];
+
 if isempty(probInds)
     blahInds = farInds; % At the moment, not really dealing with a segment not being found!
 else
@@ -165,20 +155,12 @@ blockEndInds = blockInds + blockSizes - 1;
 comInds = nan(size(blockSizes));
 for blk = 1:numel(blockSizes)
     blkInds = blockInds(blk):blockEndInds(blk);
-    %     comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
-     nPts = ceil(2/dTh);
-    [~, ind] = max(nml);
-    inds = max(ind-nPts,1):min(ind+nPts,length(nml));
-    inds = inds(:); nml = nml(:);
-    if numel(inds)>=length(nml)
-         ind  = round(sum(inds.*nml(inds))/(sum(nml(inds))));      
+    if sum(nml(blkInds))~=0
+        comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
     end
-    comInds(blk)= blahInds(ind);
-%     comInds(blk) = blahInds(ceil(median(ind)));
 end
-
+comInds(isnan(comInds))=[];
 lineInds = indMat(comInds,:)';
-
 
     function [blockSizes, blockInds] = GetContiguousBlocks(values)
         % Given a set of values, returns the sizes of contiguous blocks and the
@@ -197,14 +179,25 @@ lineInds = indMat(comInds,:)';
         end
         blockSizes = [blockSizes; count];
     end
-    function C = CorrC(mtrx, vctr)
-        C = nan(size(mtrx,1),1);
-        for row = 1:size(mtrx,1)
-            blah = corrcoef(mtrx(row,:),vctr(:)');
-            C(row) = blah(2);
+
+    function periPts = GetPeriPts(pts,nPeri)
+        periPts =[];
+        for jj = 1:length(pts)
+            blah = pts(jj)-nPeri:pts(jj)+nPeri;
+            periPts = [periPts;blah(:)];
         end
     end
-    
+
+end
+
+function nml = rImg2nml(rImg)
+Standardize = @(x)(x-min(x))/(max(x)-min(x));
+muPxls = mean(rImg,2);
+rImg2 = sort(rImg,2,'descend');
+temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
+[~, comInds] = min(temp,[],2);
+[lps,~] = GetLineProfileSpread(rImg);
+nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
 end
 
 function PlotLineInds(img,fishPos,lineInds,imgNum)
@@ -229,19 +222,19 @@ end
 lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
     strInd = parentMap{end}(ln);
-    blah = [];   
+    blah = [];
     for seg = 1:length(parentMap)
         blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
-    end 
+    end
     lineInds(:,ln) = blah;
 end
 
-lineGrad = 0.2*(1:sum(heights));
 lineProfiles = img(lineInds);
-muPxls = mean(lineProfiles,1);
-[lps,gof] = GetLineProfileSpread(lineProfiles');
-lps = lps';
-nml = muPxls.*lps.*gof;
+% muPxls = mean(lineProfiles,1);
+% [lps,gof] = GetLineProfileSpread(lineProfiles');
+% lps = lps';
+% nml = muPxls.*lps.*gof;
+nml = rImg2nml(lineProfiles');
 [~,ind] = max(nml);
 ind = ind(1);
 lineInds = lineInds(:,ind);
@@ -274,8 +267,8 @@ for seg = 2:numel(lineLens)
     for ln = 1:size(blah,2)
         lInds = blah(:,ln);
         startPt = IndToSub(im,lInds(end));
-        prevStartPt = IndToSub(im,lInds(1));   
-        temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));     
+        prevStartPt = IndToSub(im,lInds(1));
+        temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
         for kk = 1:size(temp,2)
             count = count + 1;
             parentMap{seg}{count} = [parentMap{seg-1}{ln} num2str(kk)];
@@ -286,47 +279,6 @@ for seg = 2:numel(lineLens)
     numMap{seg}  = cumsum(numMap{seg});
     lineInds_all{seg} = lineInds_sub;
 end
-% [optMat,indMat] = BestLineInds(lineInds_all,numMap);
-
-    function [optMat,indMat] = BestLineInds(lineInds_all,numMap)
-        optMat = cell(size(lineInds_all));
-        indMat = optMat;
-        for ln1 = 1:numel(lineInds_all(1))
-            l1 = im(lineInds_all{1}(:,ln1));
-            %             lineGrad = 0.2*(1:size(l1,1));
-            lineGrad = ones(size(l1));
-            muPxls = repmat(lineGrad(:),1,size(l1,2));
-            muPxls = mean(muPxls.*l1,1);
-            lps = GetLineProfileSpread(l1');
-            nml = muPxls(:).*lps(:);
-            optMat{1}(ln1) = nml;
-        end
-        for seg = 2:numel(lineInds_all)
-            lineAppends = [];
-            count = 0;
-            for ln1 = 1:numel(numMap(seg-1))
-                if ln1 ==1
-                    inds = 1:numMap{seg}(ln1);
-                else
-                    inds = numMap{seg}(ln1-1)+1:numMap{seg}(ln1);
-                end
-                count = count + 1;
-                for ln2 = inds(:)'
-                    %                     l1 = im(lineInds_all{seg-1}(:,ln1));
-                    l2  = im(lineInds_all{seg}(:,ln2));
-                    line_conc = [l1;l2];
-                    lineGrad = 0.2*(1:size(line_conc,1));
-                    muPxls = repmat(lineGrad(:),1,size(line_conc,2));
-                    muPxls = mean(muPxls.*line_conc,1);
-                    lps = GetLineProfileSpread(line_conc');
-                    nml = muPxls(:).*lps(:);
-                    optMat{seg}(ln2) = nml;
-                end
-                [~,indMat{seg}(ln1)] = max(optMat{seg});
-            end
-        end
-        [~,indMat{1}] = max(optMat{1});
-    end
     function sub  = IndToSub(im,ind)
         [r,c] = ind2sub(size(im),ind);
         x = c; y = r;
@@ -349,4 +301,3 @@ Y_est = X*B;
 gof = sqrt(sum((Y_est-Y).^2,1))./var(Y,[],1);
 
 end
-

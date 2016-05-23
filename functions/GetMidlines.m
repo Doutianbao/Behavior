@@ -123,6 +123,13 @@ while (isempty(maxtab)) && (count <10)
     disp('Lowering threshold to find segment...')
     count = count + 1;
 end
+if isempty(maxtab)
+    maxtab(:,1) = find(nml > thr);
+end
+if isempty(maxtab)
+    maxtab(:,1) = max(nml);
+end
+
 nPts = round((4/dTh));
 probInds = GetPeriPts(maxtab(:,1),nPts);
 probInds(probInds<0) = 1;

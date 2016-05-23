@@ -62,7 +62,7 @@ if strcmpi(process,'serial')
     fishPos = [x; y]';
     toc
 elseif strcmpi(process, 'parallel')
-    imgFrames = 1:size(IM,3);    d
+    imgFrames = 1:size(IM,3);    
     tic
     disp('Tracking fish...')
     if matlabpool('size')==0

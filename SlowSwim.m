@@ -7,7 +7,7 @@
 clear all
 close all
 
-cd 'Z:\Avinash\Ablations & Behavior'
+cd 'V:\Avinash\Behavior Rig\Ventral RS\May 2016\20160511'
 
 readMode =  'fromImages';
 % readMode = 'fromMishVid';
@@ -44,12 +44,11 @@ end
 disp('Processing images...')
 IM_proc = ProcessImages(IM);
 
-break;
 
 %% Tracking the fish
 if ~isempty(bp)
-    fishPos = GetFishPos(IM_proc, 40,'filter',[10 25],'process','parallel');
-%     fishPos = GetFishPos(IM_proc, 40,'filter',[10 25],'process','serial');
+    fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','parallel');
+%     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
 else
     fishPos = GetFishPos(IM_proc, 40,'process','parallel');
     %     fishPos = GetFishPos(IM_proc, 40,'process','serial');
@@ -64,7 +63,7 @@ toc
 disp('Getting fish orientation...')
 tic
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
-% midlineInds = GetMidlines(IM_proc,fishPos,[25 25 20]);
+% midlineInds = GetMidlines(IM_proc,fishPos,[32 20 20]);
 midlineInds = GetMidlines_parallel(IM_proc,fishPos,[32 20 20]);
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');

@@ -14,7 +14,7 @@ frames = [];
 fishpos = [];
 fishorientation = [];
 pausedur = 0;
-pathlength = 30;
+pathlength = 500;
 
 nArgs = nargin;
 args = varargin;

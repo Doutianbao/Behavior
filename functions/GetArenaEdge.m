@@ -1,3 +1,4 @@
+
 function varargout = GetArenaEdge(varargin)
 %GetArenaEdge Given a reference image, returns the indices of a circle
 %   that has been fit to the edge of the fish arena
@@ -26,7 +27,7 @@ Standardize = @(x)(x-min(x(:)))/(max(x(:))-min(x(:)));
 [G,~]  = imgradient(refImg);
 G = Standardize(G);
 E = zeros(size(G));
-E(G>0.4)=1;
+E(G>0.8)=1;
 [eX,eY] = find(E);
 
 edgeInds = FitCircle([eX, eY],nIter);

@@ -53,8 +53,11 @@ for imgNum = imgInds;
     img = IM(:,:,imgNum);
     
     [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
-    
-    midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
+    try
+        midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
+    catch
+        midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
+    end
     
     PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
 end
@@ -137,11 +140,12 @@ probInds(probInds > length(nml))= length(nml);
 probInds(probInds==0)=[];
 
 if isempty(probInds)
-    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
+    blahInds = farInds; % At the moment, not really dealing with a segment not being found!    
 else
     blahInds = farInds(probInds);
+    nml = nml(probInds);
 end
-nml = nml(probInds);
+
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
@@ -153,10 +157,10 @@ blockEndInds = blockInds + blockSizes - 1;
 
 comInds = nan(size(blockSizes));
 for blk = 1:numel(blockSizes)
-    blkInds = blockInds(blk):blockEndInds(blk);
+    blkInds = blockInds(blk):blockEndInds(blk);  
     if sum(nml(blkInds))~=0
         comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
-    end
+    end 
 end
 comInds(isnan(comInds))=[];
 lineInds = indMat(comInds,:)';
@@ -196,7 +200,14 @@ rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 [lps,~] = GetLineProfileSpread(rImg);
-nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
+if sum(lps)==0 && sum(comInds)~=0
+     nml = Standardize(muPxls(:)).*Standardize(comInds(:)); 
+elseif sum(lps)==0 && sum(comInds)==0
+    nml = Standardize(muPxls(:));
+else   
+    nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
+end
+
 end
 
 function PlotLineInds(img,fishPos,lineInds,imgNum)
@@ -222,8 +233,12 @@ lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
     strInd = parentMap{end}(ln);
     blah = [];
-    for seg = 1:length(parentMap)
-        blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
+    for seg = 1:length(parentMap)        
+            segInd = str2num(strInd{1}(seg));
+            if segInd ==0
+                segInd = 1; % This is a hack for now! Need to replace with proper implementation later (20160523)
+            end
+            blah  = [blah; lineInds_all{seg}(:,segInd)];      
     end
     lineInds(:,ln) = blah;
 end

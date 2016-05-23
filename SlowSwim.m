@@ -64,7 +64,7 @@ disp('Getting fish orientation...')
 tic
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 % midlineInds = GetMidlines(IM_proc,fishPos,[32 20 20]);
-midlineInds = GetMidlines_parallel(IM_proc,fishPos,[32 20 20]);
+midlineInds = GetMidlines_parallel(IM_proc,fishPos,[31 21 20]);
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';

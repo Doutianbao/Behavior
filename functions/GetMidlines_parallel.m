@@ -145,11 +145,11 @@ probInds(probInds > length(nml))= length(nml);
 probInds(probInds==0)=[];
 
 if isempty(probInds)
-    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
+    blahInds = farInds; % At the moment, not really dealing with a segment not being found!    
 else
     blahInds = farInds(probInds);
+    nml = nml(probInds);
 end
-nml = nml(probInds);
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
@@ -204,7 +204,14 @@ rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 [lps,~] = GetLineProfileSpread(rImg);
-nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
+if sum(lps)==0 && sum(comInds)~=0
+     nml = Standardize(muPxls(:)).*Standardize(comInds(:)); 
+elseif sum(lps)==0 && sum(comInds)==0
+    nml = Standardize(muPxls(:));
+else   
+    nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
+end
+
 end
 
 function PlotLineInds(img,fishPos,lineInds,imgNum)
@@ -230,8 +237,12 @@ lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
     strInd = parentMap{end}(ln);
     blah = [];
-    for seg = 1:length(parentMap)
-        blah  = [blah; lineInds_all{seg}(:,str2num(strInd{1}(seg)))];
+    for seg = 1:length(parentMap)        
+            segInd = str2num(strInd{1}(seg));
+            if segInd ==0
+                segInd = 1; % This is a hack for now! Need to replace with proper implementation later (20160523)
+            end
+            blah  = [blah; lineInds_all{seg}(:,segInd)];      
     end
     lineInds(:,ln) = blah;
 end

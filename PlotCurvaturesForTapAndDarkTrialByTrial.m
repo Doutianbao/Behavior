@@ -4,7 +4,7 @@ nFramesInTrl = 750;
 preStimPer = 0.1; % In seconds
 firstTapTrl = 1;
 yOff = [220 100];
-seg = 2; % [1 - head, 2 = tail, 3 - combined]
+seg = 3; % [1 - head, 2 = tail, 3 - combined]
 
 %% Trializing 
 curv = motionInfo.curv;

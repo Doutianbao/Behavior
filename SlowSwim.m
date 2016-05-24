@@ -112,7 +112,7 @@ end
 
 %% Plot max-int projected fish images for tap and dark flash trls
 periPxls = 100;
-nFramesInTrl = 500;
+nFramesInTrl = 750;
 nTrls = size(IM_proc,3)/nFramesInTrl;
 trls.tap = 1:2:nTrls;
 trls.dark = 2:2:nTrls;

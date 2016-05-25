@@ -71,7 +71,7 @@ dOr = conv2((-DiffOrientation(orientation(:,1)))*180/pi, ker(:),'same');
 if size(orientation,2)>1
     curv = GetCurvInfo(orientation);
     curv = [curv, sum(curv,2)];
-    curv = fix(curv/8)*8;
+%     curv = fix(curv/8)*8;
     if frameRate < 100
         for jj = 1:size(curv,2)
             curv(:,jj) = conv2(curv(:,jj),ker(:),'same');
@@ -84,6 +84,7 @@ if size(orientation,2)>1
 else
     curv = NaN;
 end
+
 
 
 %## Motion vec info

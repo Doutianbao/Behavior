@@ -1,7 +1,8 @@
 function PlayFishOriention(IM,fishPos,orientation,varargin)
 % PlayFishOrientation - Plays the video of the fish along with orientation
 %   line
-% PlayFishOrientation(IM, fishPos,orientation, 'startFrame',startFrame,'endFrame',endFrame,'pauseDur',pauseDur,'curv',curv)
+% PlayFishOrientation(IM, fishPos,orientation, 'startFrame',startFrame,...
+%           'endFrame',endFrame,'pauseDur',pauseDur,'curv',curv, 'periPxls',periPxls)
 %
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image

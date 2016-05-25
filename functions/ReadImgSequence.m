@@ -17,12 +17,12 @@ function IM = ReadImgSequence(imgDir,varargin)
 imgInds = [];
 imgExt = 'jpg';
 poolSize = 10;
-imgNums = [];
+
 if nargin == 2
     imgExt = varargin{1};
 elseif nargin ==3
     imgExt = varargin{1};
-    imgNums = varargin{2};
+    imgInds = varargin{2};
 end
 disp('Scanning all image files in the dir...')
 tic
@@ -35,8 +35,6 @@ end
 
 if ~isempty(imgInds)
     fNames = fNames(imgInds);
-else
-    fNames = fNames;
 end
 
 

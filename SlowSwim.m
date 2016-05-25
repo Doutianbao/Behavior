@@ -12,7 +12,7 @@ cd 'V:\Avinash\Behavior Rig\Ventral RS\May 2016\20160511'
 readMode =  'fromImages';
 % readMode = 'fromMishVid';
 
-poolSize  = 12;
+poolSize  = 10;
 switch readMode
     case 'fromMishVid'
         fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
@@ -43,7 +43,7 @@ if matlabpool('size')==0
 end
 disp('Processing images...')
 IM_proc = ProcessImages(IM);
-
+toc
 
 %% Tracking the fish
 if ~isempty(bp)

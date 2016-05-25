@@ -1,31 +1,29 @@
 %% Inputs for fast
-fps = 500; % (30 for slow, 500 for fast)
-nFramesInTrl = 750; %(1800 for slow, 750 for fast)
-preStimPer = 0.1; % In seconds (1.5 for slow)
-mult = 1; % Determines whether preStimPer gets added or subtracted while plotting rasters (-1 for slow)
-nTrls = size(fishPos,1)/nFramesInTrl;
-tapTrls = 1:2:nTrls;
-flashTrls = 2:2:nTrls;
+% fps = 500; % (30 for slow, 500 for fast)
+% nFramesInTrl = 750; %(1800 for slow, 750 for fast)
+% preStimPer = 0.1; % In seconds (1.5 for slow)
+% mult = 1; % Determines whether preStimPer gets added or subtracted while plotting rasters (-1 for slow)
+% firstTapTrl = 1;
+% yOff = [220 200];
+% seg = 3; % [1 - head, 2 = tail, 3 - combined]
+% motionThr = 4;
+% peakDetThr = 0.2; 
+
+%% Inputs for slow
+fps = 30; % (30 for slow, 500 for fast)
+nFramesInTrl = 1800; %(1800/3600 for slow, 750 for fast)
+preStimPer = 1.5; % In seconds (1.5 for slow)
+mult = -1; % Determines whether preStimPer gets added or subtracted while plotting rasters (-1 for slow)
+tapTrls = [1:2:30];
+flashTrls = [2:2:30];
 yOff = [220 200];
 seg = 3; % [1 - head, 2 = tail, 3 - combined]
 motionThr = 4;
 peakDetThr = 0.2; 
 
-%% Inputs for slow
-% fps = 30; % (30 for slow, 500 for fast)
-% nFramesInTrl = 1800; %(1800/3600 for slow, 750 for fast)
-% preStimPer = 1.5; % In seconds (1.5 for slow)
-% mult = -1; % Determines whether preStimPer gets added or subtracted while plotting rasters (-1 for slow)
-% nTrls = size(fishPos,1)/nFramesInTrl;
-% tapTrls = 1:1:nTrls;
-% flashTrls = 1:nTrls;
-% yOff = [220 200];
-% seg = 3; % [1 - head, 2 = tail, 3 - combined]
-% motionThr = 4;
-% peakDetThr = 0.1; 
-
 %% Getting motion info
 imgDims = [size(ref), size(fishPos,1)];
+nTrls = size(fishPos,1)/nFramesInTrl;
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
 time = (0:size(fishPos,1)-1)/fps;
 dS_all = motionInfo.dS_all;
@@ -53,12 +51,15 @@ disp([num2str(sum(swim.bool)) ' swim episodes detected'])
 
 
 %% Trializing curvatures
+
 if mod(nTrls,1) ~= 0
     error('Check value of nFramesInTrl, does not evenly divide into total # of frames')
 else
     disp([num2str(nTrls) ' trials detected'])
 end
+
 curv_trl = permute(reshape(curv,[nFramesInTrl nTrls, size(curv,2)]),[1 3 2]);
+
 time_trl = ((0:nFramesInTrl-1)/fps)-0.1;
 
 %% Separating tap and dark flash trls
@@ -68,8 +69,8 @@ curv_trl = cat(4,tap,dark);
 
 %% Finding left and right curve peaks
 if fps > 100
-    blah = zscore(chebfilt(curv(:,3),1/fps,15,'high'));
-    [lPks,rPks] = peakdet(blah,1);
+blah = zscore(chebfilt(curv(:,3),1/fps,15,'high'));
+[lPks,rPks] = peakdet(blah,1);
 end
 
 %% Plotting tap and dark trl curvatures

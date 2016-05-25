@@ -62,24 +62,31 @@ if strcmpi(process,'serial')
     fishPos = [x; y]';
     toc
 elseif strcmpi(process, 'parallel')
-    imgFrames = 1:size(IM,3);    
+    imgFrames = 1:size(IM,3);
     tic
     disp('Tracking fish...')
     if matlabpool('size')==0
         matlabpool(poolSize)
     end
-    parfor jj=imgFrames
-        img= IM(:,:,jj);
-        if filterFlag
-            img = gaussianbpf(img,flt);
+    if filterFlag
+        parfor jj=imgFrames
+            img= gaussianbpf(IM(:,:,jj),flt);
+            [r,c] = FishPosInImg(img,nPixels,method);
+            x(jj) = c;
+            y(jj) = r;
+            if mod(jj,dispChunk)==0
+                disp(['Img # ' num2str(jj)])
+            end
         end
-        [r,c] = FishPosInImg(img,nPixels,method);
-        x(jj) = c;
-        y(jj) = r; 
-         if mod(jj,dispChunk)==0
-            disp(['Img # ' num2str(jj)])            
+    else
+        parfor jj=imgFrames
+            img= IM(:,:,jj);
+            [r,c] = FishPosInImg(img,nPixels,method);
+            x(jj) = c;
+            y(jj) = r;  
+            disp(['Img # ' num2str(jj)])
         end
-    end
+    end    
     fishPos = [x; y]';
 end
 

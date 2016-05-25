@@ -3,8 +3,7 @@ function varargout= PlayFixedFish(IM,fishPos,varargin)
 %   and orientation
 % PlayFixedFish(IM,fishPos)
 % PlayFixedFish(IM,fishPos,orientation)
-% PlayFixedFish(...,frameInds,pauseDur)
-% PlayFixedFish(...,'frameInds',frameInds,'pauseDur',pauseDur,'zoom',zoom)
+% PlayFixedFish(...,'frameInds',frameInds,'pauseDur',pauseDur,'periPxls',periPxls,'midlineInds',midlineInds)
 % IM_adj = PlayFixedFish(...)
 % Inputs:
 % IM - Image stack of size M x N x T, where M = image height, N = image
@@ -20,6 +19,7 @@ function varargout= PlayFixedFish(IM,fishPos,varargin)
 %   the fish when cropping image. periPxls = [], results in displaying of
 %   full image
 % dispBool - 0 or 1; If 0, does not display images, if 1 does.
+% midlineInds - Not yet implemented
 % Outputs:
 % IM_adj = Adjusted IM, where each frame is transformed to account for
 %   position and orientation of fish
@@ -29,6 +29,7 @@ pauseDur = 0.1;
 orientation = [];
 periPxls = [];
 dispBool = 1;
+midlineInds =[];
 if nargin < 2
     error('Minimum 2 inputs not entered!')
 elseif nargin > 2
@@ -50,6 +51,9 @@ for jj = 1:length(varargin)
     end
     if strcmpi(varargin{jj},'dispBool')
         dispBool = round(varargin{jj+1});
+    end
+    if strcmpi(varargin{jj},'midlineInds')
+        midlineInds = varargin{jj+1};
     end
 end
 
@@ -74,8 +78,10 @@ fh = figure('Name','Fixed Fish Movie');
 end
 count = 0;
 cLim = [min(IM(:)) max(IM(:))*0.9];
+imgDims = size(IM);
+imgDims = imgDims(1:2);
 for imgNum = frameInds(:)'    
-    im = IM(:,:,imgNum);
+    im = IM(:,:,imgNum);    
     if isempty(fishPos)
         im_trans = im;
     else
@@ -92,8 +98,18 @@ for imgNum = frameInds(:)'
     count = count + 1;
     im_trans_rot = im_trans_rot(rInds(1):rInds(2),cInds(1):cInds(2));
     if dispBool
-        cla
-        imagesc(im_trans_rot), axis image, colormap(jet), set(gca,'clim',cLim), drawnow
+        cla        
+        if ~isempty(midlineInds) % Not yet implemented
+            imagesc(im_trans_rot), axis image, colormap(gray), set(gca,'clim',cLim)
+            hold on
+           [x,y] = ind2sub([imgDims(1), imgDims(2)],midlineInds{imgNum}{1});
+           x = x + rShift;
+           y = y + cShift;
+           plot(y,x,'color','m');
+        else
+            imagesc(im_trans_rot), axis image, colormap(jet), set(gca,'clim',cLim)
+        end
+        drawnow
         shg
         title(num2str(imgNum))
         pause(pauseDur)   

@@ -15,12 +15,11 @@ function PlayFishOriention(IM,fishPos,orientation,varargin)
 % pauseDur - Duration of pause between subsequent frames
 % plotCurv - 0 or 1, 0 results in plotting of curvatures
 
-
 lineLength = 25;
 skipFrames = 1;
 plotCurv = 0;
 frameInds  = [];
-
+midlineInds = [];
 if nargin < 3
     error('3 inputs required!')
 end
@@ -30,6 +29,9 @@ for jj = 1:numel(varargin)
     end
     if strcmpi(varargin{jj},'pauseDur')
         pauseDur = varargin{jj+1};
+    end
+    if strcmpi(varargin{jj},'midlineInds')
+        midlineInds = varargin{jj+1};
     end
     if strcmpi(varargin{jj},'plotCurv')
         plotCurv = varargin{jj+1};
@@ -54,6 +56,10 @@ figure('Name', 'Fish Tracking')
 tic
 if isempty(frameInds)
     frameInds = 1:size(IM,3);
+end
+imgDims =[size(IM,1), size(IM,2)];
+if ~isempty(midlineInds)
+    clrs = jet(length(midlineInds{1}));
 end
 for imgNum = frameInds(:)'
     [x,y] = Or2LnInds(orientation(imgNum,1),lineLength);
@@ -96,7 +102,15 @@ for imgNum = frameInds(:)'
         cla
         imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
         hold on
-        plot(x,y,'color','r','linewidth',2),drawnow
+        if ~isempty(midlineInds)
+            for line = 1:length(midlineInds{imgNum})
+            [y,x] = ind2sub(imgDims,midlineInds{imgNum}{line});
+            plot(x,y,'color',clrs(line,:),'linewidth',2)          
+            end
+        else
+            plot(x,y,'color','r','linewidth',2)
+        end
+        drawnow
         eTime = toc;
         title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(orientation(imgNum))) '^o ' ...
             ', Frame rate = ' num2str(round(1/eTime)) ' fps'])

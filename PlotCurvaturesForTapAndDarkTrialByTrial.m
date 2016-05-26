@@ -11,10 +11,10 @@ seg = 3; % [1 - head, 2 = tail, 3 - combined]
 motionThr = 4;
 peakDetThr = 0.2; 
 
-%% Inputs for slow
+% %% Inputs for slow
 % fps = 30; % (30 for slow, 500 for fast)
 % nFramesInTrl = 1800; %(1800/3600 for slow, 750 for fast)
-% preStimPer = 1.5; % In seconds (1.5 for slow)
+% preStimPer = 0.6; % In seconds (1.5 for slow)
 % mult = -1; % Determines whether preStimPer gets added or subtracted while plotting rasters (-1 for slow)
 % nTrls = size(fishPos,1)/nFramesInTrl;
 % tapTrls = 1:1:nTrls;
@@ -249,6 +249,17 @@ if fps >=100
     shg
 end
 
-
+%% Plot swim activity based on displacement
+time = (0:size(fishPos,1)-1)/fps;
+blah = dS_all;
+blah(trlFrames)=0;
+blah = chebfilt(blah,1/fps,10,'low');
+blah(abs(blah)<=1.5)=0;
+blah(blah<0)=0;
+plot(time,blah,'g')
+hold on
+stem(time(trlFrames),ones(size(trlFrames))*60,'r','marker','none')
+set(gca,'color','k')
+shg
 
 

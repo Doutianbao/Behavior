@@ -107,7 +107,7 @@ for imgNum = frameInds(:)'
            y = y + cShift;
            plot(y,x,'color','m');
         else
-            imagesc(im_trans_rot), axis image, colormap(jet), set(gca,'clim',cLim)
+            imagesc(im_trans_rot), axis image, colormap(gray), set(gca,'clim',cLim)
         end
         drawnow
         shg

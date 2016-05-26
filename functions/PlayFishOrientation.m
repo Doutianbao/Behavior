@@ -14,12 +14,14 @@ function PlayFishOriention(IM,fishPos,orientation,varargin)
 % frameInds - Indices of frames to display
 % pauseDur - Duration of pause between subsequent frames
 % plotCurv - 0 or 1, 0 results in plotting of curvatures
+% saveDir - Directory to save images to
 
 lineLength = 25;
 skipFrames = 1;
 plotCurv = 0;
 frameInds  = [];
 midlineInds = [];
+saveDir = [];
 if nargin < 3
     error('3 inputs required!')
 end
@@ -32,6 +34,9 @@ for jj = 1:numel(varargin)
     end
     if strcmpi(varargin{jj},'midlineInds')
         midlineInds = varargin{jj+1};
+    end
+    if strcmpi(varargin{jj},'saveDir')
+        saveDir = varargin{jj+1};
     end
     if strcmpi(varargin{jj},'plotCurv')
         plotCurv = varargin{jj+1};
@@ -106,9 +111,15 @@ for imgNum = frameInds(:)'
             for line = 1:length(midlineInds{imgNum})
             [y,x] = ind2sub(imgDims,midlineInds{imgNum}{line});
             plot(x,y,'color',clrs(line,:),'linewidth',2)          
-            end
+            end            
         else
             plot(x,y,'color','r','linewidth',2)
+        end   
+        axis off
+        if ~isempty(saveDir)            
+            suffix = sprintf('%0.5d',imgNum);
+            fName = ['Img_' suffix];
+            print(fullfile(saveDir,fName),'-dpng')
         end
         drawnow
         eTime = toc;

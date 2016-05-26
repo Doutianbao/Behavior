@@ -37,7 +37,6 @@ if ~isempty(imgInds)
     fNames = fNames(imgInds);
 end
 
-
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
 imSize = [imgInfo.Height imgInfo.Width];
 IM = zeros(imSize(1),imSize(2),length(fNames));

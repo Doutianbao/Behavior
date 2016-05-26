@@ -36,6 +36,7 @@ if exist(outDir)~=7
     mkdir(outDir)
 end
 
+
 %% Processing images
 tic
 if matlabpool('size')==0

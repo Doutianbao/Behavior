@@ -4,7 +4,7 @@ function varargout = GetArenaEdge(varargin)
 %   that has been fit to the edge of the fish arena
 % edgeInds = GetArenaEdge(refImg)
 % edgeInds = GetArenaEdge(refImg,'nIter', nIter)
-% edgeInds = GetArenaEdge(refImg,nIter,'detThr', detThr);
+% edgeInds = GetArenaEdge(refImg,nIter,'detThr', detThr,'tol',tol,'plotBool',plotBool);
 % Inputs:
 % refImg - Reference image in which to find the arena edge (usually a single image that is the mean
 %   of all the images in the image stack)
@@ -24,7 +24,7 @@ function varargout = GetArenaEdge(varargin)
 
 detThr = 0.8;
 nIter = 10;
-tol = 0.25;
+tol = 0.05;
 plotBool = 1;
 
 for jj = 2:numel(varargin)
@@ -84,7 +84,7 @@ function varargout = FitCircle(cInds,varargin)
 % Avinash Pujala, Koyamalab/HHMI, 2016
 
 
-tol = 0.25; % Tolerance for percentage error improvement between one iteration and the next
+tol = 0.05; % Tolerance for percentage error improvement between one iteration and the next
 shift = [mean(cInds(:,1)), mean(cInds(:,2))];
 shift_orig = shift;
 x = cInds(:,1)-shift(1);
@@ -106,9 +106,12 @@ for iter = 1:nIter
     error = sqrt(sum((rho-rho_fit).^2))/numel(rho);
     disp(['Iter# ' num2str(iter) ', Error = ' num2str(error*100) '%'])
     [x_fit,y_fit] = pol2cart(theta,rho_fit);
-    if iter > 1 && ((error_prev-error)*100) < tol
+    
+    if iter > 1 &&  ((error_prev-error)/error_orig) < tol/100       
         disp(['Error within tolerance of ' num2str(tol) ' %, quitting!'])
         break
+    else
+        error_orig = error;
     end
     offset = [mean(x)-mean(x_fit), mean(y)-mean(y_fit)];
     shift = shift + offset;

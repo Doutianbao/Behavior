@@ -68,7 +68,6 @@ tic
 midlineInds = GetMidlines_parallel(IM_proc,fishPos,[31 21 20]);
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
-orientation = orientation';
 orientation_backup = orientation;
 toc
 
@@ -85,11 +84,17 @@ end
 fName_suffix = [num2str(round(imgInds(1)/60/30)) '-' num2str(round(imgInds(end)/60/30)) 'mins'];
 fName = strcat(fName_prefix,'_',fName_suffix);
 ts = datestr(now,30);
-save(fullfile(outDir,[fName, '_orientation_' ts '.mat']),'orientation');
-save(fullfile(outDir,[fName, '_imgDims_'  ts '.mat']),'imgDims')
-save(fullfile(outDir,[fName, '_midlineInds_' ts '.mat']),'midlineInds');
-save(fullfile(outDir,[fName, '_ref_' ts '.mat']),'ref');
-save(fullfile(outDir,[fName, '_tracexy_' ts '.mat']),'fishPos');
+procData = matfile(fullfile(outDir,['procData_' ts '.mat']),'Writable',true);
+procData.fishPos = fishPos;
+procData.orientation = orientation;
+procData.midlineInds = midlineInds;
+procData.ref = ref;
+
+% save(fullfile(outDir,[fName, '_orientation_' ts '.mat']),'orientation');
+% % save(fullfile(outDir,[fName, '_imgDims_'  ts '.mat']),'imgDims')
+% save(fullfile(outDir,[fName, '_midlineInds_' ts '.mat']),'midlineInds');
+% save(fullfile(outDir,[fName, '_ref_' ts '.mat']),'ref');
+% save(fullfile(outDir,[fName, '_tracexy_' ts '.mat']),'fishPos');
 % save(fullfile(outDir,[fName '_motionInfo_' ts '.mat']),'motionInfo');
 disp(['Saved orientation, imgDims ,midlineInds, ref, tracexy at ' outDir])
 
@@ -101,7 +106,8 @@ saveOrNot = 'y';
 tic
 if strcmpi('y',saveOrNot)
     disp('Saving relevant variables...')
-    savefast(fullfile(outDir,[fName, '_IM_proc.mat']),'IM_proc');
+%     savefast(fullfile(outDir,[fName, '_IM_proc.mat']),'IM_proc');
+    procData.IM_proc = IM_proc;
 else
     disp('Data not saved!')
 end

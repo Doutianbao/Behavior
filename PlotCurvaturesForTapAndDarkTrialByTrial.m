@@ -50,6 +50,13 @@ swim.bool(swim.inds)= 1;
 disp([num2str(sum(swim.bool)) ' swim episodes detected'])
 
 
+%% Playing with dS_all
+r = 4;
+N = 100;
+expwin = @(N,r)exp(-r*linspace(0,1,N));
+expKer = expwin(10,r); expKer = expKer/sum(expKer);
+
+
 %% Trializing some variables
 if mod(nTrls,1) ~= 0
     error('Check value of nFramesInTrl, does not evenly divide into total # of frames')

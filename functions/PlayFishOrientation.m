@@ -22,6 +22,7 @@ plotCurv = 0;
 frameInds  = [];
 midlineInds = [];
 saveDir = [];
+pauseDur =0;
 if nargin < 3
     error('3 inputs required!')
 end

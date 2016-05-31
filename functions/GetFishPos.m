@@ -11,27 +11,32 @@ function fishPos = GetFishPos(IM,varargin)
 % 'method' - Centroid detection method: {'median'}, ['mean']
 % 'filter' - Bandpass values, e.g., [15 25];
 % 'process' - 'serial' or 'parallel'; Process in serial or parallel
+% 'pxlLim' - Limit of how many pixels the fish can traverse in the imaging
+%   setup. This is can be used to reduce false positives.
+%
 % Avinash Pujala, HHMI, 2016
 
 nPixels = 30;
 method = 'mean';
 process = 'serial';
 filterFlag = 0;
-poolSize = 12;
+poolSize = 10;
 
 nArgs = length(varargin);
 for jj = 1:nArgs
-    if strcmpi(varargin{jj},'method')
-        method =  varargin{jj+1};
-    end
-    if strcmpi(varargin{jj},'filter')
-        bp =  varargin{jj+1};
-        filterFlag = 1;
-    end
-    if strcmpi(varargin{jj},'process')
-        process =  varargin{jj+1};
+    switch lower(varargin{jj})
+        case 'method'
+            method =  varargin{jj+1};
+        case 'filter'
+            bp =  varargin{jj+1};
+            filterFlag = 1;
+        case 'process'
+            process =  varargin{jj+1};
+        case lower('pxlLim')
+            pxlLim = varargin{jj+1};
     end
 end
+
 if nargin > 1
     nPixels = varargin{1};
 end
@@ -83,10 +88,10 @@ elseif strcmpi(process, 'parallel')
             img= IM(:,:,jj);
             [r,c] = FishPosInImg(img,nPixels,method);
             x(jj) = c;
-            y(jj) = r;  
+            y(jj) = r;
             disp(['Img # ' num2str(jj)])
         end
-    end    
+    end
     fishPos = [x; y]';
 end
 

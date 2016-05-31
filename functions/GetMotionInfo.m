@@ -78,7 +78,7 @@ if size(orientation,2)>1
         end
     else
          for jj = 1:size(curv,2)
-            curv(:,jj) = chebfilt(curv(:,jj),1/500,lpf,'low');
+            curv(:,jj) = chebfilt(curv(:,jj),1/500,lpf,'low');            
         end
     end
 else

@@ -50,6 +50,13 @@ swim.bool(swim.inds)= 1;
 disp([num2str(sum(swim.bool)) ' swim episodes detected'])
 
 
+%% Playing with dS_all
+r = 4;
+N = 100;
+expwin = @(N,r)exp(-r*linspace(0,1,N));
+expKer = expwin(10,r); expKer = expKer/sum(expKer);
+
+
 %% Trializing some variables
 if mod(nTrls,1) ~= 0
     error('Check value of nFramesInTrl, does not evenly divide into total # of frames')
@@ -59,14 +66,18 @@ end
 SortTrls = @(var,nFramesInTrl,nTrls) permute(reshape(var,[nFramesInTrl,nTrls,size(var,2)]),[1 3 2]);
 SepTapAndFlashTrls = @(var,tapTrls,flashTrls) cat(4, var(:,:,tapTrls), var(:,:,flashTrls)); 
 curv_trl = SepTapAndFlashTrls(SortTrls(curv,nFramesInTrl,nTrls),tapTrls,flashTrls);
+if size(orientation,1) < size(orientation,2)
+    orientation = orientation';
+    disp('Transposed orientation!')
+end
 or_trl =  SepTapAndFlashTrls(SortTrls(orientation,nFramesInTrl,nTrls),tapTrls,flashTrls);
 time_trl = ((0:nFramesInTrl-1)/fps);
 
 
 %% Separating tap and dark flash trls
-tap = curv_trl(:,:,tapTrls);
-dark = curv_trl(:,:,flashTrls);
-curv_trl = cat(4,tap,dark);
+% tap = curv_trl(:,:,tapTrls);
+% dark = curv_trl(:,:,flashTrls);
+% curv_trl = cat(4,tap,dark);
 
 %% Finding left and right curve peaks
 if fps > 100

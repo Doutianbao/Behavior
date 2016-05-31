@@ -20,7 +20,7 @@ function varargout = RadialFish(im,varargin)
 % lineThetas - Thetas by which line is rotated
 
 
-dTh = 5;
+dTh = 4;
 lineLen = 70;
 if nargin ==1
     fishPos = GetFishPos(im,30);

@@ -1,4 +1,4 @@
-function midlineInds = GetMidlines(IM,varargin)
+function midlineInds = GetMidlines_cl(IM,varargin)
 % GetMidLines - Given an image series or an image dir containing an image
 %   series, returns a series of indices corresponding to the midline of the
 %   the fish in each image
@@ -25,7 +25,7 @@ function midlineInds = GetMidlines(IM,varargin)
 % Avinash Pujala, HHMI, 2016
 
 heights =  [18 16 14 10];
-dTh = 2;
+dTh = 1;
 imgExt = 'jpg';
 if nargin == 1
     if ischar(IM) && isdir(IM)
@@ -90,8 +90,8 @@ if isempty(dTh)
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-ker = gausswin(round(dTh)*4)*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
-rImg = conv2(rImg,ker,'same');
+% ker = gausswin(round(dTh)*4)*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+% rImg = conv2(rImg,ker,'same');
 
 if isempty(prevStartPt)
     farInds = 1:size(indMat,1);
@@ -109,14 +109,13 @@ else
 end
 
 
-%## Find lines that pass through fish
-Standardize = @(x)(x-min(x))/(max(x)-min(x));
+%## Find candidate midlines
 nml = rImg2nml(rImg);
 nml = nml(farInds);
-nml = Standardize(nml);
 
-thr = 0.4;
+thr = 0.1;
 [maxtab,~] = peakdet(nml,thr);
+
 count = 0;
 while (isempty(maxtab)) && (count <10)
     thr = thr*0.9;
@@ -124,18 +123,18 @@ while (isempty(maxtab)) && (count <10)
     disp('Lowering threshold to find segment...')
     count = count + 1;
 end
+remInds = find(maxtab(:,2) < 0.5*max(maxtab(:,2)));
+maxtab(remInds,:)=[];
 if isempty(maxtab)
-    maxtab(:,1) = find(nml > thr);
-end
-if isempty(maxtab)
-    maxtab(:,1) = max(nml);
+    [~, maxtab(:,1)] = max(nml);
 end
 
-nPts = round((4/dTh));
+nPts = round((2/dTh));
 probInds = GetPeriPts(maxtab(:,1),nPts);
 probInds(probInds<0) = 1;
 probInds(probInds > length(nml))= length(nml);
-probInds(probInds==0)=[];
+probInds(probInds==0)=1;
+probInds = unique(probInds);
 
 if isempty(probInds)
     blahInds = farInds; % At the moment, not really dealing with a segment not being found!    
@@ -197,15 +196,12 @@ muPxls = mean(rImg,2);
 rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
-[lps,~] = GetLineProfileSpread(rImg);
-if sum(lps)==0 && sum(comInds)~=0
-     nml = Standardize(muPxls(:)).*Standardize(comInds(:)); 
-elseif sum(lps)==0 && sum(comInds)==0
-    nml = Standardize(muPxls(:));
-else   
-    nml = Standardize(muPxls(:)).*Standardize(lps(:)).*Standardize(comInds(:));
-end
-
+ker = gausswin(10);
+nml = muPxls(:).*comInds(:);
+N = length(nml);
+nml = [nml(:); nml(:); nml(:)];
+nml = Standardize(conv2(nml, ker(:),'same'));
+nml = nml(N+1:2*N);
 end
 
 function PlotLineInds(img,fishPos,lineInds,imgNum)

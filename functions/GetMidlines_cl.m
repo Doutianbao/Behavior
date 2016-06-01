@@ -55,7 +55,7 @@ for imgNum = imgInds;
     [lineInds_all,parentMap] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
     
     midlineInds{imgNum}= GetBestLine(img,lineInds_all,parentMap);
-   
+    
     
     PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
 end
@@ -111,10 +111,9 @@ end
 
 %## Find candidate midlines
 nml = rImg2nml(rImg);
-nml = nml(farInds);
-
 thr = 0.1;
-[maxtab,~] = peakdet(nml,thr);
+maxtab(:,1) = GetPks(nml,'peakThr',thr,'thrType','abs','polarity',1);
+maxtab(:,2) = nml(maxtab(:,1));
 
 count = 0;
 while (isempty(maxtab)) && (count <10)
@@ -129,7 +128,11 @@ if isempty(maxtab)
 end
 remInds = find(maxtab(:,2) < 0.5*max(maxtab(:,2)));
 maxtab(remInds,:)=[];
-
+nml = nml(farInds);
+[~,comInds] = intersect(maxtab(:,1),farInds);
+if ~isempty(comInds)
+    maxtab = maxtab(comInds,:);
+end
 nPts = round((2/dTh));
 probInds = GetPeriPts(maxtab(:,1),nPts);
 probInds(probInds<0) = 1;
@@ -138,7 +141,7 @@ probInds(probInds==0)=1;
 probInds = unique(probInds);
 
 if isempty(probInds)
-    blahInds = farInds; % At the moment, not really dealing with a segment not being found!    
+    blahInds = farInds; % At the moment, not really dealing with a segment not being found!
 else
     blahInds = farInds(probInds);
     nml = nml(probInds);
@@ -155,10 +158,10 @@ blockEndInds = blockInds + blockSizes - 1;
 
 comInds = nan(size(blockSizes));
 for blk = 1:numel(blockSizes)
-    blkInds = blockInds(blk):blockEndInds(blk);  
+    blkInds = blockInds(blk):blockEndInds(blk);
     if sum(nml(blkInds))~=0
         comInds(blk) = blahInds(round(sum(blkInds(:).*nml(blkInds))/sum(nml(blkInds))));
-    end 
+    end
 end
 comInds(isnan(comInds))=[];
 lineInds = indMat(comInds,:)';
@@ -267,12 +270,12 @@ lineInds = nan(sum(heights),length(parentMap{end}));
 for ln = 1:size(lineInds,2)
     strInd = parentMap{end}(ln);
     blah = [];
-    for seg = 1:length(parentMap)        
-            segInd = str2num(strInd{1}(seg));
-            if segInd ==0
-                segInd = 1; % This is a hack for now! Need to replace with proper implementation later (20160523)
-            end
-            blah  = [blah; lineInds_all{seg}(:,segInd)];      
+    for seg = 1:length(parentMap)
+        segInd = str2num(strInd{1}(seg));
+        if segInd ==0
+            segInd = 1; % This is a hack for now! Need to replace with proper implementation later (20160523)
+        end
+        blah  = [blah; lineInds_all{seg}(:,segInd)];
     end
     lineInds(:,ln) = blah;
 end

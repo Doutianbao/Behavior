@@ -123,11 +123,12 @@ while (isempty(maxtab)) && (count <10)
     disp('Lowering threshold to find segment...')
     count = count + 1;
 end
+
+if isempty(maxtab)
+    [maxtab(:,2), maxtab(:,1)] = max(nml);
+end
 remInds = find(maxtab(:,2) < 0.5*max(maxtab(:,2)));
 maxtab(remInds,:)=[];
-if isempty(maxtab)
-    [~, maxtab(:,1)] = max(nml);
-end
 
 nPts = round((2/dTh));
 probInds = GetPeriPts(maxtab(:,1),nPts);
@@ -190,6 +191,45 @@ lineInds = indMat(comInds,:)';
 
 end
 
+
+function [lineInds_all,parentMap] = GetMLs(im,fishPos,dTh,lineLens)
+startPt = fishPos;
+prevStartPt  =[];
+lineInds_all = cell(numel(lineLens),1);
+numMap = lineInds_all;
+parentMap = numMap;
+lineInds_all{1} = GetML(im,startPt,prevStartPt, dTh, lineLens(1));
+numMap{1} = size(lineInds_all{1},2);
+for kk = 1:size(lineInds_all{1},2);
+    parentMap{1}{kk} = num2str(kk);
+end
+for seg = 2:numel(lineLens)
+    blah = lineInds_all{seg-1};
+    lineInds_sub =[];
+    numMap{seg}=[];
+    count = 0;
+    for ln = 1:size(blah,2)
+        lInds = blah(:,ln);
+        startPt = IndToSub(im,lInds(end));
+        prevStartPt = IndToSub(im,lInds(1));
+        temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
+        for kk = 1:size(temp,2)
+            count = count + 1;
+            parentMap{seg}{count} = [parentMap{seg-1}{ln} num2str(kk)];
+        end
+        numMap{seg} = [numMap{seg}, size(temp,2)];
+        lineInds_sub = [lineInds_sub, temp];
+    end
+    numMap{seg}  = cumsum(numMap{seg});
+    lineInds_all{seg} = lineInds_sub;
+end
+    function sub  = IndToSub(im,ind)
+        [r,c] = ind2sub(size(im),ind);
+        x = c; y = r;
+        sub = [x,y];
+    end
+end
+
 function nml = rImg2nml(rImg)
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
 muPxls = mean(rImg,2);
@@ -197,7 +237,7 @@ rImg2 = sort(rImg,2,'descend');
 temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 ker = gausswin(10);
-nml = muPxls(:).*comInds(:);
+nml = Standardize(muPxls(:)).*Standardize(comInds(:)); % Standardization before multiplication is important so as no to convert valleys with negative values into peaks
 N = length(nml);
 nml = [nml(:); nml(:); nml(:)];
 nml = Standardize(conv2(nml, ker(:),'same'));
@@ -254,44 +294,6 @@ for seg = 2:numel(heights)
     segInds = startInd:+ startInd + heights(seg)-1;
     lineInds_best{seg} = lineInds(segInds);
 end
-end
-
-function [lineInds_all,parentMap] = GetMLs(im,fishPos,dTh,lineLens)
-startPt = fishPos;
-prevStartPt  =[];
-lineInds_all = cell(numel(lineLens),1);
-numMap = lineInds_all;
-parentMap = numMap;
-lineInds_all{1} = GetML(im,startPt,prevStartPt, dTh, lineLens(1));
-numMap{1} = size(lineInds_all{1},2);
-for kk = 1:size(lineInds_all{1},2);
-    parentMap{1}{kk} = num2str(kk);
-end
-for seg = 2:numel(lineLens)
-    blah = lineInds_all{seg-1};
-    lineInds_sub =[];
-    numMap{seg}=[];
-    count = 0;
-    for ln = 1:size(blah,2)
-        lInds = blah(:,ln);
-        startPt = IndToSub(im,lInds(end));
-        prevStartPt = IndToSub(im,lInds(1));
-        temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
-        for kk = 1:size(temp,2)
-            count = count + 1;
-            parentMap{seg}{count} = [parentMap{seg-1}{ln} num2str(kk)];
-        end
-        numMap{seg} = [numMap{seg}, size(temp,2)];
-        lineInds_sub = [lineInds_sub, temp];
-    end
-    numMap{seg}  = cumsum(numMap{seg});
-    lineInds_all{seg} = lineInds_sub;
-end
-    function sub  = IndToSub(im,ind)
-        [r,c] = ind2sub(size(im),ind);
-        x = c; y = r;
-        sub = [x,y];
-    end
 end
 
 function [lps,gof] = GetLineProfileSpread(rImg)

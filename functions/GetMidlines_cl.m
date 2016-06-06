@@ -73,13 +73,15 @@ end
 
 for imgNum = imgInds;
     img = IM(:,:,imgNum);
-    img(extraArenaInds) = minInt;
+    img(extraArenaInds) = minInt;    
     
-  
-    [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
- 
+    [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);   
     
-    midlineInds{imgNum} = GetBestLine(img,lineMat,heights);    
+    if size(lineMat,2)>1
+        a = 1;
+    end
+    
+    [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);    
     
     PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
 end
@@ -248,6 +250,13 @@ for seg = 2:numel(lineLens)
 %             blah(lineInds{seg}{count}) = max(im(:)); % For debugging only           
         end
     end
+    blah = cell2mat(lineInds{seg});
+    if size(blah,2)>1        
+         bestLine = GetBestLine_sub(im,blah);        
+    else
+        bestLine = blah;
+    end
+    lineInds{seg} = {bestLine};
 end
 lineMat = cell2mat(lineInds{end});
 
@@ -286,7 +295,20 @@ title(num2str(imgNum))
 shg
 end
 
-function midlines = GetBestLine(img,lineMat,heights)
+function lineMat = GetBestLine_sub(img,lineMat)
+lineProfiles = img(lineMat);
+% muPxls = mean(lineProfiles,1);
+% [lps,gof] = GetLineProfileSpread(lineProfiles');
+% lps = lps';
+% nml = muPxls.*lps.*gof;
+
+nml = rImg2nml(lineProfiles');
+[~,ind] = max(nml);
+ind = ind(1);
+lineMat = lineMat(:,ind);
+end
+
+function [midlines, lineMat] = GetBestLine(img,lineMat,heights)
 lineProfiles = img(lineMat);
 % muPxls = mean(lineProfiles,1);
 % [lps,gof] = GetLineProfileSpread(lineProfiles');

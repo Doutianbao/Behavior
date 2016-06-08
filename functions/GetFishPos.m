@@ -24,16 +24,18 @@ poolSize = 10;
 
 nArgs = length(varargin);
 for jj = 1:nArgs
-    switch lower(varargin{jj})
-        case 'method'
-            method =  varargin{jj+1};
-        case 'filter'
-            bp =  varargin{jj+1};
-            filterFlag = 1;
-        case 'process'
-            process =  varargin{jj+1};
-        case lower('pxlLim')
-            pxlLim = varargin{jj+1};
+    if isstr(varargin{jj})
+        switch lower(varargin{jj})
+            case 'method'
+                method =  varargin{jj+1};
+            case 'filter'
+                bp =  varargin{jj+1};
+                filterFlag = 1;
+            case 'process'
+                process =  varargin{jj+1};
+            case lower('pxlLim')
+                pxlLim = varargin{jj+1};
+        end
     end
 end
 

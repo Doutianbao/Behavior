@@ -40,9 +40,8 @@ end
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
 imSize = [imgInfo.Height imgInfo.Width];
 IM = zeros(imSize(1),imSize(2),length(fNames));
-% IM = MappedTensor(imSize(1),imSize(2),length(fNames));
-disp(['Reading all .' imgExt ' images from dir...'])
 
+disp(['Reading all .' imgExt ' images from dir...'])
 if matlabpool('size')==0
     matlabpool(poolSize)
 end

@@ -11,24 +11,23 @@ function IM_proc = ProcessImages(varargin)
 poolSize = 10;
 IM = varargin{1};
 disp('Computing smoothed mean frame...')
-tic
 imKer = ones(5)/5^2;
 refFrames = 1:size(IM,3);
 if (nargin == 2)
     refFrames = varargin{2};
 end
 im = conv2(mean(IM(:,:,refFrames),3),imKer,'same');
-toc
+
 
 disp('Processing images...')
-tic
+
 if size(IM,3)>=500
 %     IM_proc = ProcInParallel(IM,im,poolSize);
 IM_proc = ProcInSerial(IM,im);
 else
     IM_proc = ProcInSerial(IM,im);
 end
-toc
+
 
 end
 function IM_proc = ProcInParallel(IM,im, poolSize)

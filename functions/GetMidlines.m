@@ -5,7 +5,7 @@ function midlineInds = GetMidlines(IM,varargin)
 % midlineInds = GetMidline(IM);
 % midlineInds = GetMidline(..., fishPos);
 % midlineInds = GetMidline(IM,fishPos,lineLens);
-% midlineInds = GetMidline(IM,fishPos,lineLens, imgExt);
+% midlineInds = GetMidline(IM,fishPos,lineLens, imgExt,'ref',refImg);
 % Inputs:
 % IM - Either an image stack (3D matrix where 3rd dim is time) or
 %   image dir with image series. If IM is image dir, then assumes all
@@ -17,6 +17,8 @@ function midlineInds = GetMidlines(IM,varargin)
 % lineLens - A vector where each value indicates the length of the line
 %   segment in the series of line segments to fit to the fish's body
 % imgExt - Image extension (default: 'jpg')
+% 'ref', refImg - Reference image for setting extra-arena points to low
+%   values
 % Outputs:
 % midlineInds - Indices of the midline in the image series; L x T matrix
 %   where T is the number of images in the series and L is number of line
@@ -28,6 +30,7 @@ heights =  [18 16 14 10];
 dTh = 1;
 imgExt = 'jpg';
 ref =[];
+procType = 'serial';
 
 if nargin == 1
     if ischar(IM) && isdir(IM)
@@ -47,10 +50,12 @@ end
 
 for jj =  3:numel(varargin)
     if isstr(varargin{jj})
-    switch lower(varargin{jj})
-        case 'ref'
-            ref = varargin{jj+1};
-    end
+        switch lower(varargin{jj})
+            case 'ref'
+                ref = varargin{jj+1};
+            case 'proctype'
+                procType = varargin{jj+1};
+        end
     end
 end
 
@@ -62,7 +67,7 @@ midlineInds = cell(size(IM,3),1);
 imgInds = 1:size(IM,3);
 %# Getting outside arena points to minimize drawing of midline segments on them
 if ~isempty(ref)
-    disp('Getting extra-arena points..')
+    disp('Getting extra-arena points...')
     rp = randperm(length(imgInds));
     inds = imgInds(rp(1:min(length(rp),100)));
     IM_sub = IM(:,:,inds);
@@ -71,15 +76,32 @@ if ~isempty(ref)
     extraArenaInds = ref <= 0.15;
 end
 
-for imgNum = imgInds;
-    img = IM(:,:,imgNum);
-    img(extraArenaInds) = minInt;    
-    
-    [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights); 
-    
-    [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);    
-    
-    PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+if strcmpi(procType,'parallel')
+    if matlabpool('size')==0
+        matlabpool(10)
+    end
+    disp('Img # ')
+    parfor imgNum = imgInds;
+        img = IM(:,:,imgNum);
+        img(extraArenaInds) = minInt;
+        
+        [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
+        
+        [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
+        
+        disp(imgNum)
+    end
+else
+    for imgNum = imgInds;
+        img = IM(:,:,imgNum);
+        img(extraArenaInds) = minInt;
+        
+        [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
+        
+        [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
+        
+        PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+    end
 end
 
 end
@@ -117,12 +139,12 @@ rImg = conv2(rImg,ker,'same');
 
 if isempty(prevStartPt)
     farInds = 1:size(indMat,1);
-else   
+else
     [y2,x2] = ind2sub(size(im),indMat(:,end));
     postVecs = [x2, y2] - repmat(startPt,length(x2),1);
-    postVecs = postVecs(:,1) + postVecs(:,2).*1i;     
+    postVecs = postVecs(:,1) + postVecs(:,2).*1i;
     preVec = startPt-prevStartPt;
-    preVecs = repmat(preVec(1) + preVec(2)*1i,length(x2),1);    
+    preVecs = repmat(preVec(1) + preVec(2)*1i,length(x2),1);
     dAngles = angle(preVecs.*conj(postVecs)) *(180/pi);
     farInds = find(abs(dAngles)<=140);
 end
@@ -240,28 +262,28 @@ for kk = 1:size(lineInds_first,2);
     parentMap{1}{kk} = num2str(kk);
     lineInds{1}{kk} = lineInds_first(:,kk);
 end
-for seg = 2:numel(lineLens)     
+for seg = 2:numel(lineLens)
     count = 0;
     for ln = 1:length(lineInds{seg-1})
-        lInds = lineInds{seg-1}{ln};        
+        lInds = lineInds{seg-1}{ln};
         startPt = IndToSub(im,lInds(end));
         prevStartPt = IndToSub(im,lInds(length(lInds)-lineLens(seg-1)+1));
-%         prevStartPt = IndToSub(im,lInds_seg(1));
+        %         prevStartPt = IndToSub(im,lInds_seg(1));
         temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
         if isempty(temp)
-             temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
+            temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
         end
         for kk = 1:size(temp,2)
             count = count + 1;
             parentMap{seg}{count} = [parentMap{seg-1}{ln} '_' num2str(kk)];
             lineInds{seg}{count} = [lineInds{seg-1}{ln}; temp(:,kk)];
-%             blah = im/2; % For debugging only
-%             blah(lineInds{seg}{count}) = max(im(:)); % For debugging only           
+            %             blah = im/2; % For debugging only
+            %             blah(lineInds{seg}{count}) = max(im(:)); % For debugging only
         end
     end
     blah = cell2mat(lineInds{seg});
-    if size(blah,2)>1        
-         bestLine = GetBestLine_sub(im,blah);        
+    if size(blah,2)>1
+        bestLine = GetBestLine_sub(im,blah);
     else
         bestLine = blah;
     end

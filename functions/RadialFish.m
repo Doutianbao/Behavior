@@ -39,7 +39,7 @@ if isempty(fishPos)
     fishPos = GetFishPos(im,30);
 end
 if isempty(dTh)
-    dTh  = 5;
+    dTh  = 4;
 end
 
 x = fishPos(:,1);
@@ -58,25 +58,20 @@ lineIndMat = radialImg;
 for jj = thetaInds(:)'
     th{jj} = repmat(lineThetas(jj),1,lineLen);
     [blahX,blahY] = pol2cart(th{jj},0:lineLen-1);
-    blahX = blahX + x;
-    yy = y;  
-    blahY = blahY  + yy;
+    blahX = blahX + x;  
+    blahY = blahY  + y;
     
     outInds = find(blahX > size(im,2));
-    blahX(outInds) = 1:numel(outInds);
-    %     blahX(blahX>size(im,2)) = size(im,2);
+    blahX(outInds) = size(im,2);
     
     outInds = find(blahX < 1);
     blahX(outInds) = size(im,2)-numel(outInds)+1:size(im,2);    
-%     blahX(blahX<1) = 1;
     
     outInds = find(blahY > size(im,1));
-    blahY(outInds) = 1:numel(outInds);
-%     blahY(blahY>size(im,1)) = size(im,1);
+    blahY(outInds) = size(im,1);
     
     outInds = find(blahY < 1);
     blahY(outInds) = size(im,1)-numel(outInds)+1:size(im,1);   
-%     blahY(blahY<1) = 1;
 
     lineInds = sub2ind(size(im),round(blahY),round(blahX));     
     lineProf{jj} = im(lineInds);
@@ -87,19 +82,6 @@ end
 varargout{1} = radialImg;
 varargout{2} = lineIndMat;
 varargout{3} = round(lineThetas*180/pi);
-
-% lineSums(1) = [];
-% lineRanges(1) = [];
-% lineSums = (lineSums-min(lineSums))/(max(lineSums)-min(lineSums));
-% lineRanges = (lineRanges-min(lineRanges))/(max(lineRanges)-min(lineRanges));
-% trunkLine = lineSums-lineRanges;
-% trunkInd = find(trunkLine==max(trunkLine));
-% orientation(frame) = lineThetas(trunkInd(1))*180/pi;
-% orientation(frame) = mod(orientation(frame) + 180,360);
-
-
-
-
 
 
 end

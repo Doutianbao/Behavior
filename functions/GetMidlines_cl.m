@@ -75,11 +75,7 @@ for imgNum = imgInds;
     img = IM(:,:,imgNum);
     img(extraArenaInds) = minInt;    
     
-    [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);   
-    
-    if size(lineMat,2)>1
-        a = 1;
-    end
+    [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights); 
     
     [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);    
     
@@ -132,11 +128,25 @@ else
 end
 
 
-%## Find candidate midlines
+%## Finding candidate midlines
 nml = rImg2nml(rImg);
 thr = 0.1;
 maxtab(:,1) = GetPks(nml,'peakThr',thr,'thrType','abs','polarity',1);
 maxtab(:,2) = nml(maxtab(:,1));
+
+%## This next bit of code finds peaks that may not have been detected
+%## because 'rImg' is linear when it should have been circular
+midPt = round(length(nml)/2);
+pks_shift = GetPks(circshift(nml(:),midPt),'peakThr',thr,'thrType','abs','polarity',1);
+pks_bool = zeros(length(nml),1);
+pks_bool(pks_shift) = 1;
+pks_bool = circshift(pks_bool(:), -midPt);
+pks_shift = find(pks_bool);
+pks_shift = union(maxtab(:,1),pks_shift);
+maxtab=[];
+maxtab(:,1) = pks_shift;
+maxtab(:,2) = nml(maxtab(:,1));
+%##########
 
 count = 0;
 while (isempty(maxtab)) && (count <10)
@@ -151,7 +161,7 @@ if isempty(maxtab)
 end
 remInds = find(maxtab(:,2) < 0.4*max(maxtab(:,2)));
 maxtab(remInds,:)=[];
-% nml = nml(farInds);
+
 [~,comInds] = intersect(maxtab(:,1),farInds);
 if ~isempty(comInds)
     maxtab = maxtab(comInds,:);
@@ -170,7 +180,6 @@ else
     blahInds = keepInds;
     nml = nml(keepInds);
 end
-
 
 %## Find lines that are not contiguous blocks (i.e. islands) and eliminate
 [blockSizes,blockInds] = GetContiguousBlocks(blahInds);
@@ -293,6 +302,7 @@ hold on
 plot(fishPos(1),fishPos(2),'ko')
 title(num2str(imgNum))
 shg
+pause()
 end
 
 function lineMat = GetBestLine_sub(img,lineMat)

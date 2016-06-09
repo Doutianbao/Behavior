@@ -112,8 +112,8 @@ if isempty(dTh)
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-% ker = gausswin(round(dTh)*4)*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
-% rImg = conv2(rImg,ker,'same');
+ker = gausswin(round(dTh)*4)*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+rImg = conv2(rImg,ker,'same');
 
 if isempty(prevStartPt)
     farInds = 1:size(indMat,1);
@@ -280,7 +280,8 @@ function nml = rImg2nml(rImg)
 Standardize = @(x)(x-min(x))/(max(x)-min(x));
 muPxls = mean(rImg,2);
 rImg2 = sort(rImg,2,'descend');
-temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
+% temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
+temp = abs(rImg2-repmat(median(rImg2,2)*0.9,1,size(rImg2,2)));
 [~, comInds] = min(temp,[],2);
 ker = gausswin(max(1,round(size(rImg,1)/30)));
 nml =  (Standardize(muPxls(:))).*comInds(:); % Standardization before multiplication is important so as no to convert valleys with negative values into peaks
@@ -302,7 +303,7 @@ hold on
 plot(fishPos(1),fishPos(2),'ko')
 title(num2str(imgNum))
 shg
-pause()
+% pause()
 end
 
 function lineMat = GetBestLine_sub(img,lineMat)

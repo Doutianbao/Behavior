@@ -16,18 +16,16 @@ refFrames = 1:size(IM,3);
 if (nargin == 2)
     refFrames = varargin{2};
 end
-im = conv2(mean(IM(:,:,refFrames),3),imKer,'same');
-
+% im = conv2(mean(IM(:,:,refFrames),3),imKer,'same');
+im = median(IM(:,:,refFrames),3);
 
 disp('Processing images...')
 
 if size(IM,3)>=500
-%     IM_proc = ProcInParallel(IM,im,poolSize);
-IM_proc = ProcInSerial(IM,im);
+    IM_proc = ProcInParallel(IM,im,poolSize);
 else
     IM_proc = ProcInSerial(IM,im);
 end
-
 
 end
 function IM_proc = ProcInParallel(IM,im, poolSize)
@@ -45,7 +43,8 @@ if matlabpool('size')==0
 end
 dispChunk = round(numel(imgFrames)/30);
 parfor jj=imgFrames
-    IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+%     IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+    IM_proc(:,:,jj) = -squeeze(IM(:,:,jj))+im;
     if mod(jj, dispChunk)==0
         disp(['Img# ' num2str(jj)])
     end

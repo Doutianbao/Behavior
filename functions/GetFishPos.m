@@ -49,7 +49,8 @@ y = x;
 if filterFlag
     [~,flt] = gaussianbpf(IM(:,:,1),bp(1),bp(2));
 end
-dispChunk = round(size(IM,3)/50)+1;
+% dispChunk = round(size(IM,3)/50)+1;
+dispChunk = 1;
 if strcmpi(process,'serial')
     disp('Tracking fish...')
     tic

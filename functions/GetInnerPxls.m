@@ -31,15 +31,15 @@ end
 [row,col] = find(ones(size(im)));
 inPxls = [];
 outPxls = [];
-% refPt = [r(1) c(1)];
-% refS = sum(sqrt(sum(([r(:) c(:)]- repmat(refPt,length(r),1)).^2,2)));
+refPt = [r(1) c(1)];
+refS = sum(sqrt(sum(([r(:) c(:)]- repmat(refPt,length(r),1)).^2,2)));
 for jj = 1:length(row)
-%     S = sum(sqrt(sum((repmat([row(jj) col(jj)],length(r),1) - [r(:) c(:)]).^2,2)));
-%     if S < refS
-%         inPxls = [inPxls;[row(jj) col(jj)]];
-%     else
-%         outPxls = [outPxls;[row(jj) col(jj)]];
-%     end
+    S = sum(sqrt(sum((repmat([row(jj) col(jj)],length(r),1) - [r(:) c(:)]).^2,2)));
+    if S < refS
+        inPxls = [inPxls;[row(jj) col(jj)]];
+    else
+        outPxls = [outPxls;[row(jj) col(jj)]];
+    end
   
 end
 inPxls = sub2ind(size(im), inPxls(:,1), inPxls(:,2));

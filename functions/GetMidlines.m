@@ -72,7 +72,8 @@ if ~isempty(ref)
     inds = imgInds(rp(1:min(length(rp),100)));
     IM_sub = IM(:,:,inds);
     minInt = min(IM_sub(:));
-    ref = bfilter2(Standardize(ref),12,[6 0.5]);
+    filtSize = ceil(mean([size(IM,1) size(IM,2)])/50);
+    ref = bfilter2(Standardize(ref),filtSize,[filtSize/2 0.5]);
     extraArenaInds = ref <= 0.15;
 end
 

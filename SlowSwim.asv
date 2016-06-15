@@ -64,7 +64,7 @@ toc
 disp('Getting fish orientation...')
 tic
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
-% midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
+% midlineInds = GetMidlines(IM_proc,fishPos,[20 25 20],'bmp','ref',ref);
 midlineInds = GetMidlines(IM_proc,fishPos,[20 25 20],'bmp','ref', ref,'procType','parallel');
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
@@ -117,7 +117,7 @@ saveOrNot = input('Detect and save peak info (y/n)?  ','s');
 tic
 if strcmpi('y',saveOrNot)
     disp('Getting peak info...')
-    GetTapDark1st2ndLeftRightPks;
+    GetTapDark1st2ndLeftRightPks;    
     procData.pks = pks;
 else
     disp('Pk info not saved!')

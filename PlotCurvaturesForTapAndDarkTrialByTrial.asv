@@ -11,13 +11,6 @@ seg = 3; % [1 - head, 2 = tail, 3 - combined]
 motionThr = 4;
 peakDetThr = 0.2;
 
-%## Sort all frame indices based on whether they are tap or dark trials
-tapInds = [];
-for trl = tapTrls
-    tapInds = [tapInds, (trl-1)*nFramesInTrl + 1 : trl*nFramesInTrl];
-end
-darkInds = setdiff(1:length(time),tapInds);
-
 % %% Inputs for slow
 % fps = 30; % (30 for slow, 500 for fast)
 % nFramesInTrl = 1800; %(1800/3600 for slow, 750 for fast)
@@ -69,7 +62,6 @@ end
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
-curv = motionInfo.curv;
 
 %%  Swim episodes
 stimFrames = (0:nTrls-1)*nFramesInTrl + (preStimPer*fps);

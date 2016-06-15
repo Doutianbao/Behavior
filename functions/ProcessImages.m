@@ -43,8 +43,8 @@ if matlabpool('size')==0
 end
 dispChunk = round(numel(imgFrames)/30);
 parfor jj=imgFrames
-%     IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
-    IM_proc(:,:,jj) = -squeeze(IM(:,:,jj))+im;
+    IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+%     IM_proc(:,:,jj) = -squeeze(IM(:,:,jj))+im;
     if mod(jj, dispChunk)==0
         disp(['Img# ' num2str(jj)])
     end

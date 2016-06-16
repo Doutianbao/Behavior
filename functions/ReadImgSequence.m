@@ -6,7 +6,7 @@ function IM = ReadImgSequence(imgDir,varargin)
 % IM = ReadImgSequence(imgDir,imgExt,imgNums)
 % Inputs:
 % imgDir - Directory where images are stored
-% imgExt - Extension of the img, e.g., {'jpg'} ['tif'] ['png']
+% imgExt - Extension of the img, e.g., {'bmp'}['jpg']['tif'] ['png']
 % imgNums - Vector specifying the subset of images to read from all the
 %   images in the directory. For e.g., imgNuums = [1 3 5], will only cause
 %   the images 1, 3, and 5 to be read from the image sequence
@@ -15,7 +15,7 @@ function IM = ReadImgSequence(imgDir,varargin)
 
 
 imgInds = [];
-imgExt = 'jpg';
+imgExt = 'bmp';
 poolSize = 10;
 
 if nargin == 2
@@ -40,14 +40,13 @@ end
 imgInfo = imfinfo(fullfile(imgDir,fNames{1}));
 imSize = [imgInfo.Height imgInfo.Width];
 IM = zeros(imSize(1),imSize(2),length(fNames));
-
+% IM = MappedTensor(imSize(1),imSize(2),length(fNames));
 disp(['Reading all .' imgExt ' images from dir...'])
 if matlabpool('size')==0
     matlabpool(poolSize)
 end
 imgNums = 1:length(fNames);
-
-parfor jj = imgNums
+parfor jj = imgNums    
     img = imread(fullfile(imgDir,fNames{jj}));
     if length(size(img))==3
         if jj ==1

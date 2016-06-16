@@ -53,6 +53,7 @@ for indNum = 1:length(badInds)
         midlineInds{ind}{seg} = 0.5*(midlineInds{ind-1}{seg} + midlineInds{ind+1}{seg});
     end
 end
+orientation_old = orientation;
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
@@ -141,7 +142,7 @@ set(gca,'color','k')
 xlim([0 5])
 box off
 set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(1:4))
-title('Second peaks for tap and dark trls sorted by left and right turn')
+title('1st peaks for tap and dark trls sorted by left and right turn')
 
 %## Second pks for tap and dark
 figure('Name','Second peaks')
@@ -155,7 +156,7 @@ set(gca,'color','k')
 xlim([0 5])
 box off
 set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(5:8))
-title('Second peaks for tap and dark trls sorted by left and right turn')
+title('2nd peaks for tap and dark trls sorted by left and right turn')
 
 
 %## 1st and 2nd pks on one plot
@@ -177,10 +178,11 @@ hold on
 % plot(2,abs(pks.curv(pks.second_tap_right)),'r+')
 % plot(3.5,abs(pks.curv(pks.second_dark_left)),'g+')
 % plot(4.5,abs(pks.curv(pks.second_dark_right)),'m+')
-plot(1:4,pks.mu(5:8),'w+-')
+plot(1:4,pks.mu(5:8),'g+-')
 set(gca,'color','k')
 xlim([0 5])
-legend('1st pks','2nd pks')
+lh = legend('1st pks','2nd pks');
+set(lh,'color','w')
 box off
 % set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(5:8))
 % title('Second peaks for tap and dark trls sorted by left and right turn')

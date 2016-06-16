@@ -1,3 +1,12 @@
+function procData = AppendPksToProc(procData)
+%AppendPksToProc - Get pks (sorted by first or second, left or right, tap
+%   or dark) and append to procData
+
+fishPos = procData.fishPos;
+midlineInds = procData.midlineInds;
+orientation = procData.orientation;
+ref = procData.orientation;
+
 %% Inputs for fast
 fps = 500; % (30 for slow, 500 for fast)
 nFramesInTrl = 750; %(1800 for slow, 750 for fast)
@@ -53,6 +62,7 @@ for indNum = 1:length(badInds)
         midlineInds{ind}{seg} = 0.5*(midlineInds{ind-1}{seg} + midlineInds{ind+1}{seg});
     end
 end
+orientation_old = orientation;
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
@@ -115,7 +125,8 @@ pks.mu =[mean(curv_sm(pks.first_tap_left)), mean(abs(curv_sm(pks.first_tap_right
     mean(curv_sm(pks.second_tap_left)), mean(abs(curv_sm(pks.second_tap_right))),...
     mean(curv_sm(pks.second_dark_left)), mean(abs(curv_sm(pks.second_dark_right)))];
 
-
+procData.Properties.Writable = true;
+procData.pks = pks;
 
 %% Plots
 
@@ -141,7 +152,7 @@ set(gca,'color','k')
 xlim([0 5])
 box off
 set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(1:4))
-title('Second peaks for tap and dark trls sorted by left and right turn')
+title('1st peaks for tap and dark trls sorted by left and right turn')
 
 %## Second pks for tap and dark
 figure('Name','Second peaks')
@@ -155,7 +166,7 @@ set(gca,'color','k')
 xlim([0 5])
 box off
 set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(5:8))
-title('Second peaks for tap and dark trls sorted by left and right turn')
+title('2nd peaks for tap and dark trls sorted by left and right turn')
 
 
 %## 1st and 2nd pks on one plot
@@ -177,10 +188,16 @@ hold on
 % plot(2,abs(pks.curv(pks.second_tap_right)),'r+')
 % plot(3.5,abs(pks.curv(pks.second_dark_left)),'g+')
 % plot(4.5,abs(pks.curv(pks.second_dark_right)),'m+')
-plot(1:4,pks.mu(5:8),'w+-')
+plot(1:4,pks.mu(5:8),'g+-')
 set(gca,'color','k')
 xlim([0 5])
-legend('Firstpks','')
+lh = legend('1st pks','2nd pks');
+set(lh,'color','w')
 box off
 % set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(5:8))
 % title('Second peaks for tap and dark trls sorted by left and right turn')
+
+
+
+end
+

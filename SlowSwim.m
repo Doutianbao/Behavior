@@ -51,8 +51,8 @@ if ~isempty(bp)
     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','parallel');
 %     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
 else
-    fishPos = GetFishPos(IM_proc, 40,'process','parallel');
-    %     fishPos = GetFishPos(IM_proc, 40,'process','serial');
+%     fishPos = GetFishPos(IM_proc, 40,'process','parallel');
+        fishPos = GetFishPos(IM_proc, 40,'process','serial');
 end
 
 toc
@@ -65,7 +65,7 @@ disp('Getting fish orientation...')
 tic
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 % midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
-midlineInds = GetMidlines(IM_proc,fishPos,[20 25 20],'bmp','ref', ref,'procType','parallel');
+midlineInds = GetMidlines(IM_proc,fishPos,[15 15 15],'bmp','ref', ref,'procType','serial');
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation_backup = orientation;

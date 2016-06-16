@@ -40,7 +40,7 @@ end
 if strcmpi(processMethod,'s')
     [orientation, origins] = OrFromSerialInds(midlineInds,imgDims);
 else
-    [orientation, origins] = OrFromParallelInds(midlineINds,imgDims);
+    [orientation, origins] = OrFromParallelInds(midlineInds,imgDims);
 end
 
 varargout{1}= orientation;

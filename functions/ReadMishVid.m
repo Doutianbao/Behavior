@@ -41,7 +41,7 @@ cd(imgDir)
 [fileName,pathName] = uigetfile('*.mishVid*','Select the mishVid');
 dirFile = [pathName fileName];
 [~,fname,~]=fileparts(fileName);
-outDir=[pathName,fname,'\swims\'];
+outDir=[pathName,fname,'\proc\'];
 disp(fileName)
 % imgDims = input('Enter image dimensions as [height width] e.g. [500 600] :  ');
 h_axis = imgDims(1);

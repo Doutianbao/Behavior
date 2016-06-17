@@ -27,9 +27,9 @@ switch readMode
             'Press enter [] to skip (filtering is recommended if using collimated ' ...
             'light during behavior): '];
         fps = input('Enter frame rate (frames/sec): ');
-        bp = input(bpMessg);         
-        outDir = fullfile(imgDir,'spont');
-         IM = ReadImgSequence(imgDir,imgExt,imgInds);
+        bp = input(bpMessg);
+        outDir = fullfile(imgDir,'proc');
+        IM = ReadImgSequence(imgDir,imgExt,imgInds);
 end
 
 if exist(outDir)~=7
@@ -49,10 +49,10 @@ toc
 %% Tracking the fish
 if ~isempty(bp)
     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','parallel');
-%     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
+    %     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
 else
-%     fishPos = GetFishPos(IM_proc, 40,'process','parallel');
-        fishPos = GetFishPos(IM_proc, 40,'process','serial');
+    %     fishPos = GetFishPos(IM_proc, 40,'process','parallel');
+    fishPos = GetFishPos(IM_proc, 40,'process','serial');
 end
 
 toc
@@ -90,12 +90,6 @@ procData.orientation = orientation;
 procData.midlineInds = midlineInds;
 procData.ref = ref;
 
-% save(fullfile(outDir,[fName, '_orientation_' ts '.mat']),'orientation');
-% % save(fullfile(outDir,[fName, '_imgDims_'  ts '.mat']),'imgDims')
-% save(fullfile(outDir,[fName, '_midlineInds_' ts '.mat']),'midlineInds');
-% save(fullfile(outDir,[fName, '_ref_' ts '.mat']),'ref');
-% save(fullfile(outDir,[fName, '_tracexy_' ts '.mat']),'fishPos');
-% save(fullfile(outDir,[fName '_motionInfo_' ts '.mat']),'motionInfo');
 disp(['Saved orientation, imgDims ,midlineInds, ref, tracexy at ' outDir])
 
 %% Saving processed images
@@ -144,7 +138,7 @@ fldNames = fieldnames(trls);
 for stim = 1:length(fldNames)
     N = length(trls.(fldNames{stim}));
     maxImgStacks{stim} = zeros(2*periPxls+1,2*periPxls+1,N);
-    fh = figure('Name',fldNames{stim})   
+    fh = figure('Name',fldNames{stim})
     nRows = 3;
     nCols = ceil(N/3);
     disp(['Stim: ' fldNames{stim}])
@@ -152,18 +146,18 @@ for stim = 1:length(fldNames)
     for trl = trls.(fldNames{stim})
         count = count + 1;
         disp(['Trl: ' num2str(trl)])
-        inds = (nFramesInTrl*(trl-1)+1:nFramesInTrl*trl); 
+        inds = (nFramesInTrl*(trl-1)+1:nFramesInTrl*trl);
         IM_fix = PlayFixedFish(IM_proc(:,:,inds),fishPos(inds,:),orientation(1,inds)+180, ...
             'periPxls',periPxls,'dispBool',0);
-         maxImg = max(IM_fix,[],3);
-         maxImgStacks{stim}(:,:,count)= maxImg;
-         figure(fh)
-         subaxis(nRows,nCols,count,'SpacingHoriz',0, 'SpacingVert',0.05)
-         imagesc(imNormalize999(maxImg)), axis image, colormap(gray), axis off 
-         set(gca,'clim',[0 0.9])
-         title(num2str(trl))        
-         drawnow 
-         
+        maxImg = max(IM_fix,[],3);
+        maxImgStacks{stim}(:,:,count)= maxImg;
+        figure(fh)
+        subaxis(nRows,nCols,count,'SpacingHoriz',0, 'SpacingVert',0.05)
+        imagesc(imNormalize999(maxImg)), axis image, colormap(gray), axis off
+        set(gca,'clim',[0 0.9])
+        title(num2str(trl))
+        drawnow
+        
     end
 end
 saveOrNot = input('Save max img stacks (y/n)?:', 's');

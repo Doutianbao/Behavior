@@ -51,14 +51,13 @@ if ~isempty(bp)
     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','parallel');
     %     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
 else
-    %     fishPos = GetFishPos(IM_proc, 40,'process','parallel');
-    fishPos = GetFishPos(IM_proc, 40,'process','serial');
+        fishPos = GetFishPos(IM_proc, 40,'process','parallel');
+%     fishPos = GetFishPos(IM_proc, 40,'process','serial');
 end
 
 toc
-disp('Creating mean reference frame...')
-ref = mean(IM,3);
-
+disp('Creating reference frame...')
+ref = max(IM,[],3);
 disp('Saving fish position and ref image...')
 if isempty(imgInds)
     imgInds = 1:size(IM,3);
@@ -76,7 +75,14 @@ disp('Getting fish orientation...')
 tic
 % midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
 % midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
-midlineInds = GetMidlines(IM_proc,fishPos,[15 15 15],'bmp','ref', ref,'procType','serial');
+
+disp('Getting arena edge...')
+edgeInds  = GetArenaEdge(ref,'detThr',0.6,'nIter',100);
+disp('Getting extra arena pxls...')
+[~,outPxls] = GetInnerPxls(ref,fliplr(edgeInds));
+extraArenaInds = sub2ind(size(ref),outPxls(:,1),outPxls(:,2));
+
+midlineInds = GetMidlines(IM_proc,fishPos,[20 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','serial');
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation_backup = orientation;
@@ -87,7 +93,7 @@ procData.midlineInds = midlineInds;
 toc
 
 %% Motion Info
-motionThr = 4;
+motionThr = 1;
 [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
 

@@ -10,14 +10,14 @@ function IM_proc = ProcessImages(varargin)
 
 poolSize = 10;
 IM = varargin{1};
-disp('Computing smoothed mean frame...')
-imKer = ones(5)/5^2;
+disp('Computing ref frame...')
 refFrames = 1:size(IM,3);
 if (nargin == 2)
     refFrames = varargin{2};
 end
-% im = conv2(mean(IM(:,:,refFrames),3),imKer,'same');
-im = median(IM(:,:,refFrames),3);
+
+% im = median(IM(:,:,refFrames),3);
+im = max(IM(:,:,refFrames),[],3);
 
 disp('Processing images...')
 

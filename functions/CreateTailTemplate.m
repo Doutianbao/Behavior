@@ -14,12 +14,13 @@ function varargout = CreateTailTemplate(base,height,varargin)
 % grad - Intensity gradient to apply to tail template. If grad < 0, then
 %   template intensity from base of triangle to tip drops with slope equal
 %   to grad
+
 grad = -0.15;
 if nargin==3;
     grad = varargin{1};
 end
 x_sub = round(base/2)*(0:1);
-y = 0:height;
+y = 0:height-1;
 y_sub = linspace(0,height,length(x_sub));
 x = interp1(y_sub,x_sub,y,'spline');
 side1 = [sort(-x(:)),y(:)];
@@ -39,11 +40,13 @@ img = img(imgCtr(1)-ceil(base/2):imgCtr(1)+ceil(base/2), imgCtr(2):end);
 [x,y] = find(img); 
 img(inpolygon(r,c,x,y)) = 1;
 t = 1:size(img,2);
-y = grad*t;
-[X,~] = meshgrid(grad*t,y);
+y = grad*t + 1;
+[X,~] = meshgrid(y,y);
 X = X(1:size(img),:);
 img = img.*X;
 varargout{1} = img;
 [r,c] = find(img);
+
 varargout{2} = [r,c];
+
 end

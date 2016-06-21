@@ -21,12 +21,13 @@ refFrames = 2:size(IM,3); % For some reason the 1st image doesn't record properl
 if (nargin == 2)
     refFrames = varargin{2};
 end
-
-im = median(IM(:,:,refFrames),3);
+tic
+% im = median(IM(:,:,refFrames),3);
 % im = max(IM(:,:,refFrames),[],3);
+im = mean(IM(:,:,refFrames),[],3);
+toc
 
 disp('Subtracting background...')
-
 if size(IM,3)>=500
     IM_proc = ProcInParallel(IM,im,poolSize);
 else

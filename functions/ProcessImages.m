@@ -1,31 +1,40 @@
-function IM_proc = ProcessImages(varargin)
+function varargout = ProcessImages(varargin)
 %ProcessImages_parallel Smooth and background subtract images
 % IM_proc = ProcessImages(IM)
-% IM_proc = ProcessImages(IM,refFrames);
+% [IM_proc, refImg] = ProcessImages(IM,refFrames);
 % Inputs:
 % IM - Image stack where 3rd time is time
 % refFrames - A vector specifying the frames to average for background
 %   subtraction. This is useful for considering only frames in which fish
 %   moves
+% Outputs:
+% IM_proc - Stack with background subtracted images
+% refImg = Reference image (median of image stack) used for background
+%   subtraction
+% 
+% Avinash Pujala, Koyama lab/HHMI, 2016
 
 poolSize = 10;
 IM = varargin{1};
 disp('Computing ref frame...')
-refFrames = 1:size(IM,3);
+refFrames = 2:size(IM,3); % For some reason the 1st image doesn't record properly [AP - 20160621]
 if (nargin == 2)
     refFrames = varargin{2};
 end
 
-% im = median(IM(:,:,refFrames),3);
-im = max(IM(:,:,refFrames),[],3);
+im = median(IM(:,:,refFrames),3);
+% im = max(IM(:,:,refFrames),[],3);
 
-disp('Processing images...')
+disp('Subtracting background...')
 
 if size(IM,3)>=500
     IM_proc = ProcInParallel(IM,im,poolSize);
 else
     IM_proc = ProcInSerial(IM,im);
 end
+
+varargout{1} = IM_proc;
+varargout{2} = ref;
 
 end
 function IM_proc = ProcInParallel(IM,im, poolSize)

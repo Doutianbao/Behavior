@@ -43,7 +43,7 @@ if matlabpool('size')==0
     matlabpool(poolSize)
 end
 disp('Processing images...')
-IM_proc = ProcessImages(IM);
+[IM_proc, ref] = ProcessImages(IM);
 toc
 
 %% Tracking the fish
@@ -51,13 +51,11 @@ if ~isempty(bp)
     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','parallel');
     %     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
 else
-        fishPos = GetFishPos(IM_proc, 40,'process','parallel');
-%     fishPos = GetFishPos(IM_proc, 40,'process','serial');
+    fishPos = GetFishPos(IM_proc, 40,'process','parallel');
+    %     fishPos = GetFishPos(IM_proc, 40,'process','serial');
 end
 
 toc
-disp('Creating reference frame...')
-ref = max(IM,[],3);
 disp('Saving fish position and ref image...')
 if isempty(imgInds)
     imgInds = 1:size(IM,3);

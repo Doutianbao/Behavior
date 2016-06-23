@@ -42,20 +42,34 @@ imSize = [imgInfo.Height imgInfo.Width];
 IM = zeros(imSize(1),imSize(2),length(fNames));
 % IM = MappedTensor(imSize(1),imSize(2),length(fNames));
 disp(['Reading all .' imgExt ' images from dir...'])
-if matlabpool('size')==0
-    matlabpool(poolSize)
-end
 imgNums = 1:length(fNames);
-parfor jj = imgNums    
-    img = imread(fullfile(imgDir,fNames{jj}));
-    if length(size(img))==3
-        if jj ==1
-            disp('Great! Images are rgb and are being converted to gray...')
-        end
-        img = rgb2Gray(img);
+try
+    if matlabpool('size')==0
+        matlabpool(poolSize)
     end
-    IM(:,:,jj) = img;
-end 
+    parfor jj = imgNums
+        img = imread(fullfile(imgDir,fNames{jj}));
+        if length(size(img))==3
+            if jj ==1
+                disp('Great! Images are rgb and are being converted to gray...')
+            end
+            img = rgb2Gray(img);
+        end
+        IM(:,:,jj) = img;
+    end
+catch
+    disp('Parallel failed,reading serially... ')
+    for jj = imgNums
+        img = imread(fullfile(imgDir,fNames{jj}));
+        if length(size(img))==3
+            if jj ==1
+                disp('Great! Images are rgb and are being converted to gray...')
+            end
+            img = rgb2Gray(img);
+        end
+        IM(:,:,jj) = img;
+    end
+end
 toc
 
 end

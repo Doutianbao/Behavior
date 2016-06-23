@@ -3,9 +3,19 @@ fps = 500; % (30 for slow, 500 for fast)
 nFramesInTrl = 750; %(1800 for slow, 750 for fast)
 preStimPer = 0.1; % In seconds (1.5 for slow)
 mult = 1; % Determines whether preStimPer gets added or subtracted while plotting rasters (-1 for slow)
+
+disp('Reading timeseries from procData...')
+tic
+fishPos = procData.fishPos;
+midlineInds = procData.midlineInds;
+orientation = procData.orientation;
+ref = procData.ref;
+% pks = procData.pks;
+toc
+
 nTrls = size(fishPos,1)/nFramesInTrl;
-tapTrls = 1:2:nTrls;
-flashTrls = 2:2:nTrls;
+tapTrls = [];%1:2:nTrls;
+flashTrls = 1:nTrls; %2:2:nTrls;
 yOff = [220 200];
 seg = 3; % [1 - head, 2 = tail, 3 - combined]
 motionThr = 4;
@@ -58,8 +68,14 @@ orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation = orientation';
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
 curv = motionInfo.curv;
+ker = gausswin(8); ker = ker/sum(ker);
+curv_sm = conv2(curv(:,3),ker(:),'same');
+dCurv = [0; diff(curv_sm(:))./diff(time(:))]/1000; % In units of deg/ms
 
-%% Getting peaks
+
+
+%% Getting peaks & plotting - Curvature
+var = curv_sm;
 minSwimInt = 150e-3;
 maxBurstInt = 100e-3;
 minBurstInt = 5e-3;
@@ -69,16 +85,14 @@ minSwimPts = round(minSwimInt*fps);
 maxBurstPts = round(maxBurstInt*fps);
 minBurstPts = round(minBurstInt*fps);
 
-ker = gausswin(8); ker = ker/sum(ker);
-curv_sm = conv2(curv(:,3),ker(:),'same');
-pks.all = GetPks(zscore(curv_sm),'polarity',0,'peakThr',pkThr_1st,'thrType','rel');
+pks.all = GetPks(zscore(var),'polarity',0,'peakThr',pkThr_1st,'thrType','rel');
 
 
 dPks = diff(pks.all);
 inds = find(dPks >= minSwimPts) + 1;
 pks.first =  pks.all(find(dPks>=minSwimPts)+1);
 pks.first = [pks.all(1); pks.first(:)];
-pks.all = GetPks(zscore(curv_sm),'polarity',0,'peakThr',pkThr_2nd,'thrType','rel');
+pks.all = GetPks(zscore(var),'polarity',0,'peakThr',pkThr_2nd,'thrType','rel');
 
 pks.second = nan(size(pks.first));
 for pk = 1:length(pks.first)
@@ -97,40 +111,272 @@ end
 pks.second(isnan(pks.second))=[];
 
 pks.first_tap = intersect(pks.first,tapInds);
-pks.first_tap_left = pks.first_tap(curv_sm(pks.first_tap)>0);
-pks.first_tap_right = pks.first_tap(curv_sm(pks.first_tap)<0);
+pks.first_tap_left = pks.first_tap(var(pks.first_tap)>0);
+pks.first_tap_right = pks.first_tap(var(pks.first_tap)<0);
 pks.first_dark = intersect(pks.first,darkInds);
-pks.first_dark_left = pks.first_dark(curv_sm(pks.first_dark)>0);
-pks.first_dark_right = pks.first_dark(curv_sm(pks.first_dark)<0);
+pks.first_dark_left = pks.first_dark(var(pks.first_dark)>0);
+pks.first_dark_right = pks.first_dark(var(pks.first_dark)<0);
 pks.second_tap = intersect(pks.second,tapInds);
-pks.second_tap_left = pks.second_tap(curv_sm(pks.second_tap)>0);
-pks.second_tap_right = pks.second_tap(curv_sm(pks.second_tap)<0);
+pks.second_tap_left = pks.second_tap(var(pks.second_tap)>0);
+pks.second_tap_right = pks.second_tap(var(pks.second_tap)<0);
 pks.second_dark = intersect(pks.second,darkInds);
-pks.second_dark_left = pks.second_dark(curv_sm(pks.second_dark)>0);
-pks.second_dark_right = pks.second_dark(curv_sm(pks.second_dark)<0);
-pks.curv = curv_sm;
+pks.second_dark_left = pks.second_dark(var(pks.second_dark)>0);
+pks.second_dark_right = pks.second_dark(var(pks.second_dark)<0);
+pks.curv = var;
 pks.mu_lbl = {'1st_tap_left', '1st_tap_right','1st_dark_left','1st_dark_right',...
     '2nd_tap_left', '2nd_tap_right','2nd_dark_left','2nd_dark_right'};
-pks.mu =[mean(curv_sm(pks.first_tap_left)), mean(abs(curv_sm(pks.first_tap_right))),...
-    mean(curv_sm(pks.first_dark_left)), mean(abs(curv_sm(pks.first_dark_right))),...
-    mean(curv_sm(pks.second_tap_left)), mean(abs(curv_sm(pks.second_tap_right))),...
-    mean(curv_sm(pks.second_dark_left)), mean(abs(curv_sm(pks.second_dark_right)))];
+pks.mu =[mean(var(pks.first_tap_left)), mean(abs(var(pks.first_tap_right))),...
+    mean(var(pks.first_dark_left)), mean(abs(var(pks.first_dark_right))),...
+    mean(var(pks.second_tap_left)), mean(abs(var(pks.second_tap_right))),...
+    mean(var(pks.second_dark_left)), mean(abs(var(pks.second_dark_right)))];
 
 
-
-%% Plots
-
-%## Pks on full trace
+% Plots - Pks on full trace
 figure('Name','All pks')
-plot(time,curv_sm)
+plot(time,var)
 hold on
 set(gca,'color','k')
-plot(time(pks.all),curv_sm(pks.all),'yo')
-plot(time(pks.first),curv_sm(pks.first),'g+')
-plot(time(pks.second),curv_sm(pks.second),'m+')
+plot(time(pks.all),var(pks.all),'yo')
+plot(time(pks.first),var(pks.first),'g+')
+plot(time(pks.second),var(pks.second),'m+')
+trlVec = zeros(size(time));
+trlVec(trlFrames) = 50;
+trlVec(trlFrames+1) = -50;
+plot(time,trlVec,'r--')
 
 
-%## First pks for tap and dark
+% Plots - First peaks
+figure('Name','First peaks')
+y1 = abs(var(pks.first_dark_left));
+x1 = 1 + rand(size(y1))*0.5-0.25;
+plot(x1,y1,'b.')
+hold on
+y2 = abs(var(pks.first_dark_right));
+x2 = 2 + rand(size(y2))*0.5-0.25;
+plot(x2,y2,'r.')
+mu1 = mean(y1);
+mu2 = mean(y2);
+hold on
+plot([1,2],[mu1, mu2],'yo-')
+set(gca,'color','k')
+xlim([0 3])
+box off
+set(gca,'xtick',1:2,'xticklabel',{'Left','Right'})
+title('Dark trls')
+ylabel('1st bend amp (deg)')
+
+
+
+%% Getting peaks & plotting - angular vel (dCurvature)
+var = dCurv;
+minSwimInt = 150e-3;
+maxBurstInt = 100e-3;
+minBurstInt = 5e-3;
+pkThr_1st = 1.5;
+pkThr_2nd = 1;
+minSwimPts = round(minSwimInt*fps);
+maxBurstPts = round(maxBurstInt*fps);
+minBurstPts = round(minBurstInt*fps);
+
+pks.all = GetPks(zscore(var),'polarity',0,'peakThr',pkThr_1st,'thrType','rel');
+
+
+dPks = diff(pks.all);
+inds = find(dPks >= minSwimPts) + 1;
+pks.first =  pks.all(find(dPks>=minSwimPts)+1);
+pks.first = [pks.all(1); pks.first(:)];
+pks.all = GetPks(zscore(var),'polarity',0,'peakThr',pkThr_2nd,'thrType','rel');
+
+pks.second = nan(size(pks.first));
+for pk = 1:length(pks.first)
+    if pk ==16
+        a = 1;
+    end
+    dPks = pks.all-pks.first(pk);
+    dPks(dPks<=0)=inf;
+    dPks(dPks >=maxBurstPts)=inf;
+    dPks(dPks <= minBurstPts)=inf;
+    if ~ all(isinf(dPks))
+        [~, ind] = min(dPks);
+        pks.second(pk) = pks.all(ind);
+    end
+end
+pks.second(isnan(pks.second))=[];
+
+pks.first_tap = intersect(pks.first,tapInds);
+pks.first_tap_left = pks.first_tap(var(pks.first_tap)>0);
+pks.first_tap_right = pks.first_tap(var(pks.first_tap)<0);
+pks.first_dark = intersect(pks.first,darkInds);
+pks.first_dark_left = pks.first_dark(var(pks.first_dark)>0);
+pks.first_dark_right = pks.first_dark(var(pks.first_dark)<0);
+pks.second_tap = intersect(pks.second,tapInds);
+pks.second_tap_left = pks.second_tap(var(pks.second_tap)>0);
+pks.second_tap_right = pks.second_tap(var(pks.second_tap)<0);
+pks.second_dark = intersect(pks.second,darkInds);
+pks.second_dark_left = pks.second_dark(var(pks.second_dark)>0);
+pks.second_dark_right = pks.second_dark(var(pks.second_dark)<0);
+pks.dCurv = var;
+pks.mu_lbl = {'1st_tap_left', '1st_tap_right','1st_dark_left','1st_dark_right',...
+    '2nd_tap_left', '2nd_tap_right','2nd_dark_left','2nd_dark_right'};
+pks.mu =[mean(var(pks.first_tap_left)), mean(abs(var(pks.first_tap_right))),...
+    mean(var(pks.first_dark_left)), mean(abs(var(pks.first_dark_right))),...
+    mean(var(pks.second_tap_left)), mean(abs(var(pks.second_tap_right))),...
+    mean(var(pks.second_dark_left)), mean(abs(var(pks.second_dark_right)))];
+
+
+% Plots - Pks on full trace
+figure('Name','All pks')
+plot(time,var)
+hold on
+set(gca,'color','k')
+plot(time(pks.all),var(pks.all),'yo')
+plot(time(pks.first),var(pks.first),'g+')
+plot(time(pks.second),var(pks.second),'m+')
+trlVec = zeros(size(time));
+trlVec(trlFrames) = 50;
+trlVec(trlFrames+1) = -50;
+plot(time,trlVec,'r--')
+
+
+% Plots - First peaks
+figure('Name','First peaks')
+y1 = abs(var(pks.first_dark_left));
+x1 = 1 + rand(size(y1))*0.5-0.25;
+plot(x1,y1,'b.')
+hold on
+y2 = abs(var(pks.first_dark_right));
+x2 = 2 + rand(size(y2))*0.5-0.25;
+plot(x2,y2,'r.')
+mu1 = mean(y1);
+mu2 = mean(y2);
+hold on
+plot([1,2],[mu1, mu2],'yo-')
+set(gca,'color','k')
+xlim([0 3])
+box off
+set(gca,'xtick',1:2,'xticklabel',{'Left','Right'})
+title('Dark trls')
+ylabel('Angular vel for 1st peak (deg/ms)')
+
+break;
+
+%% Getting peaks & plotting - angular vel (dCurvature) --> Not properly implemented yet
+var = zeros(size(curv_sm));
+lInds = find(curv_sm>0);
+rInds= find(curv_sm<0);
+var(lInds) = curv_sm(lInds).*dCurv(lInds);
+var(rInds) = curv_sm(rInds).*dCurv(rInds);
+minSwimInt = 150e-3;
+maxBurstInt = 100e-3;
+minBurstInt = 5e-3;
+pkThr_1st = 1.5;
+pkThr_2nd = 1;
+minSwimPts = round(minSwimInt*fps);
+maxBurstPts = round(maxBurstInt*fps);
+minBurstPts = round(minBurstInt*fps);
+
+pks.all = GetPks(zscore(var),'polarity',0,'peakThr',pkThr_1st,'thrType','rel');
+
+
+dPks = diff(pks.all);
+inds = find(dPks >= minSwimPts) + 1;
+pks.first =  pks.all(find(dPks>=minSwimPts)+1);
+pks.first = [pks.all(1); pks.first(:)];
+pks.all = GetPks(zscore(var),'polarity',0,'peakThr',pkThr_2nd,'thrType','rel');
+
+pks.second = nan(size(pks.first));
+for pk = 1:length(pks.first)
+    if pk ==16
+        a = 1;
+    end
+    dPks = pks.all-pks.first(pk);
+    dPks(dPks<=0)=inf;
+    dPks(dPks >=maxBurstPts)=inf;
+    dPks(dPks <= minBurstPts)=inf;
+    if ~ all(isinf(dPks))
+        [~, ind] = min(dPks);
+        pks.second(pk) = pks.all(ind);
+    end
+end
+pks.second(isnan(pks.second))=[];
+
+pks.first_tap = intersect(pks.first,tapInds);
+pks.first_tap_left = pks.first_tap(var(pks.first_tap)>0);
+pks.first_tap_right = pks.first_tap(var(pks.first_tap)<0);
+pks.first_dark = intersect(pks.first,darkInds);
+pks.first_dark_left = pks.first_dark(var(pks.first_dark)>0);
+pks.first_dark_right = pks.first_dark(var(pks.first_dark)<0);
+pks.second_tap = intersect(pks.second,tapInds);
+pks.second_tap_left = pks.second_tap(var(pks.second_tap)>0);
+pks.second_tap_right = pks.second_tap(var(pks.second_tap)<0);
+pks.second_dark = intersect(pks.second,darkInds);
+pks.second_dark_left = pks.second_dark(var(pks.second_dark)>0);
+pks.second_dark_right = pks.second_dark(var(pks.second_dark)<0);
+pks.dCurv = var;
+pks.mu_lbl = {'1st_tap_left', '1st_tap_right','1st_dark_left','1st_dark_right',...
+    '2nd_tap_left', '2nd_tap_right','2nd_dark_left','2nd_dark_right'};
+pks.mu =[mean(var(pks.first_tap_left)), mean(abs(var(pks.first_tap_right))),...
+    mean(var(pks.first_dark_left)), mean(abs(var(pks.first_dark_right))),...
+    mean(var(pks.second_tap_left)), mean(abs(var(pks.second_tap_right))),...
+    mean(var(pks.second_dark_left)), mean(abs(var(pks.second_dark_right)))];
+
+
+% Plots - Pks on full trace
+figure('Name','All pks')
+plot(time,var)
+hold on
+set(gca,'color','k')
+plot(time(pks.all),var(pks.all),'yo')
+plot(time(pks.first),var(pks.first),'g+')
+plot(time(pks.second),var(pks.second),'m+')
+trlVec = zeros(size(time));
+trlVec(trlFrames) = 50;
+trlVec(trlFrames+1) = -50;
+plot(time,trlVec,'r--')
+
+
+% Plots - First peaks
+figure('Name','First peaks')
+y1 = abs(var(pks.first_dark_left));
+x1 = 1 + rand(size(y1))*0.5-0.25;
+plot(x1,y1,'b.')
+hold on
+y2 = abs(var(pks.first_dark_right));
+x2 = 2 + rand(size(y2))*0.5-0.25;
+plot(x2,y2,'r.')
+mu1 = mean(y1);
+mu2 = mean(y2);
+hold on
+plot([1,2],[mu1, mu2],'yo-')
+set(gca,'color','k')
+xlim([0 3])
+box off
+set(gca,'xtick',1:2,'xticklabel',{'Left','Right'})
+title('Dark trls')
+ylabel('Angular vel for 1st peak (deg/ms)')
+break
+
+
+
+
+
+ %% Plots - First peaks
+% figure('Name','First peaks')
+% plot(1,abs(pks.curv(pks.first_tap_left)),'b.')
+% hold on
+% plot(2,abs(pks.curv(pks.first_tap_right)),'r.')
+% plot(3,abs(pks.curv(pks.first_dark_left)),'g.')
+% plot(4,abs(pks.curv(pks.first_dark_right)),'m.')
+% plot(1:4,pks.mu(1:4),'yo-')
+% set(gca,'color','k')
+% xlim([0 5])
+% box off
+% set(gca,'xtick',1:4,'xticklabel',pks.mu_lbl(1:4))
+% title('1st peaks for tap and dark trls sorted by left and right turn')
+% 
+% break
+
+%% Plots - First pks for tap and dark
 figure('Name','First peaks')
 plot(1,abs(pks.curv(pks.first_tap_left)),'b.')
 hold on

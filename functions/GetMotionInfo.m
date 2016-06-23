@@ -1,8 +1,7 @@
 function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 %GetMotionInfo - Returns some info about fish motion
 % motionInfo = GetMotionInfo(fishPos, orientation, imgLen)
-% motionInfo = GetMotionInfo(...,motionThr);
-% motionInto = GetMotionInfo(...,trajPlot)
+% motionInfo = GetMotionInfo(...,'motionThr',motionThr,'trajPlot',trajPlot,'fps',fps,'lpf',lpf,'hpf',hpf,'curvNoise',curvNoise);
 % Inputs:
 % fishPos - T x 2 matrix where T is the total number of time points (img
 %   frames) and the 1st and the 2nd cols contain the x and y coordinates of the fish
@@ -11,7 +10,12 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 % imgLen - Length of each image, i.e., size(IM,1)
 % motionThr - The fish has to move by this many pixels to be considered in
 %   motion
-% trajPlot - Trajectory plot boolean
+% plotTraj - Trajectory plot boolean (True results in the plotting of trajectories)
+% fps - Frames per second [default: 500]
+% lpf - Low pass filter value for smoothing curvature & orientation [default: 100]
+% hpf - High pass filter value [default: 15]
+% noise_curv - Noise level below which to smooth out signal in curvature
+%   timeseries
 % Outputs:
 % motionInfo - Structure variable containing swimming info extracted from
 %   trajectories.
@@ -31,22 +35,39 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 %   .turnInfo - ?? (later)
 %   .orientInfo - ?? (later)
 % 
-% Avinash Pujala, HHMI, 2016
+% Avinash Pujala, Koyama lab/HHMI, 2016
 
-trajPlot = 0; % 1 results in plotting of trajectories
+plotTraj = 0; % 1 results in plotting of trajectories
 motionThr = 5;
-lpf = 50; % Low pass filter for timeseries (only if sampling rate greater than 100 fps)
-frameRate = 500;
+lpf = 60; % Low pass filter for timeseries (only if sampling rate greater than 150 fps)
+hpf = 15;
+fps = 500;
+noise_curv = 4;
 
-if nargin ==4
-    motionThr = varargin{1};
-elseif nargin ==5
-    motionThr = varargin{1};
-    trajPlot = varargin{2};
+for jj = 1:numel(varargin)
+    if isstr(varargin{jj})
+        switch lower(varargin{jj})
+            case 'motionthr'
+                motionThr = varargin{jj+1};
+            case 'fps'
+                fps = varargin{jj+1};
+            case 'lpf'
+                lpf = varargin{jj+1};
+            case 'plottraj'
+                plotTraj = varargin{jj+1};
+            case 'hpf'
+                hpf = varargin{jj+1};
+            case 'curvnoise'
+                noise_curv = varargin{jj+1};
+        end
+    end
 end
+
+disp('Getting motion frames...')
 [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
 
 %## Distance info
+disp('Getting swim distance info...')
 D = @(v)sqrt(sum(diff(v,[],1).^2,2));
 x = fishPos(swimStartFrames,1);
 y = fishPos(swimStartFrames,2);
@@ -55,6 +76,7 @@ dS = D(fishPos(swimStartFrames,:));
 dS_all = D(fishPos);
 
 %## Orientation info
+disp('Getting orientation info...')
 if (size(orientation,1)==2) && (size(orientation,1) < size(orientation,2))
     orientation = orientation';
 elseif (size(orientation,1) < size(orientation,2))
@@ -66,26 +88,25 @@ or = 360-or;
 ker = gausswin(6); ker = ker/sum(ker);
 dOr = conv2((-DiffOrientation(orientation(:,1)))*180/pi, ker(:),'same');
 
-
 %## Head curvature info
+disp('Getting curvature info...')
 if size(orientation,2)>1
     curv = GetCurvInfo(orientation);
     curv = [curv, sum(curv,2)];
-%     curv = fix(curv/8)*8;
-    if frameRate < 100
-        for jj = 1:size(curv,2)
-            curv(:,jj) = conv2(curv(:,jj),ker(:),'same');
-        end
-    else
-         for jj = 1:size(curv,2)
-            curv(:,jj) = chebfilt(curv(:,jj),1/500,lpf,'low');            
-        end
+    disp('Filtering curvature...')
+    if size(curv,1) > 50
+         curv = chebfilt(curv,1/fps,hpf,'high');
+         curv = fix(curv/noise_curv)*noise_curv; % Ignore noise in curv below specified level.
+    end
+    if fps >=150       
+        curv = chebfilt(curv,1/fps,lpf,'low');
     end
 else
     curv = NaN;
 end
-
-
+for jj = 1:size(curv,2)
+    curv(:,jj) = conv2(curv(:,jj),ker(:),'same');
+end
 
 %## Motion vec info
 motionVecInfo = GetMotionVecInfo(fishPos);
@@ -98,7 +119,7 @@ epInds = {};
 traj_angle = zeros(size(swimStartFrames));
 [traj_angle_lim,speed,vel,angVel] = deal(traj_angle);
 
-if trajPlot
+if plotTraj
     figure
     %     axis image
 end
@@ -137,7 +158,7 @@ for jj = 2:length(swimStartFrames)-1
     
     
     %## Plot trajectories if specified
-    if trajPlot
+    if plotTraj
         hold on
         plot(traj_adj{jj}(:,1),traj_adj{jj}(:,2),'.-','color',rand(1,3)), drawnow
         axis image

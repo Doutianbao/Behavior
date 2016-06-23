@@ -14,6 +14,7 @@ function PlayFishOriention(IM,fishPos,orientation,varargin)
 % frameInds - Indices of frames to display
 % pauseDur - Duration of pause between subsequent frames
 % plotCurv - 0 or 1, 0 results in plotting of curvatures
+% curv - Curvature to plot
 % saveDir - Directory to save images to
 
 lineLength = 25;
@@ -23,34 +24,33 @@ frameInds  = [];
 midlineInds = [];
 saveDir = [];
 pauseDur =0;
+curv = [];
 if nargin < 3
     error('3 inputs required!')
 end
 for jj = 1:numel(varargin)
-    if strcmpi(varargin{jj},'frameInds')
-        frameInds = varargin{jj+1};
-    end
-    if strcmpi(varargin{jj},'pauseDur')
-        pauseDur = varargin{jj+1};
-    end
-    if strcmpi(varargin{jj},'midlineInds')
-        midlineInds = varargin{jj+1};
-    end
-    if strcmpi(varargin{jj},'saveDir')
-        saveDir = varargin{jj+1};
-    end
-    if strcmpi(varargin{jj},'plotCurv')
-        plotCurv = varargin{jj+1};
-        curv = GetCurvInfo(orientation);
-        curv = fix(curv/8)*8;
-        ker = gausswin(6); ker = ker/sum(ker);
-        for kk = 1:size(curv,2)
-            curv(:,kk) = conv2(curv(:,kk),ker(:),'same');
+    if isstr(varargin{jj})
+        switch lower(varargin{jj})
+            case 'frameinds'
+                frameInds = varargin{jj+1};
+            case 'pausedur'
+                pauseDur = varargin{jj+1};
+            case 'midlineinds'
+                midlineInds = varargin{jj+1};
+            case 'savedir'
+                saveDir = varargin{jj+1};
+            case 'plotcurv'
+                plotCurv = varargin{jj+1};
+            case 'curv'
+                curv = varargin{jj+1};
         end
-   
     end
 end
 
+if isempty(curv) || all(isnan(curv(:)))
+    motionInfo = GetMotionInfo(fishPos,orientation,size(IM,1),'curvNoise',10);
+    curv = motionInfo.curv;
+end
 
 if iscell(orientation) % Implies this input is midlineInds, rather than orientation
     imgDims = size(IM);
@@ -67,6 +67,8 @@ imgDims =[size(IM,1), size(IM,2)];
 if ~isempty(midlineInds)
     clrs = jet(length(midlineInds{1}));
 end
+blah = IM(:,:,end);
+cLim = [min(blah(:)), max(blah(:))];
 for imgNum = frameInds(:)'
     [x,y] = Or2LnInds(orientation(imgNum,1),lineLength);
     x = x + fishPos(imgNum,1);
@@ -74,8 +76,9 @@ for imgNum = frameInds(:)'
     if plotCurv
         subplot(2,1,1)
         cla
-        imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
+        imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)       
         hold on
+        set(gca,'clim',cLim)
         plot(x,y,'color','r','linewidth',2),drawnow
         eTime = toc;
         title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(orientation(imgNum))) '^o ' ...
@@ -108,6 +111,7 @@ for imgNum = frameInds(:)'
         cla
         imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
         hold on
+        set(gca,'clim',cLim)
         if ~isempty(midlineInds)
             for line = 1:length(midlineInds{imgNum})
             [y,x] = ind2sub(imgDims,midlineInds{imgNum}{line});

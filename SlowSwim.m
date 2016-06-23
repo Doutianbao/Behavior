@@ -80,7 +80,7 @@ disp('Getting extra arena pxls...')
 [~,outPxls] = GetInnerPxls(ref,fliplr(edgeInds));
 extraArenaInds = sub2ind(size(ref),outPxls(:,1),outPxls(:,2));
 
-midlineInds = GetMidlines(IM_proc,fishPos,[20 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','serial');
+midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
 imgDims = size(IM_proc);
 orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 orientation_backup = orientation;
@@ -92,8 +92,8 @@ toc
 
 %% Motion Info
 motionThr = 1;
-[motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
-motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1));
+% [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
+motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
 
 %% Saving processed images
 % saveOrNot = 'y';

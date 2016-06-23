@@ -24,21 +24,21 @@ end
 tic
 % im = median(IM(:,:,refFrames),3);
 % im = max(IM(:,:,refFrames),[],3);
-im = mean(IM(:,:,refFrames),[],3);
+ref = mean(IM(:,:,refFrames),3);
 toc
 
 disp('Subtracting background...')
 if size(IM,3)>=500
-    IM_proc = ProcInParallel(IM,im,poolSize);
+    IM_proc = ProcInParallel(IM,ref,poolSize);
 else
-    IM_proc = ProcInSerial(IM,im);
+    IM_proc = ProcInSerial(IM,ref);
 end
 
 varargout{1} = IM_proc;
 varargout{2} = ref;
 
 end
-function IM_proc = ProcInParallel(IM,im, poolSize)
+function IM_proc = ProcInParallel(IM,ref, poolSize)
 if strcmpi(class(IM),'mappedTensor')
     IM_proc = MappedTensor(size(IM));
 else
@@ -53,7 +53,7 @@ if matlabpool('size')==0
 end
 dispChunk = round(numel(imgFrames)/30);
 parfor jj=imgFrames
-    IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+    IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+ref,ones(5)/25,'same');
 %     IM_proc(:,:,jj) = -squeeze(IM(:,:,jj))+im;
     if mod(jj, dispChunk)==0
         disp(['Img# ' num2str(jj)])
@@ -64,7 +64,7 @@ if poolOpened
 end
 end
 
-function IM_proc = ProcInSerial(IM,im)
+function IM_proc = ProcInSerial(IM,ref)
 if strcmpi(class(IM),'mappedTensor')
     IM_proc = MappedTensor(size(IM));
 else
@@ -74,7 +74,7 @@ end
 imgFrames= 1:size(IM,3);
 dispChunk = round(numel(imgFrames)/30);
 for jj=imgFrames
-    IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+im,ones(5)/25,'same');
+    IM_proc(:,:,jj) = conv2(-squeeze(IM(:,:,jj))+ref,ones(5)/25,'same');
     if mod(jj, dispChunk)==0
         disp(['Img# ' num2str(jj)])
     end

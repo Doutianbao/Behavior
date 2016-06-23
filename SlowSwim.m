@@ -99,10 +99,16 @@ motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr)
 % saveOrNot = 'y';
 saveOrNot = input('Save IM_proc (y/n)?  ','s');
 tic
-if strcmpi('y',saveOrNot)
-    disp('Saving relevant variables...')
-    %     savefast(fullfile(outDir,[fName, '_IM_proc.mat']),'IM_proc');
-    procData.IM_proc = IM_proc;
+if strcmpi('y',saveOrNot)   
+    clear IM
+    disp('Cropping images...')
+    tic
+    IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100,'procType','parallel');
+    toc
+    disp('Saving cropped IM_proc...')
+    tic
+    procData.IM_proc = IM_crop; % This is to save some time and space
+    toc
 else
     disp('Data not saved!')
 end

@@ -1,7 +1,7 @@
-function varargout = ProcessImages(varargin)
-%ProcessImages_parallel Smooth and background subtract images
-% IM_proc = ProcessImages(IM)
-% [IM_proc, refImg] = ProcessImages(IM,refFrames);
+function varargout = SubtractBackground(varargin)
+%SubtractBackground Subtracts background from images
+% IM_proc = SubtractBackground(IM)
+% [IM_proc, refImg] = SubtractBackground(IM,refFrames);
 % Inputs:
 % IM - Image stack where 3rd time is time
 % refFrames - A vector specifying the frames to average for background

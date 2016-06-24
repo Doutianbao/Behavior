@@ -43,7 +43,7 @@ if matlabpool('size')==0
     matlabpool(poolSize)
 end
 disp('Processing images...')
-[IM_proc, ref] = ProcessImages(IM);
+[IM_proc, ref] = SubtractBackground(IM);
 toc
 
 %% Tracking the fish

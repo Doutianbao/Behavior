@@ -103,7 +103,8 @@ if strcmpi('y',saveOrNot)
     clear IM
     disp('Cropping images...')
     tic
-    IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100,'procType','parallel');
+%     IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100,'procType','parallel');
+    IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100);
     toc
     disp('Saving cropped IM_proc...')
     tic

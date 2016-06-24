@@ -25,6 +25,7 @@ midlineInds = [];
 saveDir = [];
 pauseDur =0;
 curv = [];
+motionThr = 4;
 if nargin < 3
     error('3 inputs required!')
 end
@@ -43,12 +44,14 @@ for jj = 1:numel(varargin)
                 plotCurv = varargin{jj+1};
             case 'curv'
                 curv = varargin{jj+1};
+            case 'motionthr'
+                motionThr = varargin{jj+1};
         end
     end
 end
 
 if isempty(curv) || all(isnan(curv(:)))
-    motionInfo = GetMotionInfo(fishPos,orientation,size(IM,1),'curvNoise',10);
+    motionInfo = GetMotionInfo(fishPos,orientation,size(IM,1),'curvNoise',10,'motionThr',motionThr);
     curv = motionInfo.curv;
 end
 
@@ -76,7 +79,7 @@ for imgNum = frameInds(:)'
     if plotCurv
         subplot(2,1,1)
         cla
-        imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)       
+        imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
         hold on
         set(gca,'clim',cLim)
         plot(x,y,'color','r','linewidth',2),drawnow
@@ -91,7 +94,7 @@ for imgNum = frameInds(:)'
             plot(imgNum-99:imgNum,curv(imgNum-99:imgNum,2),'g')
             plot(imgNum-99:imgNum,ones(1,100)*10,'w:')
             plot(imgNum-99:imgNum,ones(1,100)*-10,'w:')
-            xlim([imgNum-99 imgNum])          
+            xlim([imgNum-99 imgNum])
             %             plot([imgNum, imgNum ],[-20,20],'c--')
         else
             cla
@@ -100,7 +103,7 @@ for imgNum = frameInds(:)'
             plot(curv(1:imgNum,2),'g')
             plot(ones(imgNum,1)*10,'w:')
             plot(ones(imgNum,1)*-10,'w:')
-            xlim([0 imgNum])            
+            xlim([0 imgNum])
         end
         ylim([-120 120])
         lh = legend('head','tail');
@@ -114,14 +117,14 @@ for imgNum = frameInds(:)'
         set(gca,'clim',cLim)
         if ~isempty(midlineInds)
             for line = 1:length(midlineInds{imgNum})
-            [y,x] = ind2sub(imgDims,midlineInds{imgNum}{line});
-            plot(x,y,'color',clrs(line,:),'linewidth',2)          
-            end            
+                [y,x] = ind2sub(imgDims,midlineInds{imgNum}{line});
+                plot(x,y,'color',clrs(line,:),'linewidth',2)
+            end
         else
             plot(x,y,'color','r','linewidth',2)
-        end   
+        end
         axis off
-        if ~isempty(saveDir)            
+        if ~isempty(saveDir)
             suffix = sprintf('%0.5d',imgNum);
             fName = ['Img_' suffix];
             print(fullfile(saveDir,fName),'-dpng')

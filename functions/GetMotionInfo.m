@@ -40,7 +40,7 @@ function motionInfo = GetMotionInfo(fishPos,orientation,imgLen,varargin)
 plotTraj = 0; % 1 results in plotting of trajectories
 motionThr = 5;
 lpf = 60; % Low pass filter for timeseries (only if sampling rate greater than 150 fps)
-hpf = 15;
+hpf = 5;
 fps = 500;
 noise_curv = 4;
 
@@ -96,7 +96,7 @@ if size(orientation,2)>1
     disp('Filtering curvature...')
     if size(curv,1) > 50
          curv = chebfilt(curv,1/fps,hpf,'high');
-         curv = fix(curv/noise_curv)*noise_curv; % Ignore noise in curv below specified level.
+%          curv = fix(curv/noise_curv)*noise_curv; % Ignore noise in curv below specified level.
     end
     if fps >=150       
         curv = chebfilt(curv,1/fps,lpf,'low');

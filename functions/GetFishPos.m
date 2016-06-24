@@ -21,6 +21,7 @@ method = 'mean';
 process = 'serial';
 filterFlag = 0;
 poolSize = 10;
+ker = ones(5)/25;
 
 nArgs = length(varargin);
 for jj = 1:nArgs
@@ -43,7 +44,6 @@ if nargin > 1
     nPixels = varargin{1};
 end
 
-
 x = zeros(1,size(IM,3));
 y = x;
 if filterFlag
@@ -58,6 +58,8 @@ if strcmpi(process,'serial')
         img= IM(:,:,jj);
         if filterFlag
             img = gaussianbpf(img,flt);
+        else
+            img = conv2(img,ker,'same');
         end
         [r,c] = FishPosInImg(img,nPixels,method);
         x(jj) = c;
@@ -89,6 +91,7 @@ elseif strcmpi(process, 'parallel')
     else
         parfor jj=imgFrames
             img= IM(:,:,jj);
+            img = conv2(img,ker,'same');
             [r,c] = FishPosInImg(img,nPixels,method);
             x(jj) = c;
             y(jj) = r;

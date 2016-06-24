@@ -48,10 +48,10 @@ toc
 
 %% Tracking the fish
 if ~isempty(bp)
-    fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','parallel');
+    fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
     %     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
 else
-    fishPos = GetFishPos(IM_proc, 40,'process','parallel');
+    fishPos = GetFishPos(IM_proc, 30,'process','parallel');
     %     fishPos = GetFishPos(IM_proc, 40,'process','serial');
 end
 

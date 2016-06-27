@@ -41,9 +41,9 @@ img = img(imgCtr(1)-ceil(base/2):imgCtr(1)+ceil(base/2), imgCtr(2):end);
 img(inpolygon(r,c,x,y)) = 1;
 t = 1:size(img,2);
 y = grad*t + 1;
-[X,~] = meshgrid(y,y);
-X = X(1:size(img),:);
-img = img.*X;
+[X,~] = meshgrid(y,1:size(img,1));
+G = X(1:size(img,1),:);
+img = img.*G;
 varargout{1} = img;
 [r,c] = find(img);
 

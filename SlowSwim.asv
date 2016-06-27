@@ -97,25 +97,18 @@ motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr)
 
 %% Saving processed images
 % saveOrNot = 'y';
-saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
-cropWid = input('Enter crop width in pxls: ');
-if isempty(cropWid)
-    cropWid = 70;
-end
+saveOrNot = input('Save cropped  (y/n)?  ','s');
 tic
 if strcmpi('y',saveOrNot)   
+    clear IM
     disp('Cropping images...')
     tic
-    IM_crop = CropImgsAroundPxl(IM,fishPos,cropWid);
-    clear IM
-    IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
-    clear IM_proc
-    toc    
-    disp('Saving cropped stacks...')
-    tic
-    procData.IM = IM_crop;
+%     IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100,'procType','parallel');
+    IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100);
     toc
-    procData.IM_proc = IM_proc_crop; % This is to save some time and space
+    disp('Saving cropped IM_proc...')
+    tic
+    procData.IM_proc = IM_crop; % This is to save some time and space
     toc
 else
     disp('Data not saved!')

@@ -14,7 +14,7 @@ S = @(pxl,pxls)(sum((pxls-repmat(pxl,size(pxls,1),1)).^2,2).^0.5);
 I_thresh = size(I_crop);
 linePxls = zeros(nLinePxls,2,size(I_crop,3));
 % indMat = reshape(1:size(I_crop,1)*size(I_crop,2),size(I_crop,1),size(I_crop,2));
-[C,R] = meshgrid(1:size(I_crop,2),1:size(I_crop,1));
+[C,R] = meshgrid(1:size(I_crop,1),1:size(I_crop,2));
 for jj = 1:size(I_crop,3)
     cla
     %# Get threshold for binarizing image

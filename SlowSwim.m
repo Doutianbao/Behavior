@@ -44,6 +44,9 @@ if matlabpool('size')==0
 end
 disp('Processing images...')
 [IM_proc, ref] = SubtractBackground(IM);
+IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
+imgDims = size(IM_proc);
+clear IM_proc
 toc
 
 %% Tracking the fish
@@ -69,25 +72,32 @@ procData.ref = ref;
 toc
 
 %% Fish Orientation
-disp('Getting fish orientation...')
+disp('Getting tail curvature...')
 tic
-% midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
+
 % midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
 
-disp('Getting arena edge...')
-edgeInds  = GetArenaEdge(ref,'detThr',0.6,'nIter',100);
-disp('Getting extra arena pxls...')
-[~,outPxls] = GetInnerPxls(ref,fliplr(edgeInds));
-extraArenaInds = sub2ind(size(ref),outPxls(:,1),outPxls(:,2));
+%##### Not using this method at the moment.
+% disp('Getting arena edge...')
+% edgeInds  = GetArenaEdge(ref,'detThr',0.6,'nIter',100);
+% disp('Getting extra arena pxls...')
+% [~,outPxls] = GetInnerPxls(ref,fliplr(edgeInds));
+% extraArenaInds = sub2ind(size(ref),outPxls(:,1),outPxls(:,2));
+% midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
+%###########
 
-midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
-imgDims = size(IM_proc);
-orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
-orientation_backup = orientation;
+midlineInds = GetMidlines(I_proc_crop,(fishPos./fishPos)*(size(I_proc_crop,1)/2+1),...
+    [15 12 12 10 10],'bmp','procType','serial');
+
+tailCurv = SmoothMidlines(mlInds,I_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
+
+% orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
+% orientation_backup = orientation;
 
 disp('Saving orientation...')
-procData.orientation = orientation;
+% procData.orientation = orientation;
 procData.midlineInds = midlineInds;
+procData.tailCurv = tailCurv;
 toc
 
 %% Motion Info
@@ -107,9 +117,7 @@ if strcmpi('y',saveOrNot)
     disp('Cropping images...')
     tic
     IM_crop = CropImgsAroundPxl(IM,fishPos,cropWid);
-    clear IM
-    IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
-    clear IM_proc
+    clear IM   
     toc    
     disp('Saving cropped stacks...')
     tic

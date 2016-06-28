@@ -71,19 +71,28 @@ toc
 %% Fish Orientation
 disp('Getting fish orientation...')
 tic
-% midlineInds = GetMidline_template_parallel(IM_orient,fishPos,[30]);
+
 % midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
 
-disp('Getting arena edge...')
-edgeInds  = GetArenaEdge(ref,'detThr',0.6,'nIter',100);
-disp('Getting extra arena pxls...')
-[~,outPxls] = GetInnerPxls(ref,fliplr(edgeInds));
-extraArenaInds = sub2ind(size(ref),outPxls(:,1),outPxls(:,2));
+%##### Not using this method at the moment.
+% disp('Getting arena edge...')
+% edgeInds  = GetArenaEdge(ref,'detThr',0.6,'nIter',100);
+% disp('Getting extra arena pxls...')
+% [~,outPxls] = GetInnerPxls(ref,fliplr(edgeInds));
+% extraArenaInds = sub2ind(size(ref),outPxls(:,1),outPxls(:,2));
+% midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
+%###########
 
-midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
+
+IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
+clear IM_proc
+midlineInds = GetMidlines(I_proc_crop(:,:,inds),(fishPos(inds,:)./fishPos(inds,:))*(size(I_crop,1)/2+1),...
+    [15 12 12 10 10],'bmp','procType','serial');
 imgDims = size(IM_proc);
-orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
-orientation_backup = orientation;
+tailCurv = SmoothMidlines(mlInds,I_proc_crop(:,:,1:300),2,'plotBool',0,'pauseDur',0,'smoothFactor',5);
+
+% orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
+% orientation_backup = orientation;
 
 disp('Saving orientation...')
 procData.orientation = orientation;
@@ -97,18 +106,23 @@ motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr)
 
 %% Saving processed images
 % saveOrNot = 'y';
-saveOrNot = input('Save cropped  (y/n)?  ','s');
+saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
+cropWid = input('Enter crop width in pxls: ');
+if isempty(cropWid)
+    cropWid = 70;
+end
 tic
 if strcmpi('y',saveOrNot)   
-    clear IM
     disp('Cropping images...')
     tic
-%     IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100,'procType','parallel');
-    IM_crop = CropImgsAroundPxl(IM_proc,fishPos,100);
-    toc
-    disp('Saving cropped IM_proc...')
+    IM_crop = CropImgsAroundPxl(IM,fishPos,cropWid);
+    clear IM   
+    toc    
+    disp('Saving cropped stacks...')
     tic
-    procData.IM_proc = IM_crop; % This is to save some time and space
+    procData.IM = IM_crop;
+    toc
+    procData.IM_proc = IM_proc_crop; % This is to save some time and space
     toc
 else
     disp('Data not saved!')

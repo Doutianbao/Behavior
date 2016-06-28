@@ -18,9 +18,10 @@ function tailCurv = SmoothMidlines(midlineInds,imgStack, varargin)
 %
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
-nHood = 1; % Default neighborhood size
+nHood = 2; % Default neighborhood size
 plotBool = false;
 pauseDur = 0;
+smoothFactor = 2;
 
 if nargin < 2
     error('Minimum 2 inputs required!')
@@ -36,12 +37,15 @@ for jj = 1:numel(varargin)
                 plotBool = varargin{jj+1};
             case 'pausedur'
                 pauseDur = varargin{jj+1};
+            case 'smoothfactor'
+                smoothFactor = varargin{jj+1};
         end
     end
 end
 if length(midlineInds) ~= size(imgStack,3)
     error('Mismatch in size of inputs, check inputs!')
 end
+
 imgStack = Standardize(imgStack); % Important for smoothing midlines using pxl intensity weighting (avoids -ve values)
 bodyLen = size(cell2mat(midlineInds{1}),1);
 tailLen = bodyLen -length(midlineInds{1}{1});
@@ -54,8 +58,8 @@ end
 for iNum = 1:length(midlineInds)
     mlInds = midlineInds{iNum};
     mlInds = cell2mat(mlInds(2:end));
-    blah = SmoothMidline(mlInds,imgStack(:,:,iNum),nHood);
-    tailCurv(:,:,iNum) = blah;
+    tc = SmoothMidline(mlInds,imgStack(:,:,iNum),nHood);
+    tailCurv(:,:,iNum) = SplineTailCurv(tc,smoothFactor);
     if mod(iNum,dispChunk)==0
         disp(['Img # ' num2str(iNum)])
     end
@@ -64,7 +68,8 @@ for iNum = 1:length(midlineInds)
         imagesc(imgStack(:,:,iNum)),axis image, colormap(gray)
         hold on
         plot(size(imgStack,1)/2+1,size(imgStack,2)/2+1,'b*','markersize',10)
-        plot(tailCurv(:,1,iNum), tailCurv(:,2,iNum),'r.-')
+        plot(tailCurv(:,1,iNum), tailCurv(:,2,iNum),'r.-','linewidth',2.5)
+        %         plot(tc(:,1),tc(:,2),'g.-')
         drawnow
         title(['Img # ' num2str(iNum)])
         shg
@@ -75,6 +80,7 @@ for iNum = 1:length(midlineInds)
         end
     end
 end
+
 end
 
 
@@ -94,4 +100,15 @@ for jj = 1:size(r,1)
     pxlInd(2) = sum(cNeighbors(:).*wts(:))/sum(wts(:));
     tailCurv(jj,:)= fliplr(round(pxlInd*10)/10); % Flipping to give in x-y rather than row-col coordinates
 end
+end
+
+
+function tailCurv_spline = SplineTailCurv(tailCurv,smoothFactor)
+y = [tailCurv(1,:); tailCurv; tailCurv(end,:)];
+tt = 0:size(y,1)-1;
+t = tt(1:smoothFactor:end);
+xx = interp1(t,y(1:smoothFactor:end,1),tt,'spline');
+yy = interp1(t,y(1:smoothFactor:end,2),tt,'spline');
+tailCurv_spline = [xx(2:end-1); yy(2:end-1)]';
+
 end

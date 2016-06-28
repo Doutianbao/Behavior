@@ -87,9 +87,9 @@ tic
 %###########
 
 midlineInds = GetMidlines(I_proc_crop,(fishPos./fishPos)*(size(I_proc_crop,1)/2+1),...
-    [15 12 12 10 10],'bmp','procType','serial');
+    [15 12 12 10 10],'bmp','procType','parallel');
 
-tailCurv = SmoothMidlines(mlInds,I_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
+tailCurv = SmoothMidlines(midlineInds,I_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
 
 % orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 % orientation_backup = orientation;

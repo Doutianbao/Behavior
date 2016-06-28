@@ -55,13 +55,15 @@ disp('Smoothing midlines...')
 if plotBool
     figure('Name','Smoothed fish tail curvature')
 end
-for iNum = 1:length(midlineInds)
+tic
+N = length(midlineInds);
+for iNum = 1:N
     mlInds = midlineInds{iNum};
     mlInds = cell2mat(mlInds(2:end));
     tc = SmoothMidline(mlInds,imgStack(:,:,iNum),nHood);
     tailCurv(:,:,iNum) = SplineTailCurv(tc,smoothFactor);
     if mod(iNum,dispChunk)==0
-        disp(['Img # ' num2str(iNum)])
+        disp(['Img # ' num2str(iNum) '/' num2str(N)])
     end
     if plotBool
         cla
@@ -80,6 +82,7 @@ for iNum = 1:length(midlineInds)
         end
     end
 end
+toc
 
 end
 

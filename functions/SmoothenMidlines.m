@@ -60,7 +60,7 @@ N = length(midlineInds);
 for iNum = 1:N
     mlInds = midlineInds{iNum};
     mlInds = cell2mat(mlInds(2:end));
-    tc = SmoothMidline(mlInds,imgStack(:,:,iNum),nHood);
+    tc = SmoothenMidline(mlInds,imgStack(:,:,iNum),nHood);
     tailCurv(:,:,iNum) = SplineTailCurv(tc,smoothFactor);
     if mod(iNum,dispChunk)==0
         disp(['Img # ' num2str(iNum) '/' num2str(N)])
@@ -87,7 +87,7 @@ toc
 end
 
 
-function tailCurv = SmoothMidline(mlInds,img,nHood)
+function tailCurv = SmoothenMidline(mlInds,img,nHood)
 tailCurv = zeros(length(mlInds),2);
 [r,c] = ind2sub(size(img),mlInds);
 [C,R] = meshgrid(1:size(img,2),1:size(img,1));
@@ -99,6 +99,8 @@ for jj = 1:size(r,1)
     rNeighbors = R(rInds,cInds);
     cNeighbors = C(rInds,cInds);
     wts = img(rInds,cInds);
+%     ker = ones(length(wts));
+%     wts = conv2(wts,ker,'same');
     pxlInd(1) = sum(rNeighbors(:).*wts(:))/sum(wts(:));
     pxlInd(2) = sum(cNeighbors(:).*wts(:))/sum(wts(:));
     tailCurv(jj,:)= fliplr(round(pxlInd*10)/10); % Flipping to give in x-y rather than row-col coordinates
@@ -109,9 +111,13 @@ end
 function tailCurv_spline = SplineTailCurv(tailCurv,smoothFactor)
 y = [tailCurv(1,:); tailCurv; tailCurv(end,:)];
 tt = 0:size(y,1)-1;
-t = tt(1:smoothFactor:end);
+% t = tt(1:smoothFactor:end);
+t = linspace(tt(1),tt(end),ceil(length(tt)/smoothFactor));
 xx = interp1(t,y(1:smoothFactor:end,1),tt,'spline');
 yy = interp1(t,y(1:smoothFactor:end,2),tt,'spline');
+% xx = interp1(t,y(1:smoothFactor:end,1),tt,'cubic');
+% yy = interp1(t,y(1:smoothFactor:end,2),tt,'cubic');
+
 tailCurv_spline = [xx(2:end-1); yy(2:end-1)]';
 
 end

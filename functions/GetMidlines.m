@@ -50,7 +50,7 @@ elseif nargin > 3
 end
 
 for jj =  3:numel(varargin)
-    if isstr(varargin{jj})
+    if ischar(varargin{jj})
         switch lower(varargin{jj})
             case 'extraarenainds'
                 extraArenaInds = varargin{jj+1};

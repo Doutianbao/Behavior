@@ -87,7 +87,7 @@ tic
 %###########
 
 midlineInds = GetMidlines(I_proc_crop,(fishPos./fishPos)*(size(I_proc_crop,1)/2+1),...
-    [15 12 12 10 10],'bmp','procType','parallel');
+    [15 10 5 5 5 5 5 5 5],'bmp','procType','serial');
 
 tailCurv = SmoothenMidlines(midlineInds,I_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
 

@@ -34,6 +34,7 @@ imgExt = 'jpg';
 extraArenaInds = [];
 procType = 'serial';
 plotBool = 1;
+headVec = cell(size(IM,3),1);
 
 if nargin == 1
     if ischar(IM) && isdir(IM)
@@ -60,6 +61,8 @@ for jj =  3:numel(varargin)
                 procType = varargin{jj+1};
             case 'plotbool'
                 plotBool = varargin{jj+1};
+            case 'headvec'
+                headVec = varargin{jj+1};
         end
     end
 end
@@ -87,9 +90,9 @@ if ~isempty(extraArenaInds)
     minInt = min(IM_sub(:));
     
 else
-    minInt =1;
+    minInt = 1;
 end
-
+dispChunk = round(size(IM,3)/5);
 if strcmpi(procType,'parallel')
     if matlabpool('size')==0
         matlabpool(10)
@@ -98,23 +101,23 @@ if strcmpi(procType,'parallel')
     parfor imgNum = imgInds;
         img = IM(:,:,imgNum);
         img(extraArenaInds) = minInt;
-        
-        [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
-        
+        [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
-        
-        disp(imgNum)
+        if mod(jj,dispChunk)==0
+            disp(num2str(imgNum))
+        end
     end
 else
     for imgNum = imgInds;
         img = IM(:,:,imgNum);
         img(extraArenaInds) = minInt;
-        
-        [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
-        
+        [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
         if plotBool
             PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+        end
+        if mod(jj,dispChunk) ==0
+            disp(num2str(imgNum))
         end
     end
 end
@@ -265,12 +268,34 @@ lineInds = indMat(comInds,:)';
 end
 
 
-function [lineMat,parentMap] = GetMLs(im,fishPos,dTh,lineLens)
-startPt = fishPos;
-prevStartPt  =[];
+function [lineMat,parentMap] = GetMLs(im,fishPos,dTh,lineLens,varargin)
+for jj = 1:numel(varargin)
+    if ischar(varargin{jj})
+        switch lower(varargin{jj})
+            case 'headvec'
+                headVec = varargin{jj+1};
+%                 if size(headVec,2)==2
+%                     headVec = sub2ind(size(im),round(headVec(:,2)),round(headVec(:,1)));
+%                 end
+        end
+    end
+end
+if ~isempty(headVec)
+    startPt = headVec(end,:);
+    prevStartPt  = headVec(1,:);
+else
+    startPt = fishPos;
+    prevStartPt  =[];
+end
+
 lineInds = cell(numel(lineLens),1);
 parentMap = lineInds;
-lineInds_first = GetML(im,startPt,prevStartPt, dTh, lineLens(1));
+if isempty(prevStartPt)
+    lineInds_first = GetML(im,startPt,prevStartPt, dTh, lineLens(1));
+else
+    lineInds_first = sub2ind(size(im),round(headVec(:,2)),round(headVec(:,1)));
+end
+
 for kk = 1:size(lineInds_first,2);
     parentMap{1}{kk} = num2str(kk);
     lineInds{1}{kk} = lineInds_first(:,kk);
@@ -373,7 +398,7 @@ lineProfiles = img(lineMat);
 % if size(lineProfiles,1) == heights(1)
 %     nml = mean(lineProfiles,1);
 % else
-%    nml = rImg2nml(lineProfiles'); 
+%    nml = rImg2nml(lineProfiles');
 % end
 nml = rImg2nml_bestLine(lineProfiles');
 [~,ind] = max(nml);

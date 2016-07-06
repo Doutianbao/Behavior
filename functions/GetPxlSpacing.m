@@ -8,8 +8,8 @@ function ipd = GetPxlSpacing(ref,varargin)
 %   input by the user. This allows for conversion of distance in pixels to
 %   distances in the units in which the arena diameter is entered
 % 
-% pxlDist = GetPxlSpacing(refImg, arenaDiameter);
-% pxlDist = GetPxlSpacing(refImg, arenaDiameter,'detThr',detThr,'nIter',nIter,'tol',tol,'plotBool',plotBool)
+% pxlDist = GetPxlSpacing(refImg);
+% pxlDist = GetPxlSpacing(refImg, 'diam, arenaDiameter,'detThr',detThr,'nIter',nIter,'tol',tol,'plotBool',plotBool)
 % 
 % Inputs:
 % refImg - Reference image in which to detect arena edge
@@ -27,7 +27,7 @@ function ipd = GetPxlSpacing(ref,varargin)
 % 
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
-diam = 250; % This is the diameter of the arena that I am currently using in mm.
+diam = 25; % This is the diameter of the arena that I am currently using in mm.
 detThr = 0.7;
 nIter = 100;
 tol = 0.1;

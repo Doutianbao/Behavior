@@ -1,13 +1,15 @@
-function varargout = GetFishPos(IM,varargin)
+function varargout = GetFishPos(IM,nPxls,varargin)
 %GetFishPos Give an image stack returns the x,y coordinates of the fish in
 %   each of the images of the stack
 % fishPos = GetFishPos(IM);
 % fishpos = GetFishPos(IM,nPixels)
 % fishPos = GetFishPos(IM, nPixels,...)
 % [fishPos,headOrientationVector] = GetFishPos(IM,nPixels,...);
+% [fishPos,headOr]
 % Inputs:
 % IM - Image stack
-% nPixels - # of bright pixels for centroid determination
+% nPixels - # of bright pixels for centroid determination. Setting nPixels
+%   to [], results in default value of 30.
 % Optional input arguments
 % 'method' - Centroid detection method: {'median'}, ['mean']
 % 'filter' - Bandpass values, e.g., [15 25]; If bp is a scalar then creates
@@ -26,13 +28,13 @@ function varargout = GetFishPos(IM,varargin)
 %
 % Avinash Pujala, HHMI, 2016
 
-nPixels = 30;
 method = 'mean';
 process = 'serial';
 filterFlag = 0;
+fltOrKer = [];
 orFlag = 0;
 nHood = 3;
-plotBool = 0;
+plotBool = 1;
 poolSize = 10;
 
 nArgs = length(varargin);
@@ -57,25 +59,26 @@ for jj = 1:nArgs
                 if isempty(lineLen)
                     lineLen = 15;
                 end
+            case 'plotbool'
+                plotBool = varargin{jj+1};
         end
     end
 end
 
-if nargin > 1
-    nPixels = varargin{1};
+if isempty(nPxls)
+    nPxls = 30;
 end
-
-x = zeros(1,size(IM,3));
-y = x;
 
 if filterFlag
     if numel(bp)==1
         ker = gausswin(bp);
         ker = ker(:)*ker(:)';
         ker = ker/numel(ker);
+        fltOrKer = ker;
         filterFlag = 2;
     elseif numel(bp)==2
         [~,flt] = gaussianbpf(IM(:,:,1),bp(1),bp(2));
+        fltOrKer = flt;
     else
         error('Check inputs, filter input must be a scalar or a 2-element vector!')
     end
@@ -83,64 +86,62 @@ end
 
 dispChunk = round(size(IM,3)/50)+1;
 % dispChunk = 1;
+fishPos = zeros(size(IM,3),2);
+tic
+disp('Tracking fish...')
 if strcmpi(process,'serial')
-    disp('Tracking fish...')
-    tic
     for jj=1:size(IM,3)
-        img= IM(:,:,jj);
-        if filterFlag ==1
-            img = gaussianbpf(img,flt);
-        elseif filterFlag ==2
-            img = conv2(img,ker,'same');
-        end
-        [r,c] = FishPosInImg(img,nPixels,method);
-        x(jj) = c;
-        y(jj) = r;
-        if orFlag
-            blah= GetMidlines(img,[c,r],lineLen,'plotBool',plotBool);
-            hOr{jj} = SmoothenMidline(blah{1}{1},img,nHood);
-        end
+        [fishPos(jj,:),hOr{jj},img] = FishPosAndHeadVec(IM(:,:,jj),filterFlag,orFlag,...
+            fltOrKer,nPxls,method,lineLen);
         if mod(jj,dispChunk)==0
             disp(['Img # ' num2str(jj)])
-            ShowFishPos(img,[r,c],jj)
+        end
+        if plotBool
+            ShowFishPos(img,[fishPos(jj,2),fishPos(jj,1)],hOr{jj},jj)
         end
     end
-    toc
 elseif strcmpi(process, 'parallel')
     imgFrames = 1:size(IM,3);
-    tic
-    disp('Tracking fish...')
     if matlabpool('size')==0
         matlabpool(poolSize)
     end
     parfor jj=imgFrames
-        if filterFlag ==1
-            img= gaussianbpf(IM(:,:,jj),flt);
-        elseif filterFlag ==2
-            img = conv2(IM(:,:,jj),ker,'same');
-        else
-            img = IM(:,:,jj);
-        end
-        [r,c] = FishPosInImg(img,nPixels,method);
-        x(jj) = c;
-        y(jj) = r;
-        if orFlag
-            blah= GetMidlines(img,[c,r],lineLen,'plotBool',plotBool);
-            hOr(jj) = SmoothenMidline(blah{1}{1},img,nHood);
-        end
+        [fishPos(jj,:),hOr{jj},img] = FishPosAndHeadVec(IM(:,:,jj),filterFlag,orFlag,...
+            fltOrKer,nPxls,method,lineLen);
         if mod(jj,dispChunk)==0
             disp(['Img # ' num2str(jj)])
         end
     end
 end
-fishPos = [x; y]';
+toc
+% fishPos = [x; y]';
 varargout{1} = fishPos;
 varargout{2} = hOr;
 end
 
-function [r,c] = FishPosInImg(img,nPixels,method)
+function varargout = FishPosAndHeadVec(img,filterFlag,orFlag,fltOrKer,nPxls,method,lineLen)
+if filterFlag ==1
+    img = gaussianbpf(img,fltOrKer);
+elseif filterFlag ==2
+    img = conv2(img,fltOrKer,'same');
+end
+[r,c] = FishPosInImg(img,nPxls,method);
+x = c;
+y = r;
+if orFlag
+    blah= GetMidlines(img,[c,r],lineLen,'plotBool',0);
+    %             hOr{jj} = SmoothenMidline(blah{1}{1},img,nHood);
+    hOr = blah{1}{1};
+else
+    hOr = [];
+end
+varargout{1} = [x,y];
+varargout{2} = hOr;
+varargout{3} = img;
+end
+function [r,c] = FishPosInImg(img,nPxls,method)
 [~,maxInds] = sort(img(:),'descend');
-maxInds = maxInds(1:nPixels);
+maxInds = maxInds(1:nPxls);
 [r,c] = ind2sub(size(img),maxInds);
 if strcmpi(method,'median')
     r = round(median(r));
@@ -151,11 +152,13 @@ elseif strcmpi(method,'mean')
 end
 
 end
-function ShowFishPos(img,fishPos,imgNum)
+function ShowFishPos(img,fishPos,hOr,imgNum)
 cla
+[y,x] = ind2sub(size(img),hOr);
 imagesc(img), axis image, colormap(gray)
 hold on
 plot(fishPos(2), fishPos(1),'ro')
+plot(x,y,'g.')
 title(['Frame # ' num2str(imgNum)])
 drawnow
 shg

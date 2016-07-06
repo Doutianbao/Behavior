@@ -50,10 +50,10 @@ toc
 tic
 disp('Getting fish pos...')
 if ~isempty(bp)
-%     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
-        fishPos = GetFishPos(IM_proc, 25,'filter',bp,'process','serial');
+    %     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
+    fishPos = GetFishPos(IM_proc, 25,'filter',bp,'process','parallel','lineLen',15);
 else
-    fishPos = GetFishPos(IM_proc, 25,'process','parallel');
+    fishPos = GetFishPos(IM_proc, 25,'process','parallel','lineLen',15);
     %     fishPos = GetFishPos(IM_proc, 30,'process','serial');
 end
 toc
@@ -118,12 +118,12 @@ if isempty(cropWid)
     cropWid = 70;
 end
 tic
-if strcmpi('y',saveOrNot)   
+if strcmpi('y',saveOrNot)
     disp('Cropping images...')
     tic
     IM_crop = CropImgsAroundPxl(IM,fishPos,cropWid);
-    clear IM   
-    toc    
+    clear IM
+    toc
     disp('Saving cropped stacks...')
     tic
     procData.IM = IM_crop;

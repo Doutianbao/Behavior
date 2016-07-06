@@ -20,6 +20,7 @@ function midlineInds = GetMidlines(IM,varargin)
 % 'extraArenaInds', extraArenaInds - Image indices to be treated as outside
 %   the arena and set to low intensity value.
 %   values
+% 'plotBool' - 1 results in plotting of midlines
 % Outputs:
 % midlineInds - Indices of the midline in the image series; L x T matrix
 %   where T is the number of images in the series and L is number of line
@@ -32,6 +33,7 @@ dTh = 1;
 imgExt = 'jpg';
 extraArenaInds = [];
 procType = 'serial';
+plotBool = 1;
 
 if nargin == 1
     if ischar(IM) && isdir(IM)
@@ -56,6 +58,8 @@ for jj =  3:numel(varargin)
                 extraArenaInds = varargin{jj+1};
             case 'proctype'
                 procType = varargin{jj+1};
+            case 'plotbool'
+                plotBool = varargin{jj+1};
         end
     end
 end
@@ -69,13 +73,13 @@ imgInds = 1:size(IM,3);
 %# Getting outside arena points to minimize drawing of midline segments on them
 if ~isempty(extraArenaInds)
     disp('Getting extra-arena points...')
-%     rp = randperm(length(imgInds));
-%     inds = imgInds(rp(1:min(length(rp),100)));
-%     IM_sub = IM(:,:,inds);
-%     minInt = min(IM_sub(:));
-%     filtSize = ceil(mean([size(IM,1) size(IM,2)])/50);
-%     ref = bfilter2(Standardize(ref),filtSize,[filtSize/2 0.5]);
-%     extraArenaInds = ref <= 0.15;    
+    %     rp = randperm(length(imgInds));
+    %     inds = imgInds(rp(1:min(length(rp),100)));
+    %     IM_sub = IM(:,:,inds);
+    %     minInt = min(IM_sub(:));
+    %     filtSize = ceil(mean([size(IM,1) size(IM,2)])/50);
+    %     ref = bfilter2(Standardize(ref),filtSize,[filtSize/2 0.5]);
+    %     extraArenaInds = ref <= 0.15;
     
     rp = randperm(length(imgInds));
     inds = imgInds(rp(1:min(length(rp),100)));
@@ -109,8 +113,9 @@ else
         [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights);
         
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
-        
-        PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+        if plotBool
+            PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+        end
     end
 end
 
@@ -272,15 +277,15 @@ for kk = 1:size(lineInds_first,2);
 end
 for seg = 2:numel(lineLens)
     count = 0;
-    for ln = 1:length(lineInds{seg-1})      
+    for ln = 1:length(lineInds{seg-1})
         lInds = lineInds{seg-1}{ln};
         startPt = IndToSub(im,lInds(end));
-        prevStartPt = IndToSub(im,lInds(length(lInds)-lineLens(seg-1)+1));        
-        temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));      
+        prevStartPt = IndToSub(im,lInds(length(lInds)-lineLens(seg-1)+1));
+        temp = GetML(im,startPt,prevStartPt,dTh,lineLens(seg));
         for kk = 1:size(temp,2)
             count = count + 1;
             parentMap{seg}{count} = [parentMap{seg-1}{ln} '_' num2str(kk)];
-            lineInds{seg}{count} = [lineInds{seg-1}{ln}; temp(:,kk)];         
+            lineInds{seg}{count} = [lineInds{seg-1}{ln}; temp(:,kk)];
         end
     end
     blah = cell2mat(lineInds{seg});
@@ -304,14 +309,16 @@ function nml = rImg2nml(rImg)
 % muPxls = abs((mean(rImg,2).*median(rImg,2).*mode(rImg,2)).^(1/3));
 shift = round(size(rImg,1)/3);
 triTemp = CreateTailTemplate(11,size(rImg,2),0);
-triTemp = triTemp(6:8,:);
+% triTemp = triTemp(6:8,:);
+triTemp = triTemp(5:9,:);
+triTemp(triTemp==0)=-1;
 blah = conv2(rImg,triTemp,'same');
 blah2 = circshift(conv2(circshift(rImg,[shift,0]),triTemp,'same'),[-shift,0]);
 blah = blah + blah2;
 muPxls = abs((mean(blah,2).* median(blah,2).*mode(blah,2)).^(1/3));
 % muPxls2 = median(blah + blah2,2);
 % muPxls3 = mode(blah + blah2,2);
-rImg2 = sort(rImg,2,'descend');
+rImg2 = sort(blah,2,'descend');
 % temp = abs(rImg2-repmat(mean(rImg2,2)*0.9,1,size(rImg2,2)));
 temp = abs(rImg2-repmat(mean(rImg2(:))*0.9,size(rImg2,1),size(rImg2,2)));
 % [~,comInds] = min(temp,[],2);
@@ -363,12 +370,12 @@ end
 
 function [midlines, lineMat] = GetBestLine(img,lineMat,heights)
 lineProfiles = img(lineMat);
-% muPxls = mean(lineProfiles,1);
-% [lps,gof] = GetLineProfileSpread(lineProfiles');
-% lps = lps';
-% nml = muPxls.*lps.*gof;
-
-nml = rImg2nml(lineProfiles');
+% if size(lineProfiles,1) == heights(1)
+%     nml = mean(lineProfiles,1);
+% else
+%    nml = rImg2nml(lineProfiles'); 
+% end
+nml = rImg2nml_bestLine(lineProfiles');
 [~,ind] = max(nml);
 ind = ind(1);
 lineMat = lineMat(:,ind);

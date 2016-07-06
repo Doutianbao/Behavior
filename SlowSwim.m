@@ -1,5 +1,4 @@
 
-
 % switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
 %     case 'LoadingNewFilm'
 %
@@ -44,20 +43,25 @@ if matlabpool('size')==0
 end
 disp('Processing images...')
 [IM_proc, ref] = SubtractBackground(IM);
-IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
 imgDims = size(IM_proc);
-clear IM_proc
 toc
 
 %% Tracking the fish
+tic
+disp('Getting fish pos...')
 if ~isempty(bp)
-    fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
-    %     fishPos = GetFishPos(IM_proc, 40,'filter',bp,'process','serial');
+%     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
+        fishPos = GetFishPos(IM_proc, 25,'filter',bp,'process','serial');
 else
-    fishPos = GetFishPos(IM_proc, 30,'process','parallel');
-    %     fishPos = GetFishPos(IM_proc, 40,'process','serial');
+    fishPos = GetFishPos(IM_proc, 25,'process','parallel');
+    %     fishPos = GetFishPos(IM_proc, 30,'process','serial');
 end
+toc
 
+cropWid = 70;
+disp('Cropping images...')
+IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
+clear IM_proc
 toc
 disp('Saving fish position and ref image...')
 if isempty(imgInds)
@@ -86,15 +90,16 @@ tic
 % midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
 %###########
 
-midlineInds = GetMidlines(I_proc_crop,(fishPos./fishPos)*(size(I_proc_crop,1)/2+1),...
-    [15 10 5 5 5 5 5 5 5],'bmp','procType','serial');
+midlineInds = GetMidlines(IM_proc_crop,(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
+    [15 10 10 10 10 5],'bmp','procType','parallel');
+toc
 
-tailCurv = SmoothenMidlines(midlineInds,I_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
+tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
 
-% orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
+orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 % orientation_backup = orientation;
 
-disp('Saving orientation...')
+disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
 procData.midlineInds = midlineInds;
 procData.tailCurv = tailCurv;
@@ -106,8 +111,8 @@ motionThr = 1;
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
 
 %% Saving processed images
-% saveOrNot = 'y';
-saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
+saveOrNot = 'y';
+% saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
 cropWid = input('Enter crop width in pxls: ');
 if isempty(cropWid)
     cropWid = 70;

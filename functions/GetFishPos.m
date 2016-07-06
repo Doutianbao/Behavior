@@ -9,7 +9,9 @@ function fishPos = GetFishPos(IM,varargin)
 % nPixels - # of bright pixels for centroid determination
 % Optional input arguments
 % 'method' - Centroid detection method: {'median'}, ['mean']
-% 'filter' - Bandpass values, e.g., [15 25];
+% 'filter' - Bandpass values, e.g., [15 25]; If bp is a scalar then creates
+%   a gaussian kernel of this size and uses this to convolve the image
+%   instead of using 'gaussianbpf'
 % 'process' - 'serial' or 'parallel'; Process in serial or parallel
 % 'pxlLim' - Limit of how many pixels the fish can traverse in the imaging
 %   setup. This is can be used to reduce false positives.
@@ -21,17 +23,18 @@ method = 'mean';
 process = 'serial';
 filterFlag = 0;
 poolSize = 10;
-ker = ones(5)/25;
 
 nArgs = length(varargin);
 for jj = 1:nArgs
-    if isstr(varargin{jj})
+    if ischar(varargin{jj})
         switch lower(varargin{jj})
             case 'method'
                 method =  varargin{jj+1};
             case 'filter'
                 bp =  varargin{jj+1};
-                filterFlag = 1;
+                if ~isempty(bp)
+                    filterFlag = 1;
+                end
             case 'process'
                 process =  varargin{jj+1};
             case lower('pxlLim')
@@ -47,18 +50,28 @@ end
 x = zeros(1,size(IM,3));
 y = x;
 if filterFlag
-    [~,flt] = gaussianbpf(IM(:,:,1),bp(1),bp(2));
+    if numel(bp)==1
+        ker = gausswin(bp);
+        ker = ker(:)*ker(:)';
+        ker = ker/numel(ker);
+        filterFlag = 2;
+    elseif numel(bp)==2
+        [~,flt] = gaussianbpf(IM(:,:,1),bp(1),bp(2));
+    else
+        error('Check inputs, filter input must be a scalar or a 2-element vector!')
+    end
+    
 end
-% dispChunk = round(size(IM,3)/50)+1;
-dispChunk = 1;
+dispChunk = round(size(IM,3)/50)+1;
+% dispChunk = 1;
 if strcmpi(process,'serial')
     disp('Tracking fish...')
     tic
     for jj=1:size(IM,3)
         img= IM(:,:,jj);
-        if filterFlag
+        if filterFlag ==1
             img = gaussianbpf(img,flt);
-        else
+        elseif filterFlag ==2
             img = conv2(img,ker,'same');
         end
         [r,c] = FishPosInImg(img,nPixels,method);
@@ -78,7 +91,7 @@ elseif strcmpi(process, 'parallel')
     if matlabpool('size')==0
         matlabpool(poolSize)
     end
-    if filterFlag
+    if filterFlag == 1
         parfor jj=imgFrames
             img= gaussianbpf(IM(:,:,jj),flt);
             [r,c] = FishPosInImg(img,nPixels,method);
@@ -88,7 +101,7 @@ elseif strcmpi(process, 'parallel')
                 disp(['Img # ' num2str(jj)])
             end
         end
-    else
+    elseif filterFlag ==2
         parfor jj=imgFrames
             img= IM(:,:,jj);
             img = conv2(img,ker,'same');
@@ -97,33 +110,41 @@ elseif strcmpi(process, 'parallel')
             y(jj) = r;
             disp(['Img # ' num2str(jj)])
         end
+    else
+        parfor jj=imgFrames
+            img= IM(:,:,jj);            
+            [r,c] = FishPosInImg(img,nPixels,method);
+            x(jj) = c;
+            y(jj) = r;
+            disp(['Img # ' num2str(jj)])
+        end
+        fishPos = [x; y]';
+    end    
+end
+
+end
+
+    function [r,c] = FishPosInImg(img,nPixels,method)
+        [~,maxInds] = sort(img(:),'descend');
+        maxInds = maxInds(1:nPixels);
+        [r,c] = ind2sub(size(img),maxInds);
+        if strcmpi(method,'median')
+            r = round(median(r));
+            c = round(median(c));
+        elseif strcmpi(method,'mean')
+            %             r = round(mean(r));
+            %             c = round(mean(c));
+            r = round(sum(r(:).*img(maxInds))/sum(img(maxInds)));
+            c = round(sum(c(:).*img(maxInds))/sum(img(maxInds)));
+        end
+        
     end
-    fishPos = [x; y]';
-end
-
-end
-
-function [r,c] = FishPosInImg(img,nPixels,method)
-[~,maxInds] = sort(img(:),'descend');
-maxInds = maxInds(1:nPixels);
-[r,c] = ind2sub(size(img),maxInds);
-if strcmpi(method,'median')
-    r = round(median(r));
-    c = round(median(c));
-elseif strcmpi(method,'mean')
-    %             r = round(mean(r));
-    %             c = round(mean(c));
-    r = round(sum(r(:).*img(maxInds))/sum(img(maxInds)));
-    c = round(sum(c(:).*img(maxInds))/sum(img(maxInds)));
-end
-
-end
-function ShowFishPos(img,fishPos,imgNum)
-cla
-imagesc(img), axis image, colormap(gray)
-hold on
-plot(fishPos(2), fishPos(1),'ro')
-title(['Frame # ' num2str(imgNum)])
-drawnow
-shg
-end
+    function ShowFishPos(img,fishPos,imgNum)
+        cla
+        imagesc(img), axis image, colormap(gray)
+        hold on
+        plot(fishPos(2), fishPos(1),'ro')
+        title(['Frame # ' num2str(imgNum)])
+        drawnow
+        shg
+    end

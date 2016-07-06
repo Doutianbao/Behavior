@@ -59,7 +59,11 @@ tic
 N = length(midlineInds);
 for iNum = 1:N
     mlInds = midlineInds{iNum};
-    mlInds = cell2mat(mlInds(2:end));
+    if length(mlInds)>1
+        mlInds = cell2mat(mlInds(2:end));
+    else
+        mlInds= cell2mat(mlInds(1));
+    end    
     tc = SmoothenMidline(mlInds,imgStack(:,:,iNum),nHood);
     tailCurv(:,:,iNum) = SplineTailCurv(tc,smoothFactor);
     if mod(iNum,dispChunk)==0
@@ -109,15 +113,15 @@ end
 
 
 function tailCurv_spline = SplineTailCurv(tailCurv,smoothFactor)
-y = [tailCurv(1,:); tailCurv; tailCurv(end,:)];
-tt = 0:size(y,1)-1;
-% t = tt(1:smoothFactor:end);
-t = linspace(tt(1),tt(end),ceil(length(tt)/smoothFactor));
-xx = interp1(t,y(1:smoothFactor:end,1),tt,'spline');
-yy = interp1(t,y(1:smoothFactor:end,2),tt,'spline');
-% xx = interp1(t,y(1:smoothFactor:end,1),tt,'cubic');
-% yy = interp1(t,y(1:smoothFactor:end,2),tt,'cubic');
-
-tailCurv_spline = [xx(2:end-1); yy(2:end-1)]';
+% y = [tailCurv(1,:); tailCurv; tailCurv(end,:)];
+y = tailCurv;
+t = 1:size(y,1);
+ts = linspace(1,size(y,1),size(y,1)/smoothFactor);
+ys(:,1) = spline(t,y(:,1),ts);
+ys(:,2) = spline(t,y(:,2),ts);
+y(:,1) = spline(ts,ys(:,1),t);
+y(:,2) = spline(ts,ys(:,2),t);
+tailCurv_spline = y;
+% tailCurv_spline = [xx(2:end-1); yy(2:end-1)]';
 
 end

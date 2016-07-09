@@ -49,7 +49,6 @@ for tt = 1:length(midlineInds)
         set(gca,'color','k')
     end
     c2 = []; 
-%     c_t1 = [];
     for ang = 1:nAngles
         x_t = tailCurv(tInds(ang):tInds(ang+1),1,tt);
         y_t = tailCurv(tInds(ang):tInds(ang+1),2,tt);
@@ -57,12 +56,8 @@ for tt = 1:length(midlineInds)
         c2 =  (x_t(end)-x_t(1) + (y_t(end)-y_t(1))*1i);
         if ang >1
             tAngles(ang,tt) = angle(c2_old*conj(c2));
-%               tAngles(ang,tt) = angle(c2);
-%             tAngles(ang,tt) = angle(c_t1*conj(c2));
         else
             tAngles(ang,tt) = angle(c1*conj(c2));
-%             c_t1 = c2;
-%             tAngles(ang,tt) = angle(c2);
         end
         if plotBool
             plot(x_t,y_fit,'g-')
@@ -77,6 +72,5 @@ for tt = 1:length(midlineInds)
 end
 varargout{1} = tAngles*180/pi;
 varargout{2} = hAngles*180/pi;
-
 end
 

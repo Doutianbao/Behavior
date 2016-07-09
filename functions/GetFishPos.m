@@ -113,10 +113,11 @@ elseif strcmpi(process, 'parallel')
         end
     end
 end
+disp('Correcting head orientation for jumps...')
+hOr_corr = JumpCorrectHeadOr(hOr);
 toc
-% fishPos = [x; y]';
 varargout{1} = fishPos;
-varargout{2} = hOr;
+varargout{2} = hOr_corr;
 end
 
 function varargout = FishPosAndHeadVec(img,filterFlag,orFlag,fltOrKer,nPxls,method,lineLen)
@@ -131,7 +132,10 @@ y = r;
 if orFlag
     blah= GetMidlines(img,[c,r],lineLen,'plotBool',0);
     %             hOr{jj} = SmoothenMidline(blah{1}{1},img,nHood);
-    hOr = blah{1}{1};
+    inds = blah{1}{1};
+    [yy,xx] = ind2sub(size(img),inds);
+    hOr = [xx,yy];
+    
 else
     hOr = [];
 end
@@ -139,6 +143,7 @@ varargout{1} = [x,y];
 varargout{2} = hOr;
 varargout{3} = img;
 end
+
 function [r,c] = FishPosInImg(img,nPxls,method)
 [~,maxInds] = sort(img(:),'descend');
 maxInds = maxInds(1:nPxls);
@@ -152,9 +157,16 @@ elseif strcmpi(method,'mean')
 end
 
 end
+
 function ShowFishPos(img,fishPos,hOr,imgNum)
 cla
-[y,x] = ind2sub(size(img),hOr);
+if size(hOr,2)==1
+    [y,x] = ind2sub(size(img),hOr);
+else
+    x = hOr(:,1);
+    y = hOr(:,2);
+end
+
 imagesc(img), axis image, colormap(gray)
 hold on
 plot(fishPos(2), fishPos(1),'ro')
@@ -164,36 +176,23 @@ drawnow
 shg
 end
 
-function tailCurv = SmoothenMidline(mlInds,img,nHood)
-tailCurv = zeros(length(mlInds),2);
-[r,c] = ind2sub(size(img),mlInds);
-[C,R] = meshgrid(1:size(img,2),1:size(img,1));
-for jj = 1:size(r,1)
-    rInds = r(jj)-nHood:r(jj)+nHood;
-    rInds(rInds<=0)=[];
-    cInds = c(jj)-nHood:c(jj)+nHood;
-    cInds(cInds<=0)=[];
-    rNeighbors = R(rInds,cInds);
-    cNeighbors = C(rInds,cInds);
-    wts = img(rInds,cInds);
-    %     ker = ones(length(wts));
-    %     wts = conv2(wts,ker,'same');
-    pxlInd(1) = sum(rNeighbors(:).*wts(:))/sum(wts(:));
-    pxlInd(2) = sum(cNeighbors(:).*wts(:))/sum(wts(:));
-    tailCurv(jj,:)= fliplr(round(pxlInd*10)/10); % Flipping to give in x-y rather than row-col coordinates
+function hOr_corr = JumpCorrectHeadOr(hOr)
+A = @(v1,v2)angle(v1*conj(v2))*180/pi;
+hOr_corr = hOr;
+for n = 2:length(hOr_corr)-1   
+    c_prev  = Line2Vec(hOr_corr{n-1});
+    c_now = Line2Vec(hOr_corr{n});
+    c_next = Line2Vec(hOr_corr{n+1});
+    a1 = A(c_prev,c_now);
+    a2 = A(c_now,c_next);
+    a3 = A(c_prev,c_next);
+    if (abs(a1)> abs(a3)) && (abs(a2)> abs(a3)) && (mean([abs(a1), abs(a2)])>100)
+        hOr_corr{n}  = round((hOr_corr{n-1} + hOr_corr{n+1})/2);
+        disp(['Corrected # ' num2str(n)])
+    end
 end
-end
-
-function tailCurv_spline = SplineTailCurv(tailCurv,smoothFactor)
-% y = [tailCurv(1,:); tailCurv; tailCurv(end,:)];
-y = tailCurv;
-t = 1:size(y,1);
-ts = linspace(1,size(y,1),size(y,1)/smoothFactor);
-ys(:,1) = spline(t,y(:,1),ts);
-ys(:,2) = spline(t,y(:,2),ts);
-y(:,1) = spline(ts,ys(:,1),t);
-y(:,2) = spline(ts,ys(:,2),t);
-tailCurv_spline = y;
-% tailCurv_spline = [xx(2:end-1); yy(2:end-1)]';
-
+    function c = Line2Vec(xy)
+        a = xy(1,:)-xy(end,:);
+        c = a(1) + a(2)*1i;
+    end    
 end

@@ -70,6 +70,10 @@ end
 if isempty(fishPos)
     fishPos = GetFishPos(ProcessImages(IM),50);
 end
+
+if ~isempty(headVec{1})
+    heights = [size(headVec{1},1) heights];
+end
 midlineInds = cell(size(IM,3),1);
 
 imgInds = 1:size(IM,3);
@@ -92,7 +96,7 @@ if ~isempty(extraArenaInds)
 else
     minInt = 1;
 end
-dispChunk = round(size(IM,3)/5);
+dispChunk = round(size(IM,3)/20);
 if strcmpi(procType,'parallel')
     if matlabpool('size')==0
         matlabpool(10)
@@ -282,12 +286,11 @@ for jj = 1:numel(varargin)
 end
 if ~isempty(headVec)
     startPt = headVec(end,:);
-    prevStartPt  = headVec(1,:);
+    prevStartPt  = headVec(1,:); 
 else
     startPt = fishPos;
-    prevStartPt  =[];
+    prevStartPt  =[];    
 end
-
 lineInds = cell(numel(lineLens),1);
 parentMap = lineInds;
 if isempty(prevStartPt)

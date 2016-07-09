@@ -49,7 +49,7 @@ end
 imgStack = Standardize(imgStack); % Important for smoothing midlines using pxl intensity weighting (avoids -ve values)
 bodyLen = size(cell2mat(midlineInds{1}),1);
 tailLen = bodyLen -length(midlineInds{1}{1});
-tailCurv = zeros(tailLen,2,length(midlineInds));
+tailCurv = zeros(bodyLen,2,length(midlineInds));
 dispChunk = round(length(midlineInds)/5);
 disp('Smoothing midlines...')
 if plotBool
@@ -60,7 +60,7 @@ N = length(midlineInds);
 for iNum = 1:N
     mlInds = midlineInds{iNum};
     if length(mlInds)>1
-        mlInds = cell2mat(mlInds(2:end));
+        mlInds = cell2mat(mlInds(1:end));
     else
         mlInds= cell2mat(mlInds(1));
     end    

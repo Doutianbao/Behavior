@@ -51,19 +51,37 @@ tic
 disp('Getting fish pos...')
 if ~isempty(bp)
     %     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
-    fishPos = GetFishPos(IM_proc, 25,'filter',bp,'process','parallel','lineLen',15);
+    [fishPos,hOr] = GetFishPos(IM_proc, 25,'filter',bp,'process','parallel','lineLen',15);
 else
-    fishPos = GetFishPos(IM_proc, 25,'process','parallel','lineLen',15);
+    [fishPos,hOr] = GetFishPos(IM_proc, 25,'process','parallel','lineLen',15);
     %     fishPos = GetFishPos(IM_proc, 30,'process','serial');
 end
 toc
 
+%% Cropping images, adjusting head orientation vector for cropped images, and saving
+tic
 cropWid = 70;
 disp('Cropping images...')
 IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
+
+disp('Adjusting head orientation vector for cropped images...')
+hOr_crop = hOr;
+imgDims = size(IM);
+imgDims_crop = size(IM_proc_crop);
+dispChunk = size(IM_proc_crop,3)/10;
+for jj = 1:length(hOr)    
+    [y,x] = ind2sub(imgDims(1:2),hOr{jj});
+    blah = [x,y] - repmat(fishPos(jj,:),length(x),1) + repmat([cropWid+1, cropWid+1],length(x),1);
+    x = blah(:,1); y = blah(:,2);
+    hOr_crop{jj} = [x,y];
+    if mod(jj,dispChunk)==0
+        disp(num2str(jj))
+    end
+end
+
 clear IM_proc
 toc
-disp('Saving fish position and ref image...')
+disp('Saving fish position, ref image, and cropped images....')
 if isempty(imgInds)
     imgInds = 1:size(IM,3);
 end
@@ -73,6 +91,7 @@ ts = datestr(now,30);
 procData = matfile(fullfile(outDir,['procData_' ts '.mat']),'Writable',true);
 procData.fishPos = fishPos;
 procData.ref = ref;
+procData.IM_proc_crop = IM_proc_crop;
 toc
 
 %% Fish Orientation
@@ -91,16 +110,18 @@ tic
 %###########
 
 midlineInds = GetMidlines(IM_proc_crop,(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
-    [15 10 10 10 10 5],'bmp','procType','serial');
+    [11 10 9 8 6 6],'bmp','procType','parallel','headVec',hOr_crop);
 toc
 
-tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,'pauseDur',0,'smoothFactor',5);
+tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
+    'pauseDur',0,'smoothFactor',5);
 
-orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
+% orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 % orientation_backup = orientation;
 
 disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
+procData.hOr_crop = procData.hOr_crop;
 procData.midlineInds = midlineInds;
 procData.tailCurv = tailCurv;
 toc
@@ -111,8 +132,8 @@ motionThr = 1;
 motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
 
 %% Saving processed images
-saveOrNot = 'y';
-% saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
+% saveOrNot = 'y';
+saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
 cropWid = input('Enter crop width in pxls: ');
 if isempty(cropWid)
     cropWid = 70;
@@ -126,10 +147,10 @@ if strcmpi('y',saveOrNot)
     toc
     disp('Saving cropped stacks...')
     tic
-    procData.IM = IM_crop;
+    procData.IM_crop = IM_crop;
     toc
-    procData.IM_proc = IM_proc_crop; % This is to save some time and space
-    toc
+%     procData.IM_proc = IM_proc_crop; % This is to save some time and space
+%     toc
 else
     disp('Data not saved!')
 end
@@ -179,7 +200,7 @@ for stim = 1:length(fldNames)
         maxImg = max(IM_fix,[],3);
         maxImgStacks{stim}(:,:,count)= maxImg;
         figure(fh)
-        subaxis(nRows,nCols,count,'SpacingHoriz',0, 'SpacingVert',0.05)
+        subaxis(nRows,nCols,count,'SpacingHoriz',0,'SpacingVert',0.05)
         imagesc(imNormalize999(maxImg)), axis image, colormap(gray), axis off
         set(gca,'clim',[0 0.9])
         title(num2str(trl))

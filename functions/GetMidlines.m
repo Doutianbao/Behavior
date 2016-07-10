@@ -5,7 +5,7 @@ function midlineInds = GetMidlines(IM,varargin)
 % midlineInds = GetMidline(IM);
 % midlineInds = GetMidline(..., fishPos);
 % midlineInds = GetMidline(IM,fishPos,lineLens);
-% midlineInds = GetMidline(IM,fishPos,lineLens, imgExt,'ref',refImg);
+% midlineInds = GetMidline(IM,fishPos,lineLens, imgExt,'ref',refImg,'pauseDur',pauseDur);
 % Inputs:
 % IM - Either an image stack (3D matrix where 3rd dim is time) or
 %   image dir with image series. If IM is image dir, then assumes all
@@ -35,6 +35,7 @@ extraArenaInds = [];
 procType = 'serial';
 plotBool = 1;
 headVec = cell(size(IM,3),1);
+pauseDur = 0;
 
 if nargin == 1
     if ischar(IM) && isdir(IM)
@@ -63,6 +64,8 @@ for jj =  3:numel(varargin)
                 plotBool = varargin{jj+1};
             case 'headvec'
                 headVec = varargin{jj+1};
+            case 'pausedur'
+                pauseDur = varargin{jj+1};
         end
     end
 end
@@ -118,7 +121,7 @@ else
         [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
         if plotBool
-            PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum)
+            PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum,pauseDur)
         end
         if mod(jj,dispChunk) ==0
             disp(num2str(imgNum))
@@ -169,7 +172,7 @@ else
     preVec = startPt-prevStartPt;
     preVecs = repmat(preVec(1) + preVec(2)*1i,length(x2),1);
     dAngles = angle(preVecs.*conj(postVecs)) *(180/pi);
-    farInds = find(abs(dAngles)<=140);
+    farInds = find(abs(dAngles)<=100);
     nearInds = setdiff(allInds,farInds);
 end
 
@@ -278,18 +281,25 @@ for jj = 1:numel(varargin)
         switch lower(varargin{jj})
             case 'headvec'
                 headVec = varargin{jj+1};
-%                 if size(headVec,2)==2
-%                     headVec = sub2ind(size(im),round(headVec(:,2)),round(headVec(:,1)));
-%                 end
+                %                 if size(headVec,2)==2
+                %                     headVec = sub2ind(size(im),round(headVec(:,2)),round(headVec(:,1)));
+                %                 end
         end
     end
 end
+
 if ~isempty(headVec)
+    if size(headVec,2)==1
+        [row,col] = ind2sub(size(im),headVec);
+        headVec = [];
+        headVec(:,1) = col;
+        headVec(:,2) = row;
+    end
     startPt = headVec(end,:);
-    prevStartPt  = headVec(1,:); 
+    prevStartPt  = headVec(1,:);
 else
     startPt = fishPos;
-    prevStartPt  =[];    
+    prevStartPt  =[];
 end
 lineInds = cell(numel(lineLens),1);
 parentMap = lineInds;
@@ -373,7 +383,7 @@ nml = Standardize(nml);
 
 end
 
-function PlotLineInds(img,fishPos,lineInds,imgNum)
+function PlotLineInds(img,fishPos,lineInds,imgNum,pauseDur)
 cla
 inds = [];
 for kk = 1:length(lineInds)
@@ -385,7 +395,11 @@ hold on
 plot(fishPos(1),fishPos(2),'ko')
 title(num2str(imgNum))
 shg
-% pause()
+if isempty(pauseDur)
+    pause()
+else
+    pause(pauseDur)
+end
 end
 
 function lineMat = GetBestLine_sub(img,lineMat)

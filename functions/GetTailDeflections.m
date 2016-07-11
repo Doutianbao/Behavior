@@ -5,7 +5,7 @@ function varargout = GetTailDeflections(midlineInds,tailCurv,imgDims,varargin)
 %   points on the tail. This is inspired by analysis described in Huang et
 %   al., 2013
 % tailAngles = GetTailDeflections(midlineInds,tailCurv,nAngles);
-% [tailAngles,dS] = GetTailDeflections(...);
+% [tailAngles,headAngles,tailAngles2] = GetTailDeflections(...);
 %
 % Inputs:
 % midlineInds - Indices of a series of line segments of different lengths
@@ -20,6 +20,8 @@ function varargout = GetTailDeflections(midlineInds,tailCurv,imgDims,varargin)
 % tailAngles - Matrix of size nAngles-by-T, where T = size(tailCurv,1) =
 %   number of time points. Tail angles are w.r.t the heading vector, which
 %   for a given time point t, is given by midlineInds{t}{1};
+% headAngles - Heading direction
+% dS - distances between successive pts on the tail
 %
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
@@ -33,12 +35,18 @@ imgDims = imgDims(1:2);
 
 hAngles = zeros(length(midlineInds),1);
 tAngles = zeros(nAngles,length(midlineInds));
+dS = tAngles;
+% tAngles2 = tAngles;
 tInds = round(linspace(1,size(tailCurv,1),nAngles+1));
 tInds(tInds==0) = 1;
 tInds(tInds>size(tailCurv,1))=size(tailCurv,1);
 for tt = 1:length(midlineInds)
-    [y_h, x_h] = ind2sub(imgDims,midlineInds{tt}{1});
-    c1 = (x_h(end)-x_h(1)) + (y_h(end)-y_h(1))*1i;
+%     [y_h, x_h] = ind2sub(imgDims,midlineInds{tt}{1});
+%     c1 = (x_h(end)-x_h(1)) + (y_h(end)-y_h(1))*1i;
+    x_h = tailCurv(1:2,1,tt);
+    y_h = tailCurv(1:2,2,tt);
+    c1 = diff([x_h, y_h],[],1);
+    c1 = c1(1) + c1(2)*1i;
     hAngles(tt) = angle(c1);
     if plotBool
         cla
@@ -54,10 +62,13 @@ for tt = 1:length(midlineInds)
         y_t = tailCurv(tInds(ang):tInds(ang+1),2,tt);
         c2_old = c2;
         c2 =  (x_t(end)-x_t(1) + (y_t(end)-y_t(1))*1i);
+        dS(ang,tt) = abs(c2);
         if ang >1
             tAngles(ang,tt) = angle(c2_old*conj(c2));
+%             tAngles2(ang,tt) = angle(c1 * conj(c2));
         else
             tAngles(ang,tt) = angle(c1*conj(c2));
+%             tAngles2(ang,tt) = angle(c1*conj(c2));
         end
         if plotBool
             plot(x_t,y_fit,'g-')
@@ -72,5 +83,7 @@ for tt = 1:length(midlineInds)
 end
 varargout{1} = tAngles*180/pi;
 varargout{2} = hAngles*180/pi;
+% varargout{3} = tAngles2*180/pi;
+varargout{3} = dS;
 end
 

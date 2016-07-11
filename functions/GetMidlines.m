@@ -110,7 +110,7 @@ if strcmpi(procType,'parallel')
         img(extraArenaInds) = minInt;
         [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
-        if mod(jj,dispChunk)==0
+        if mod(imgNum,dispChunk)==0
             disp(num2str(imgNum))
         end
     end
@@ -123,7 +123,7 @@ else
         if plotBool
             PlotLineInds(img,fishPos(imgNum,:),midlineInds{imgNum},imgNum,pauseDur)
         end
-        if mod(jj,dispChunk) ==0
+        if mod(imgNum,dispChunk) ==0
             disp(num2str(imgNum))
         end
     end
@@ -393,6 +393,7 @@ img(inds) = max(img(:))*1.5;
 imagesc(img),axis image
 hold on
 plot(fishPos(1),fishPos(2),'ko')
+drawnow
 title(num2str(imgNum))
 shg
 if isempty(pauseDur)

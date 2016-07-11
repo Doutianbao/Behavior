@@ -91,6 +91,9 @@ tic
 disp('Tracking fish...')
 if strcmpi(process,'serial')
     for jj=1:size(IM,3)
+        if jj==1
+            a = 1;
+        end
         [fishPos(jj,:),hOr{jj},img] = FishPosAndHeadVec(IM(:,:,jj),filterFlag,orFlag,...
             fltOrKer,nPxls,method,lineLen);
         if mod(jj,dispChunk)==0

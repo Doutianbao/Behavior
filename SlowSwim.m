@@ -68,15 +68,28 @@ disp('Adjusting head orientation vector for cropped images...')
 hOr_crop = hOr;
 imgDims = size(IM);
 imgDims_crop = size(IM_proc_crop);
-dispChunk = size(IM_proc_crop,3)/10;
-for jj = 1:length(hOr)    
-    [y,x] = ind2sub(imgDims(1:2),hOr{jj});
+dispChunk = round(size(IM_proc_crop,3)/10);
+dim = size(hOr{1},2);
+try
+for jj = 1:length(hOr)
+    if dim ==2
+        x = hOr{jj}(:,1);
+        y = hOr{jj}(:,2);
+    else
+        [y,x] = ind2sub(imgDims(1:2),hOr{jj});
+    end    
     blah = [x,y] - repmat(fishPos(jj,:),length(x),1) + repmat([cropWid+1, cropWid+1],length(x),1);
     x = blah(:,1); y = blah(:,2);
     hOr_crop{jj} = [x,y];
     if mod(jj,dispChunk)==0
         disp(num2str(jj))
     end
+end
+catch
+    disp('Getting head orientation in cropped stack...')
+    tic
+    [~,hOr_crop] =  GetFishPos(IM_proc_crop, 25,'filter',bp,'process','parallel','lineLen',15);
+    toc
 end
 
 clear IM_proc
@@ -122,15 +135,15 @@ tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
 
 disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
-procData.hOr_crop = procData.hOr_crop;
+procData.hOr_crop = hOr_crop;
 procData.midlineInds = midlineInds;
 procData.tailCurv = tailCurv;
 toc
 
 %% Motion Info
-motionThr = 1;
-% [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
-motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
+% motionThr = 1;
+% % [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
+% motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
 
 %% Saving processed images
 % saveOrNot = 'y';
@@ -156,6 +169,8 @@ else
     disp('Data not saved!')
 end
 toc
+
+break
 
 %% Getting and saving peak info
 saveOrNot = input('Detect and save peak info (y/n)?  ','s');

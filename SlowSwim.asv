@@ -77,28 +77,28 @@ ref = mean(ref,3);
 clear im_proc fp hOr_temp
 toc
 
-%% Background subtraction 
-% [IM_proc, ref] = SubtractBackground(IM);
-% imgDims = size(IM_proc);
+%%
+[IM_proc, ref] = SubtractBackground(IM);
+imgDims = size(IM_proc);
 
 
 %% Tracking the fish
-% tic
-% disp('Getting fish pos...')
-% if ~isempty(bp)
-%     %     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
-%     [fishPos,hOr] = GetFishPos(IM_proc, 25,'filter',bp,'process','parallel','lineLen',15);
-% else
-%     [fishPos,hOr] = GetFishPos(IM_proc, 25,'process','parallel','lineLen',15);
-%     %     fishPos = GetFishPos(IM_proc, 30,'process','serial');
-% end
-% toc
+tic
+disp('Getting fish pos...')
+if ~isempty(bp)
+    %     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
+    [fishPos,hOr] = GetFishPos(IM_proc, 25,'filter',bp,'process','parallel','lineLen',15);
+else
+    [fishPos,hOr] = GetFishPos(IM_proc, 25,'process','parallel','lineLen',15);
+    %     fishPos = GetFishPos(IM_proc, 30,'process','serial');
+end
+toc
 
 %% Cropping images, adjusting head orientation vector for cropped images, and saving
 tic
-% cropWid = 70;
-% disp('Cropping images...')
-% IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
+cropWid = 70;
+disp('Cropping images...')
+IM_proc_crop = CropImgsAroundPxl(IM_proc,fishPos,cropWid);
 
 disp('Adjusting head orientation vector for cropped images...')
 hOr_crop = hOr;

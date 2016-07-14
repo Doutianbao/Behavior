@@ -53,7 +53,7 @@ for trl = 1:nTrls
     cla
     plot(time_trl*1000,tA_trl(:,trl))
     box off
-    xlim([-inf 1*1500])
+    xlim([-inf 1*500])
     ylim([-260 260])
     title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])
     shg

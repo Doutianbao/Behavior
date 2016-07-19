@@ -99,6 +99,12 @@ if ~isempty(extraArenaInds)
 else
     minInt = 1;
 end
+
+% mu = mean(IM(:));
+% sigma = std(IM(:));
+% zThr = 1.5;
+% minPxls = 40;
+% maxPxls = 100;
 dispChunk = round(size(IM,3)/20);
 if strcmpi(procType,'parallel')
     if matlabpool('size')==0
@@ -108,6 +114,11 @@ if strcmpi(procType,'parallel')
     parfor imgNum = imgInds;
         img = IM(:,:,imgNum);
         img(extraArenaInds) = minInt;
+%         thinInds = GetMidlinesByThinning(img,'zThr',zThr,'mu',mu,'sigma',sigma,...
+%             'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fishPos(imgNum,:));
+%         img_thin = img;
+%         img_thin(thinInds)= mu + 100*sigma;
+        img = Standardize(img)-Standardize(imgradient(img));
         [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
         if mod(imgNum,dispChunk)==0
@@ -118,6 +129,11 @@ else
     for imgNum = imgInds;
         img = IM(:,:,imgNum);
         img(extraArenaInds) = minInt;
+%         thinInds = GetMidlinesByThinning(img,'zThr',zThr,'mu',mu,'sigma',sigma,...
+%             'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fishPos(imgNum,:));
+% %         img_thin = img;
+%         img(thinInds)= mu + 100*sigma;
+        img = Standardize(img)-Standardize(imgradient(img));
         [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
         if plotBool
@@ -159,7 +175,10 @@ if isempty(dTh)
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-ker = gausswin(round(dTh)*4)*gausswin(round(lineLen/4))'; ker = ker/sum(ker(:));
+ker1 = gausswin(round(size(rImg,1)/20),4); ker1 = ker1/sum(ker1);
+ker2 = gausswin(round(size(rImg,1)/20),5); ker2 =ker2/sum(ker2);
+ker = (ker2-ker1);
+ker = ker1*gausswin(round(lineLen/4))'; ker = ker/sum(abs(ker(:)));
 rImg = conv2(rImg,ker,'same');
 allInds = 1:size(indMat,1);
 if isempty(prevStartPt)
@@ -182,6 +201,9 @@ nml = rImg2nml(rImg);
 thr = 0.1;
 maxtab(:,1) = GetPks(nml,'peakThr',thr,'thrType','abs','polarity',1);
 maxtab(:,2) = nml(maxtab(:,1));
+
+% mt(:,1) = GetPks(nml,'peakThr',thr/2,'thrType','rel','polarity',1);
+% mt(:,2) = nml(mt(:,1));
 
 %## This next bit of code finds peaks that may not have been detected
 %## because 'rImg' is linear when it should have been circular

@@ -76,7 +76,9 @@ for iNum = 1:N
     end
     if plotBool
         cla
-        imagesc(imgStack(:,:,iNum)),axis image, colormap(gray)
+        img = imgStack(:,:,iNum);
+        img(mlInds) = 0;
+        imagesc(img),axis image, colormap(gray)
         hold on
         plot(size(imgStack,1)/2+1,size(imgStack,2)/2+1,'b*','markersize',10)
         plot(tailCurv(:,1,iNum), tailCurv(:,2,iNum),'r-','linewidth',1.5)

@@ -24,7 +24,7 @@ for jj = 1:numel(varargin)
 end
 
 if nargin ==0
-    cd('S:\Avinash\Ablations and behavior\Ventral RS\20160618')
+    cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
     [fileName,pathName] = uigetfile('*.mat');
     procData = matfile(fullfile(pathName,fileName));
 end
@@ -53,8 +53,8 @@ for trl = 1:nTrls
     cla
     plot(time_trl*1000,tA_trl(:,trl))
     box off
-    xlim([-inf 1*500])
-    ylim([-260 260])
+    xlim([-inf 1*750])
+    ylim([-300 300])
     title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])
     shg
     [x,y,button] = ginput(5);

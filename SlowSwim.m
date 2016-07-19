@@ -37,7 +37,7 @@ end
 
 
 %% Processing images block-by-block
-blockSize = 5;
+blockSize = 4;
 cropWid = 70;
 lineLen = 15;
 
@@ -182,9 +182,9 @@ toc
 % motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
 
 %% Saving processed images
-% saveOrNot = 'y';
-saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
-cropWid = input('Enter crop width in pxls: ');
+saveOrNot = 'y';
+% saveOrNot = input('Save cropped image stacks (y/n)?  ','s');
+% cropWid = input('Enter crop width in pxls: ');
 if isempty(cropWid)
     cropWid = 70;
 end

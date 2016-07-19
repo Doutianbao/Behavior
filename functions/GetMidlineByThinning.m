@@ -2,8 +2,8 @@ function mlInds = GetMidlineByThinning(img,varargin)
 %GetMidlineByThinnng Gets midline of fish in input image by thinning
 %   process
 % mlInds = GetMidlinesByThinning(img);
-% mlInds =
-% GetMidlinesByThinning(img,'zThr',zThr,'mu',mu,'sigma',sigma,'minPxls',minPxls,'maxPxls',maxPxls,'nIter',nIter);
+% mlInds = GetMidlinesByThinning(img,'zThr',zThr,'mu',mu,'sigma',sigma,...
+%   'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fishPos,'nIter',nIter);
 % Inputs:
 % img - Image with fish in it
 % 'zThr' - Threshold for image binarization after expressing pixel
@@ -57,12 +57,12 @@ end
 
 
 thr = zThr;
-mlInds = GetMLBT(img,thr);
+mlInds = GetMLBT(img,thr,minPxls,maxPxls,fishPos);
 count = 0;
 while (numel(mlInds) < minPxls) && (count < nIter)
     count = count + 1;
     disp(['Lowering threshold..., iter # ' num2str(count)])
-    mlInds = GetMLBT(img,thr);
+    mlInds = GetMLBT(img,thr,minPxls,maxPxls,fishPos);
     thr = 0.95*thr;
 end
 
@@ -74,30 +74,34 @@ while (numel(mlInds) > maxPxls) && (count < nIter)
     thr = 1.05*thr;
 end
 
-    function mlInds = GetMLBT(img,zThr)
-        img_bw = img;
-        img_bw(img_bw<=zThr)=0; img_bw(img_bw>zThr)=1;
-        img_thin = bwmorph(img_bw,'thin',Inf);
-        cc = bwconncomp(img_thin);
-        rp = regionprops(cc,'Centroid');
-        for jj = 1:length(cc.PixelIdxList)
-            pxls = cc.PixelIdxList{jj};
-            if numel(pxls)<minPxls
-                img_thin(pxls)=0;
-            elseif numel(pxls) > maxPxls
-                img_thin(pxls)=0;
-            end
-            if ~isempty(fishPos)
-                S = @(v1,v2)(sqrt(sum((v1-v2).^2,1)));
-                s = S(rp(jj).Centroid,fishPos);
-                if s > minPxls
-                    img_thin(pxls)=0;
-                end
-            end
-        end
-        
-        mlInds = find(img_thin);
-    end
+end
 
+function mlInds = GetMLBT(img,zThr,minPxls,maxPxls,fishPos)
+S = @(v1,v2)(sqrt(sum((v1-v2).^2,2)));
+S2 = @(v1,v2)sqrt(sum((repmat(v1,size(v2,1),1)-v2).^2,2));
+img_bw = img;
+img_bw(img_bw<=zThr)=0; img_bw(img_bw>zThr)=1;
+img_thin = bwmorph(img_bw,'thin',Inf);
+cc = bwconncomp(img_thin);
+rp = regionprops(cc,'Centroid');
+imgDims= size(img);
+for region = 1:length(cc.PixelIdxList)
+    pxls = cc.PixelIdxList{region};
+    if numel(pxls)<minPxls
+        img_thin(pxls)=0;
+    elseif numel(pxls) > maxPxls
+        img_thin(pxls)=0;
+    end
+    v2 = [];
+    if ~isempty(fishPos)
+        s = S(rp(region).Centroid,fishPos);
+        [v2(:,2),v2(:,1)] = ind2sub(imgDims,pxls);
+        s2 = min(S2(fishPos,v2));
+        if (s > minPxls) || (s2 > 10)
+            img_thin(pxls)=0;
+        end
+    end
+end
+mlInds = find(img_thin);
 end
 

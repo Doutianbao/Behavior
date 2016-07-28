@@ -133,7 +133,7 @@ else
 %             'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fishPos(imgNum,:));
 % %         img_thin = img;
 %         img(thinInds)= mu + 100*sigma;
-        img = Standardize(img)-Standardize(imgradient(img));
+%         img = Standardize(img)-Standardize(imgradient(img));
         [lineMat, ~] = GetMLs(img,fishPos(imgNum,:),dTh,heights,'headVec',headVec{imgNum});
         [midlineInds{imgNum},~] = GetBestLine(img,lineMat,heights);
         if plotBool
@@ -175,9 +175,10 @@ if isempty(dTh)
 end
 
 [rImg,indMat] = RadialFish(im,startPt,dTh,lineLen);
-ker1 = gausswin(round(size(rImg,1)/20),4); ker1 = ker1/sum(ker1);
-ker2 = gausswin(round(size(rImg,1)/20),5); ker2 =ker2/sum(ker2);
-ker = (ker2-ker1);
+ker1 = gausswin(round(size(rImg,1)/20)); ker1 = ker1/sum(ker1);
+% ker1 = gausswin(round(size(rImg,1)/20),4); ker1 = ker1/sum(ker1);
+% ker2 = gausswin(round(size(rImg,1)/20),5); ker2 =ker2/sum(ker2);
+% ker = (ker2-ker1);
 ker = ker1*gausswin(round(lineLen/4))'; ker = ker/sum(abs(ker(:)));
 rImg = conv2(rImg,ker,'same');
 allInds = 1:size(indMat,1);
@@ -198,6 +199,9 @@ end
 
 %## Finding candidate midlines
 nml = rImg2nml(rImg);
+shiftLen = max(1,round(size(rImg,1)/3));
+nml2 = circshift(rImg2nml(circshift(rImg,[shiftLen,0])),[-shiftLen,0]);
+nml = max([nml(:),nml2(:)],[],2);
 thr = 0.1;
 maxtab(:,1) = GetPks(nml,'peakThr',thr,'thrType','abs','polarity',1);
 maxtab(:,2) = nml(maxtab(:,1));

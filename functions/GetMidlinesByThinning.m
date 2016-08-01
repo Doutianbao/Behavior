@@ -5,7 +5,7 @@ function varargout = GetMidlinesByThinning(imgStack,varargin)
 % mlInds = GetMidlinesByThinning(img);
 % mlInds = GetMidlinesByThinning(img,'zThr',zThr,'mu',mu,'sigma',sigma,...
 %   'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fishPos,'nIter',nIter);
-% [mlInds,dsVecs]
+% [mlInds,dsVecs,failedInds] = GetMidlinesByThinning(...);
 % Inputs:
 % img - Image with fish in it
 % 'nThr' - Number of threshold levels to go through to identify fish (see GetMultiThr)
@@ -31,7 +31,13 @@ function varargout = GetMidlinesByThinning(imgStack,varargin)
 %   stack
 % dsVecs - A cell array  like mlInds, but where each cell contains the
 %   distances from the head centroid of the fish to the midline points.
-% 
+% Outputs:
+% mlInds - Cell array of the size of image stack where each cell contains
+%   the midline pixel indices of the fish
+% dsVecs - Cell array like mlInds, where each cell contains distances for
+%   between midline pixels and fish head centroid pixel
+% failedInds - Indices of images in which midline detection failed.
+%
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 nThr = 4;
@@ -87,7 +93,7 @@ else
     imgStack = (imgStack-mu)/sigma;
 end
 ker = gausswin(kerSize)*gausswin(kerSize)';
-ker = ker/sum(ker);
+ker = ker/sum(ker(:));
 
 mlInds = cell(size(imgStack,3),1);
 dsVecs = mlInds;
@@ -112,6 +118,7 @@ if strcmpi(process,'serial')
             hold on
             plot(fp(1),fp(2),'r+','markersize',10)
             title(['Img #' num2str(tt)])
+            drawnow
             shg
             if isempty(pauseDur)
                 pause()
@@ -126,8 +133,8 @@ if strcmpi(process,'serial')
 else
     parfor tt = imgInds(:)'
         img = conv2(imgStack(:,:,tt),ker,'same');
-        fp = fishPos(tt,:);        
-       blah = GetMidlineByThinning(img,'nThr',nThr,'minThr',minThr,'mu',mu,'sigma',sigma,...
+        fp = fishPos(tt,:);
+        blah = GetMidlineByThinning(img,'nThr',nThr,'minThr',minThr,'mu',mu,'sigma',sigma,...
             'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fp);
         [blah,dsVecs{tt}] = GetMidlineCaudalToFishPos(fp,blah,imgDims(1:2));
         mlInds{tt} = blah;
@@ -145,8 +152,41 @@ if length(dsVecs)==1
     dsVecs = dsVecs{1};
 end
 
+lens = zeros(length(mlInds),1);
+for jj = 1:length(mlInds)
+    if iscell(mlInds)
+        lens(jj) = length(mlInds{jj});
+    else
+        lens(jj) = length(mlInds);
+    end
+    
+end
+zerInds  = find(lens==0);
+nonZerInds = setdiff(1:length(mlInds),zerInds);
+if length(mlInds)>1
+    for jj = zerInds(:)'
+        if jj==1
+            mlInds{jj} = mlInds{nonZerInds(1)};
+            dsVecs{jj} = dsVecs{nonZerInds(1)};
+        elseif jj == length(mlInds)
+            mlInds{jj} = mlInds{jj-1};
+            dsVecs{jj} = dsVecs{nonZerInds(end)};
+        else
+            [r0,c0] = ind2sub(imgDims(1:2),mlInds{jj-1});
+            [r2,c2] = ind2sub(imgDims(1:2),mlInds{jj+1});
+            ds0 = dsVecs{jj-1};
+            ds2 = dsVecs{jj+1};
+            n = min([length(r0),length(r2)]);
+            rc = round(0.5*([r0(1:n), c0(1:n)] + [r2(1:n), c2(1:n)]));
+            dsVecs{jj} = 0.5*(ds0(1:n)+ ds2(1:n));
+            mlInds{jj} = sub2ind(imgDims(1:2),rc(:,1),rc(:,2));
+        end       
+    end
+end
+
 varargout{1} = mlInds;
 varargout{2} = dsVecs;
+varargout{3} = zerInds;
 
 end
 
@@ -200,7 +240,18 @@ mlInds = GetMLBT(img,nThr,minThr,minPxls,maxPxls,fishPos);
         S2 = @(v1,v2)sqrt(sum((repmat(v1,size(v2,1),1)-v2).^2,2));
         img_bw = zeros(size(img));
         [~,img_quant] = GetMultiThr(img,nThr,'minThr',minThr);
-        img_bw(img_quant>0)=1;
+        oneInds = [];
+        lvls = unique(img_quant(:));
+        for lvl = lvls(:)'
+            inds = find(img_quant==lvl);
+            if numel(inds)< 3000
+                oneInds = [oneInds; inds(:)];
+            else
+                a = 1;
+            end
+        end
+        img_bw(oneInds)=1;
+%         img_bw(img_quant>0)=1;
         img_thin = bwmorph(bwmorph(img_bw,'thin',Inf),'spur');
         cc = bwconncomp(img_thin);
         rp = regionprops(cc,'Centroid');
@@ -241,6 +292,10 @@ else
     s_ord(1:jumpInd-1) = [];
 end
 %###
+if ~isempty(mlCoords_ord)
+    mlCoords_ord = [round(fp); mlCoords_ord];
+    s_ord = [0; s_ord];
+end
 
 mlInds = sub2ind(imgDims,mlCoords_ord(:,2),mlCoords_ord(:,1));
 distVec = cumsum(s_ord);

@@ -158,13 +158,19 @@ tic
 % midlineInds = GetMidlines(IM_proc,fishPos,[24 20 15],'bmp','extraArenaInds',extraArenaInds,'procType','parallel');
 %###########
 
-lineLens = [10 9 8 7 6 5];
-midlineInds = GetMidlines(IM_proc_crop,(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
-    lineLens,'bmp','procType','parallel','headVec',hOr_crop);
+% lineLens = [10 9 8 7 6 5];
+% midlineInds = GetMidlines(IM_proc_crop,(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
+%     lineLens,'bmp','procType','parallel','headVec',hOr_crop);
+% tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
+%     'pauseDur',0,'smoothFactor',8);
+
+[midlineInds,dsVecs,failedInds] = GetMidlinesByThinning(IM_proc_crop,...
+    'fishPos',(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
+    'process','parallel','plotBool',1,'kerSize',9);
 toc
 
 tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
-    'pauseDur',0,'smoothFactor',8);
+    'pauseDur',0,'smoothFactor',8,'dsVecs',dsVecs);
 
 % orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 % orientation_backup = orientation;

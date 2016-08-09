@@ -183,7 +183,8 @@ if length(mlInds)>1
         end       
     end
 end
-
+disp('Correcting midline point order...')
+mlInds = CorrectOrder(mlInds,imgDims);
 varargout{1} = mlInds;
 varargout{2} = dsVecs;
 varargout{3} = zerInds;
@@ -325,5 +326,22 @@ pts_order(zerInds,:) = [];
 s_order(zerInds) = [];
 end
 
-
+function mlInds = CorrectOrder(mlInds,imgDims)
+for n = 3:length(mlInds)
+    clear sub1 sub2
+%     if n== 219
+%         a = 1;
+%     end
+    [sub1(:,1),sub1(:,2)] = ind2sub(imgDims(1:2), mlInds{n-1});
+    [sub2(:,1),sub2(:,2)] = ind2sub(imgDims(1:2),mlInds{n});
+    len = min([size(sub1,1), size(sub2,1)]);
+    if len~=0
+        d = sum(sqrt(sum((sub1(1:len,:)- sub2(1:len,:)).^2,2)),1);
+        d_flip = sum(sqrt(sum((sub1(1:len,:)- sub2(len:-1:1,:)).^2,2)),1);
+        if d_flip < d
+            mlInds{n} = flipud(mlInds{n});     
+        end
+    end    
+end
+end
 

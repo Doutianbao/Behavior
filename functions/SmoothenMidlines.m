@@ -122,8 +122,9 @@ for iNum = 1:N
         img(mlInds) = 0;
         imagesc(img),axis image, colormap(gray)
         hold on
-        plot(size(imgStack,1)/2+1,size(imgStack,2)/2+1,'b*','markersize',10)
+        plot(size(imgStack,1)/2+1,size(imgStack,2)/2+1,'bo','markersize',10)
         plot(tailCurv(:,1,iNum), tailCurv(:,2,iNum),'r:','linewidth',1.5)
+        plot(tailCurv(1,1,iNum),tailCurv(1,2,iNum),'r+','markersize',10)
         %         plot(tc(:,1),tc(:,2),'g.-')
         drawnow
         title(['Img # ' num2str(iNum)])

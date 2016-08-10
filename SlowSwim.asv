@@ -146,7 +146,6 @@ toc
 %% Fish Orientation
 disp('Getting tail curvature...')
 tic
-
 % midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
 
 %##### Not using this method at the moment.
@@ -166,7 +165,7 @@ tic
 
 [midlineInds,dsVecs,failedInds] = GetMidlinesByThinning(IM_proc_crop,...
     'fishPos',(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
-    'process','serial','plotBool',1,'kerSize',9);
+    'process','parallel','plotBool',1,'kerSize',9);
 toc
 
 tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...

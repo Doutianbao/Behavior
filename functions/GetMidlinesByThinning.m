@@ -98,15 +98,17 @@ ker = ker/sum(ker(:));
 mlInds = cell(size(imgStack,3),1);
 dsVecs = mlInds;
 imgInds = 1:size(imgStack,3);
-dispChunk = round(size(imgStack,3)/5);
+% dispChunk = round(size(imgStack,3)/5);
+dispChunk = 1;
 if plotBool
     figure('Name','Midline inds by thinning')
 end
 imgDims = size(imgStack);
 if strcmpi(process,'serial')
+    count = 0;
     for tt = imgInds(:)'
         img = conv2(imgStack(:,:,tt),ker,'same');
-        fp = fishPos(tt,:);
+        fp = fishPos(tt,:);       
         blah = GetMidlineByThinning(img,'nThr',nThr,'minThr',minThr,'mu',mu,'sigma',sigma,...
             'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fp);
         [blah,dsVecs{tt}] = GetMidlineCaudalToFishPos(fp,blah,imgDims(1:2));
@@ -126,8 +128,9 @@ if strcmpi(process,'serial')
                 pause(pauseDur)
             end
         end
+        count= count + 1;
         if mod(tt,dispChunk)==0
-            disp(['Img # ' num2str(tt)])
+            disp([num2str(100*(count/numel(imgInds))) '% completed...'])
         end
     end
 else
@@ -234,22 +237,29 @@ for in = 1:numel(varargin)
     end
 end
 
-mlInds = GetMLBT(img,nThr,minThr,minPxls,maxPxls,fishPos);
+[mlInds,img_denoised] = GetMLBT(img,nThr,minThr,minPxls,maxPxls,fishPos);
+% c = 0;
+% while isempty(mlInds) && c < 10
+%     [mlInds,img_denoised] = GetMLBT(img_denoised,nThr,minThr,minPxls,maxPxls,fishPos);
+% end
 
-    function mlInds = GetMLBT(img,nThr,minThr,minPxls,maxPxls,fishPos)
+    function varargout = GetMLBT(img,nThr,minThr,minPxls,maxPxls,fishPos)
         S = @(v1,v2)(sqrt(sum((v1-v2).^2,2)));
         S2 = @(v1,v2)sqrt(sum((repmat(v1,size(v2,1),1)-v2).^2,2));
         img_bw = zeros(size(img));
-        [~,img_quant] = GetMultiThr(img,nThr,'minThr',minThr);
+        [thr,img_quant] = GetMultiThr(img,nThr,'minThr',minThr);
+        img_denoised = img;
         oneInds = [];
         lvls = unique(img_quant(:));
+        count = numel(thr);
         for lvl = lvls(:)'
             inds = find(img_quant==lvl);
-            if numel(inds)< 3000
+            if numel(inds)< 500
                 oneInds = [oneInds; inds(:)];
             else
-                a = 1;
+                img_denoised(img < thr(max(count,1)))=0;
             end
+            count = count -1;
         end
         img_bw(oneInds)=1;
 %         img_bw(img_quant>0)=1;
@@ -274,7 +284,9 @@ mlInds = GetMLBT(img,nThr,minThr,minPxls,maxPxls,fishPos);
                 end
             end
         end
-        mlInds = find(img_thin);
+        mlInds = find(img_thin);     
+        varargout{1} = mlInds;
+        varargout{2} = img_denoised;
     end
 end
 
@@ -329,9 +341,6 @@ end
 function mlInds = CorrectOrder(mlInds,imgDims)
 for n = 3:length(mlInds)
     clear sub1 sub2
-%     if n== 219
-%         a = 1;
-%     end
     [sub1(:,1),sub1(:,2)] = ind2sub(imgDims(1:2), mlInds{n-1});
     [sub2(:,1),sub2(:,2)] = ind2sub(imgDims(1:2),mlInds{n});
     len = min([size(sub1,1), size(sub2,1)]);

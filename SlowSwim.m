@@ -26,7 +26,8 @@ switch readMode
             'Press enter [] to skip (filtering is recommended if using collimated ' ...
             'light during behavior): '];
         fps = input('Enter frame rate (frames/sec): ');
-        bp = input(bpMessg);
+        nFramesInTrl  = input('# of frames in each trl (default = 750): ');
+        bp = input(bpMessg);        
         outDir = fullfile(imgDir,'proc');
         IM = ReadImgSequence(imgDir,imgExt,imgInds);
 end
@@ -140,13 +141,13 @@ ts = datestr(now,30);
 procData = matfile(fullfile(outDir,['procData_' ts '.mat']),'Writable',true);
 procData.fishPos = fishPos;
 procData.ref = ref;
+procData.fps = fps;
 procData.IM_proc_crop = IM_proc_crop;
 toc
 
 %% Fish Orientation
 disp('Getting tail curvature...')
 tic
-
 % midlineInds = GetMidlines(IM_proc,fishPos,[20 15 15],'bmp','ref',ref);
 
 %##### Not using this method at the moment.
@@ -164,13 +165,19 @@ tic
 % tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
 %     'pauseDur',0,'smoothFactor',8);
 
+fp = repmat(ceil([size(IM_proc_crop,1), size(IM_proc_crop,2)]/2),size(fishPos,1),1);
 [midlineInds,dsVecs,failedInds] = GetMidlinesByThinning(IM_proc_crop,...
-    'fishPos',(fishPos./fishPos)*(size(IM_proc_crop,1)/2+1),...
-    'process','serial','plotBool',1,'kerSize',9);
+    'fishPos',fp,'process','parallel','plotBool',1,'kerSize',9);
+
 toc
 
+if isempty(nFramesInTrl)
+    nFramesInTrl = 750;
+end
+nTrls = size(IM_proc_crop,3)/nFramesInTrl;
+trlStartFrames =  (0:nTrls-1)*750 + 1;
 tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
-    'pauseDur',0,'smoothFactor',8,'dsVecs',dsVecs);
+    'pauseDur',0,'smoothFactor',8,'dsVecs',dsVecs,'trlStartFrames',trlStartFrames);
 
 % orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
 % orientation_backup = orientation;
@@ -180,6 +187,7 @@ disp('Saving midline inds, and tailCurv...')
 procData.hOr_crop = hOr_crop;
 procData.midlineInds = midlineInds;
 procData.tailCurv = tailCurv;
+procData.nFramesInTrl = nFramesInTrl;
 toc
 
 %% Motion Info

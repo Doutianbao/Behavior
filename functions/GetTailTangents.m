@@ -60,7 +60,21 @@ end
 
 tAngles = tA_flt;
 
-varargout{1} = tAngles*180/pi;
+tAngles = CorrectTailAngles(tAngles);
 
+varargout{1} = -tAngles*180/pi;
+
+end
+
+function tAngles = CorrectTailAngles(tAngles)
+for tt = 3:size(tAngles,2)
+    a0 = abs(tAngles(end,tt-1)) * 180/pi;
+    a1 = abs(tAngles(end,tt) - tAngles(end,tt-1)) * 180/pi;
+    a2 = abs(tAngles(end,tt) - -1*tAngles(end,tt-1)) * 180/pi;   
+    if (a0>100)&&(a2 < a1)
+        tAngles(end,tt) = -1*tAngles(end,tt);
+        disp(['Corrected frame# ' num2str(tt)])
+    end
+end
 end
 

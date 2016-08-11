@@ -100,7 +100,7 @@ dsVecs = mlInds;
 imgInds = 1:size(imgStack,3);
 % dispChunk = round(size(imgStack,3)/5);
 dispChunk = 1;
-if plotBool
+if plotBool && ~strcmpi(process,'parallel')
     figure('Name','Midline inds by thinning')
 end
 imgDims = size(imgStack);
@@ -186,8 +186,12 @@ if length(mlInds)>1
         end       
     end
 end
-disp('Correcting midline point order...')
-mlInds = CorrectOrder(mlInds,imgDims);
+
+% disp('Correcting midline point order...')  
+% mlInds = CorrectOrder(mlInds,imgDims); %-->  Feel like it's better to
+%   correct after smoothening
+
+
 varargout{1} = mlInds;
 varargout{2} = dsVecs;
 varargout{3} = zerInds;
@@ -341,16 +345,26 @@ end
 function mlInds = CorrectOrder(mlInds,imgDims)
 for n = 3:length(mlInds)
     clear sub1 sub2
-    [sub1(:,1),sub1(:,2)] = ind2sub(imgDims(1:2), mlInds{n-1});
-    [sub2(:,1),sub2(:,2)] = ind2sub(imgDims(1:2),mlInds{n});
-    len = min([size(sub1,1), size(sub2,1)]);
+    [sub1(:,2),sub1(:,1)] = ind2sub(imgDims(1:2), mlInds{n-1});
+    [sub2(:,2),sub2(:,1)] = ind2sub(imgDims(1:2),mlInds{n});
+    len = min([size(sub1,1), size(sub2,1)]);    
+    a1 = GetDiffAngles(sub1);
+    a2 = GetDiffAngles(sub2);   
     if len~=0
         d = sum(sqrt(sum((sub1(1:len,:)- sub2(1:len,:)).^2,2)),1);
-        d_flip = sum(sqrt(sum((sub1(1:len,:)- sub2(len:-1:1,:)).^2,2)),1);
-        if d_flip < d
-            mlInds{n} = flipud(mlInds{n});     
+        d_flip = sum(sqrt(sum((sub1(1:len,:)- sub2(len:-1:1,:)).^2,2)),1);cla
+        if (d_flip < d) || ((a1*a2 <0) && (abs(a1-a2)> abs(a1--a2))) && (abs(a1-a2)>360)
+            mlInds{n} = flipud(mlInds{n});
+            disp(['Corrected frame # ' num2str(n)])       
         end
     end    
+end
+
+function A = GetDiffAngles(vec)
+dV = diff(vec,[],1);
+C = dV(:,1) + dV(:,2)*i;
+A = angle(C(1:end-1).*conj(C(2:end)));
+A = sum(A)*180/pi;
 end
 end
 

@@ -72,12 +72,16 @@ for imgNum = frameInds(:)'
     if plotCurv
         ax1 = subplot(2,1,1);
         cla
+        cMap = jet(64*4);
         imagesc(IM(:,:,count),'parent',ax1); axis image, axis on, colormap(ax1,jet),axis off
         hold on
         set(gca,'clim',cLim)
-        plot(x,y,'color','r','linewidth',2),drawnow
+        plot(x,y,'color','r','linewidth',2)
+        plot(x(1),y(1),'bo','markersize',10)
+        plot(fishPos(count,1),fishPos(count,2),'g*','markersize',10)
+        drawnow
         title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(tailAngles(end,count)*10)/10) '^o '])  
-        if imgNum >= 100            
+        if count >= 100            
            blah = tailAngles(:,count-99:count);           
         else            
             blah = zeros(size(tailAngles,1),100);
@@ -85,9 +89,14 @@ for imgNum = frameInds(:)'
         end    
         ax2 = subplot(2,1,2);
         cla
-        imagesc(blah,'parent',ax2); colormap(ax2,jet),set(gca,'clim',[-150 150]);
+        imagesc(blah,'parent',ax2); colormap(ax2,cMap),set(gca,'clim',[-150 150]);
         box off, axis off
-        pause(pauseDur)
+        if isempty(pauseDur)
+            pause()            
+        else
+            pause(pauseDur)
+        end
+        
     else
         cla
         imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)

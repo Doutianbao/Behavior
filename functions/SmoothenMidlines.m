@@ -256,7 +256,7 @@ for n = 3:size(tailCurv,3)
 %     b(n) = abs(a1-a2);   
     d = sum(sqrt(sum((tc1- tc2).^2,2)),1);
     d_flip = sum(sqrt(sum((tc1- flipud(tc2)).^2,2)),1);
-    if ((d_flip < d) || ((a1*a2 <0) && (abs(a1-a2)> abs(a1--a2))) && (abs(a1-a2)>360)) && isempty(intersect(n,trlStartFrames))
+    if ((d_flip < d) && ((a1*a2 <0) && (abs(a1-a2)> abs(a1--a2))) && (abs(a1-a2)>360)) && isempty(intersect(n,trlStartFrames))
         tailCurv(:,1,n) = flipud(tc2(:,1));
           tailCurv(:,2,n) = flipud(tc2(:,2));
         disp(['Corrected frame # ' num2str(n)])

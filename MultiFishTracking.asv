@@ -1,7 +1,7 @@
 function varargout = MultiFishTracking(varargin)
 % MultiFishTracking - Function for finding fish and fixing position and orientation
 % blah = MultiFishTracking()
-% blah = MultiFishTracking(filePath);
+% blah = MultiFishTr(filePath);
 
 %% Some variables
 frameRate  = 500; % For timeseries lowpass filtering

@@ -171,12 +171,15 @@ fp = repmat(ceil([size(IM_proc_crop,1), size(IM_proc_crop,2)]/2),size(fishPos,1)
 
 toc
 
-if isempty(nFramesInTrl)
+if ~exist('nFramesInTrl')
+    nFramesInTrl = 750; %(Default when collecting images at 500 fps)
+elseif isempty(nFramesInTrl)
     nFramesInTrl = 750;
 end
+
 nTrls = size(IM_proc_crop,3)/nFramesInTrl;
 trlStartFrames =  (0:nTrls-1)*750 + 1;
-tailCurv = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
+[tailCurv, tailCurv_uncorrected] = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
     'pauseDur',0,'smoothFactor',8,'dsVecs',dsVecs,'trlStartFrames',trlStartFrames);
 
 % orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
@@ -189,6 +192,9 @@ procData.midlineInds = midlineInds;
 procData.tailCurv = tailCurv;
 procData.nFramesInTrl = nFramesInTrl;
 toc
+
+%% Plot trialized tail bends
+TrializeTailBendsAndPlot
 
 %% Motion Info
 % motionThr = 1;

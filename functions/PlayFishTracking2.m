@@ -80,7 +80,8 @@ for imgNum = frameInds(:)'
         plot(x(1),y(1),'bo','markersize',10)
         plot(fishPos(count,1),fishPos(count,2),'g*','markersize',10)
         drawnow
-        title(['Frame: ' num2str(imgNum) ', Angle: ' num2str(round(tailAngles(end,count)*10)/10) '^o '])  
+        title(['Abs Frame: ' num2str(imgNum) ', Rel frame # ' num2str(count)...
+            ', Angle: ' num2str(round(tailAngles(end,count)*10)/10) '^o '])  
         if count >= 100            
            blah = tailAngles(:,count-99:count);           
         else            

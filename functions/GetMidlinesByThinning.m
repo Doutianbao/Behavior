@@ -52,6 +52,7 @@ process = 'serial';
 plotBool = 0;
 kerSize = 7;
 pauseDur = 0;
+nWorkers = 10;
 
 for in = 1:numel(varargin)
     if ischar(varargin{in})
@@ -98,8 +99,8 @@ ker = ker/sum(ker(:));
 mlInds = cell(size(imgStack,3),1);
 dsVecs = mlInds;
 imgInds = 1:size(imgStack,3);
-% dispChunk = round(size(imgStack,3)/5);
-dispChunk = 1;
+dispChunk = round(size(imgStack,3)/5);
+% dispChunk = 1;
 if plotBool && ~strcmpi(process,'parallel')
     figure('Name','Midline inds by thinning')
 end
@@ -134,6 +135,9 @@ if strcmpi(process,'serial')
         end
     end
 else
+    if matlabpool('size')==0
+        matlabpool(nWorkers);
+    end
     parfor tt = imgInds(:)'
         img = conv2(imgStack(:,:,tt),ker,'same');
         fp = fishPos(tt,:);

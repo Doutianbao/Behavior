@@ -14,7 +14,7 @@ nTrls = size(tailCurv,3)/nFramesInTrl;
 
 
 disp('Calculating tail angles...')
-% [tA,~] = GetTailDeflections(midlineInds,tailCurv,[141,141],size(tailCurv,1));
+% tailCurv = tailCurv_uncorrected;
 tA = GetTailTangents(tailCurv);
 tA_trl = reshape(tA,size(tA,1),nFramesInTrl,nTrls);
 time_trl = reshape(time,nFramesInTrl,nTrls);
@@ -26,7 +26,7 @@ toc
 
 
 %%
-trls = [1:13 15:nTrls];
+trls = [1:17 19];
 % trls = 1:nTrls;
 xLim = [-inf 750];
 cLim = [-225 225];

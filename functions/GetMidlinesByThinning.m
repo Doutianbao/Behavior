@@ -262,7 +262,7 @@ end
         count = numel(thr);
         for lvl = lvls(:)'
             inds = find(img_quant==lvl);
-            if numel(inds)< 500
+            if numel(inds)< 1000
                 oneInds = [oneInds; inds(:)];
             else
                 img_denoised(img < thr(max(count,1)))=0;
@@ -287,7 +287,7 @@ end
                 s = S(rp(region).Centroid,fishPos);
                 [v2(:,2),v2(:,1)] = ind2sub(imgDims,pxls);
                 s2 = min(S2(fishPos,v2));
-                if (s > minPxls) || (s2 > 10)
+                if (s > 2*minPxls) || (s2 > 10)
                     img_thin(pxls)=0;
                 end
             end

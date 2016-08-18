@@ -1,35 +1,42 @@
 function varargout = MultiFishTracking(varargin)
 % MultiFishTracking - Function for finding fish and fixing position and orientation
-% blah = MultiFishTracking()
-% blah = MultiFishTr(filePath);
+% fishPos = MultiFishTracking(imgStack)
+% fishPos = MultiFishTracking(imgStack,'filterDims',filterDims,'minPxls',minPxls,'maxPxls',maxPxls);
+% Inputs:
+% imgStack - 2d or 3D image stack. If 3D, filtering occurs along the 3rd
+%   dimension
+% 'filterDims' - Dimensions of the bandpass filter to apply to the image.
+%   If numel(filterDims) == 1, then convolves with gaussian kernel created with this value as parameter
+%   to the function gaussker
+% 'minPxls' - Minimum # of pxls that make up the head centroid of the fish
+%   after filtering (default: 50)
+% 'maxPxls' - Max # of pxls that can make up the head centroid of the fish
+%   after filtering (default: half of the total # of pxls making each
+%   image).
+% Outputs:
+% fishPos - Cell array of length equal to number of fish (# of fish
+%   determined in the first image). Each cell is an 2 X T array where each
+%   point t = {1,2,3,....,T} corresponds to the image n in the image stack
+%   of size M x N x T. 
+% 
 
-%% Some variables
-frameRate  = 500; % For timeseries lowpass filtering
-lowPass_ts = 100; % Lowpass cutoff for timeseries filtering
-bandPass_img = [5, 10]; % For image spatial filtering
-intThr = 0.75; % For image binarization
-lineLen = 25; % For orienttion estimation
 
+%% Default parameter values
+filterDims = 30;
+minPxls = 50;
+imgDims = size(imgStack);
+maxPxls = round(0.5*(imgDims(1)*imgDims(2)));
 
-%% Read Image Stack
-if nargin==0
-    [fName,fDir] = uigetfile('*');
-    fPath = fullfile(fDir,fName);
-    dotInd = strfind(fName,'.');
-    imgExt = fName(dotInd+1:end);
-else
-    fPath = varargin{1};
-    [fDir,fName,imgExt] = fileparts(fPath);
-end
-
-IM = ReadImgStack(fPath,imgExt);
-
-IM = max(IM(:))-IM;
 
 %% Filter image stack
 % IM_smooth = SmoothImageStack(IM,10);bwc
 disp('Filtering and grayscaling images...')
-IM_flt = BandpassStack(IM,bandPass_img(1),bandPass_img(2));
+if numel(filterDims)==2
+    IM_flt = BandpassStack(IM,filterDims(1),filterDims(2));
+else
+    IM_flt = BandpassStack(IM,filterDims(1));
+end
+
 IM_bw = imNormalize999(IM_flt);
 IM_bw(IM_bw<intThr) = 0;
 
@@ -153,29 +160,36 @@ varargout{2} = out;
         end
     end
 
-    function img_flt = Bandpass(img, lowerLim,  upperLim)
+    function img_flt = Bandpass(img, varargin)
         getCtr = @(img)[round(size(img,1)/2+0.599), round(size(img,2)/2+0.599)];
         imgCtr = getCtr(img);
-        r_in = lowerLim;
-        r_out = upperLim;
-        se_in = strel('disk',r_in);
-        se_out = strel('disk',r_out);
-        se_in_ctr = getCtr(se_in.getnhood);
-        se_out_ctr = getCtr(se_out.getnhood);
-        mask = zeros(size(img));
-        inInds = se_in.getneighbors;
-        inInds(:,1) = inInds(:,1) + imgCtr(1);%-se_in_ctr(1);
-        inInds(:,2) = inInds(:,2) + imgCtr(2);%-se_in_ctr(2);
-        inInds = sub2ind(size(img),inInds(:,1),inInds(:,2));
-        outInds = se_out.getneighbors;
-        outInds(:,1) = outInds(:,1) + imgCtr(1);%-se_out_ctr(1);
-        outInds(:,2) = outInds(:,2) + imgCtr(2);%-se_out_ctr(2);
-        outInds = sub2ind(size(img),outInds(:,1),outInds(:,2));
-        mask(outInds) = 1;
-        mask(inInds) =0;
-        img_fft = fftshift(fft2(img));
-        img_fft = img_fft.*mask;
-        img_flt = ifft2(fftshift(img_fft));
+        if numel(varargin)==2
+            r_in = varargin{1};
+            r_out = varargin{2};
+            se_in = strel('disk',r_in);
+            se_out = strel('disk',r_out);
+            se_in_ctr = getCtr(se_in.getnhood);
+            se_out_ctr = getCtr(se_out.getnhood);
+            mask = zeros(size(img));
+            inInds = se_in.getneighbors;
+            inInds(:,1) = inInds(:,1) + imgCtr(1);%-se_in_ctr(1);
+            inInds(:,2) = inInds(:,2) + imgCtr(2);%-se_in_ctr(2);
+            inInds = sub2ind(size(img),inInds(:,1),inInds(:,2));
+            outInds = se_out.getneighbors;
+            outInds(:,1) = outInds(:,1) + imgCtr(1);%-se_out_ctr(1);
+            outInds(:,2) = outInds(:,2) + imgCtr(2);%-se_out_ctr(2);
+            outInds = sub2ind(size(img),outInds(:,1),outInds(:,2));
+            mask(outInds) = 1;
+            mask(inInds) =0;
+            img_fft = fftshift(fft2(img));
+            img_fft = img_fft.*mask;
+            img_flt = ifft2(fftshift(img_fft));
+        else
+            ker = gaussker(varargin{1});
+            ker = ker/sum(ker(:));
+            img_flt = conv2(img, ker);
+        end
+        
     end
 
     function IM = ReadImgStack(fPath,imgExt)

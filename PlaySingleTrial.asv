@@ -12,7 +12,7 @@ toc
 TrializeTailBendsAndPlot
 
 %% Plot tail curvatures atop moving fish
-trl = 17;
+trl = 15;
 pauseDur = 0.1;
 inds = (trl-1)*750 + 1: (trl-1)*750 + 750;
 % var1 = IM_proc_crop(:,:,inds);

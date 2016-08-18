@@ -39,7 +39,7 @@ end
 
 %% Processing images block-by-block
 blockSize = 4;
-cropWid = 70;
+cropWid = 90; %( For imgDims ~ [900,900], use 70)
 lineLen = 15;
 
 tic
@@ -108,20 +108,20 @@ imgDims_crop = size(IM_proc_crop);
 dispChunk = round(size(IM_proc_crop,3)/10);
 dim = size(hOr{1},2);
 try
-for jj = 1:length(hOr)
-    if dim ==2
-        x = hOr{jj}(:,1);
-        y = hOr{jj}(:,2);
-    else
-        [y,x] = ind2sub(imgDims(1:2),hOr{jj});
-    end    
-    blah = [x,y] - repmat(fishPos(jj,:),length(x),1) + repmat([cropWid+1, cropWid+1],length(x),1);
-    x = blah(:,1); y = blah(:,2);
-    hOr_crop{jj} = [x,y];
-    if mod(jj,dispChunk)==0
-        disp(num2str(jj))
+    for jj = 1:length(hOr)
+        if dim ==2
+            x = hOr{jj}(:,1);
+            y = hOr{jj}(:,2);
+        else
+            [y,x] = ind2sub(imgDims(1:2),hOr{jj});
+        end
+        blah = [x,y] - repmat(fishPos(jj,:),length(x),1) + repmat([cropWid+1, cropWid+1],length(x),1);
+        x = blah(:,1); y = blah(:,2);
+        hOr_crop{jj} = [x,y];
+        if mod(jj,dispChunk)==0
+            disp(num2str(jj))
+        end
     end
-end
 catch
     disp('Getting head orientation in cropped stack...')
     tic
@@ -233,8 +233,9 @@ saveOrNot = input('Detect and save peak info (y/n)?  ','s');
 tic
 if strcmpi('y',saveOrNot)
     disp('Getting peak info...')
-    GetTapDark1st2ndLeftRightPks;
-    procData.pks = pks;
+%     GetTapDark1st2ndLeftRightPks;
+%     procData.pks = pks;
+    [out,procData] = AnalyzeFreeSwims();
 else
     disp('Pk info not saved!')
 end

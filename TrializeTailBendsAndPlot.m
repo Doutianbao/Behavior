@@ -26,8 +26,8 @@ toc
 
 
 %%
-trls = [1:17 19];
-% trls = 1:nTrls;
+% trls = [1:17 19];
+trls = 1:nTrls;
 xLim = [-inf 750];
 cLim = [-225 225];
 yShift = 300;

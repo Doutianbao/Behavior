@@ -12,12 +12,14 @@ toc
 TrializeTailBendsAndPlot
 
 %% Plot tail curvatures atop moving fish
-trl = 17;
+trl = 1;
 pauseDur = 0.1;
 inds = (trl-1)*750 + 1: (trl-1)*750 + 750;
 % var1 = IM_proc_crop(:,:,inds);
 % var2 = repmat([71 71],numel(inds),1);
 % mlInds2 = midlineInds(inds);
 % tC = tailCurv(:,:,inds);
-
-PlayFishTracking(IM_proc_crop,'fishPos',[71 71], 'midlineInds',midlineInds,'tailAngles',tA,'plotCurv',1,'tailCurv',tailCurv,'frameInds',inds,'pauseDur',pauseDur);
+fp = (size(IM_proc_crop)-1)/2 + 1;
+fp = fp(1:2);
+PlayFishTracking(IM_proc_crop,'fishPos',fp, 'midlineInds',midlineInds,'tailAngles',tA,...
+    'plotCurv',1,'tailCurv',tailCurv,'frameInds',inds,'pauseDur',pauseDur,'lineClr','g');

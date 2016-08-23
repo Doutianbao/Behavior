@@ -142,7 +142,9 @@ procData = matfile(fullfile(outDir,['procData_' ts '.mat']),'Writable',true);
 procData.fishPos = fishPos;
 procData.ref = ref;
 procData.fps = fps;
+procData.imgDims = size(IM);
 procData.IM_proc_crop = IM_proc_crop;
+procData.imgDims_crop = size(IM_proc_crop);
 toc
 
 %% Fish Orientation
@@ -235,7 +237,7 @@ if strcmpi('y',saveOrNot)
     disp('Getting peak info...')
 %     GetTapDark1st2ndLeftRightPks;
 %     procData.pks = pks;
-    [out,procData] = AnalyzeFreeSwims();
+    [out,procData] = AnalyzeFreeSwims(procData);
 else
     disp('Pk info not saved!')
 end

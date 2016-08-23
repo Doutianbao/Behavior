@@ -15,13 +15,15 @@ function PlayFishTracking(IM,varargin)
 % 'pauseDur' - Duration of pause between subsequent frames
 % 'plotCurv' - 0 or 1; 1 results in plotting of curvatures in a subplot
 %   below the fish images
-% saveDir - Directory to save images to
+% 'saveDir' - Directory to save images to
+% 'lineClr' - Color of plotted midline
 
 plotCurv = 0;
 frameInds  = [];
 saveDir = [];
 pauseDur = 0;
 tailAngles = [];
+lineClr = 'r';
 
 for jj = 1:numel(varargin)
     if isstr(varargin{jj})
@@ -44,6 +46,8 @@ for jj = 1:numel(varargin)
                 plotCurv = varargin{jj+1};
             case 'tailangles'
                 tailAngles = varargin{jj+1};
+            case 'lineclr'
+                lineClr = varargin{jj+1};
         end
     end
 end
@@ -76,7 +80,7 @@ for imgNum = frameInds(:)'
         imagesc(IM(:,:,count),'parent',ax1); axis image, axis on, colormap(ax1,jet),axis off
         hold on
         set(gca,'clim',cLim)
-        plot(x,y,'color','r','linewidth',2)
+        plot(x,y,'color',lineClr,'linewidth',2)
         plot(x(1),y(1),'bo','markersize',10)
         plot(fishPos(count,1),fishPos(count,2),'g*','markersize',10)
         drawnow

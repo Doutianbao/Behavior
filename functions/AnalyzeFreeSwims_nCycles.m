@@ -11,15 +11,16 @@ nFramesInTrl = 750;
 preStimPeriod = 0.1;
 
 if nargin ==0
-    cd('S:\Avinash\Ablations and behavior\Ventral RS')
+    cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
     [fileName,pathName] = uigetfile('*.mat');
     procData = matfile(fullfile(pathName,fileName));
 elseif nargin ==1
     procData = varargin{1};
-    if isfield(procData,'fps')
+    fNames = fieldnames(procData);
+    if  any(strcmpi(fNames,'fps'))
         fps = procData.fps;
     end
-    if isfield(procData,'nFramesInTrl')
+    if any(strcmpi(fNames,'nFramesInTrl'))
         nFramesInTrl = procData.nFramesInTrl;
     end
 else
@@ -48,6 +49,8 @@ try
 catch
     disp('Extracting image dimensions...')
     imgDims = size(procData.IM_proc_crop);
+    procData.Properties.Writable = true;
+    procData.imgDims_crop = imgDims;
 end
 
 imgDims = imgDims(1:2);
@@ -69,43 +72,47 @@ for trl = 1:nTrls
     cla
     plot(time_trl*1000,tA_trl(:,trl))
     box off
-%     xlim([-inf (nFramesInTrl/fps)*1000])
-    xlim ([-inf 0.5*1000]);
+    %     xlim([-inf (nFramesInTrl/fps)*1000])
+    xlim([-inf 0.5*1000])
     ylim([-300 300])
     set(gca,'xtick',[100 500 1000 15000])
     title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])
     shg
-    [x,y,button] = ginput(5);
+    [x,y,button] = ginput();
+    evens = 2:2:numel(x);
+    if evens(end)== numel(x);
+        x(end) = [];
+        evens = 2:2:numel(x);
+    end
     if all(button==1)
-        out.onset(trl) = x(1)-(preStimPeriod)*1000;
-        out.one.amp(trl) = y(2)-y(1);
-        out.one.per(trl) = x(3)-x(1);
-        out.three.amp(trl) = y(4)-y(3);
-        out.three.per(trl) = x(5)-x(3);        
+        for cyc = 1:numel(evens)
+            ind = evens(cyc);
+            out.pk{trl}(cyc) =y(ind)-y(ind-1);
+            out.per{trl}(cyc) = x(ind+1)-x(ind-1);
+        end
+        out.onset(trl) = x(1)-(preStimPeriod)*1000;       
     else
         out.onset(trl) = nan;
-        out.one.amp(trl) = nan;
-        out.one.per(trl) = nan;
-        out.three.amp(trl) = nan;
-        out.three.per(trl) = nan;
+        out.pk{trl} = nan;
+        out.per{trl} = nan;      
     end
     
 end
-out.onset_mean = mean(out.onset(~isnan(out.onset)));
-out.onset_std = std(out.onset(~isnan(out.onset)));
-out.one.amp_mean = mean(abs(out.one.amp(~isnan(out.one.amp))));
-out.one.amp_std  = std(abs(out.one.amp(~isnan(out.one.amp))));
-out.one.per_mean = mean(out.one.per(~isnan(out.one.per)));
-out.one.per_std =  std(out.one.per(~isnan(out.one.per)));
-out.three.amp_mean = mean(abs(out.three.amp(~isnan(out.three.amp))));
-out.three.amp_std = std(abs(out.three.amp(~isnan(out.three.amp))));
-out.three.per_mean = mean(out.three.per(~isnan(out.three.per)));
-out.three.per_std = std(out.three.per(~isnan(out.three.per)));
+% out.onset_mean = mean(out.onset(~isnan(out.onset)));
+% out.onset_std = std(out.onset(~isnan(out.onset)));
+% out.one.amp_mean = mean(abs(out.one.amp(~isnan(out.one.amp))));
+% out.one.amp_std  = std(abs(out.one.amp(~isnan(out.one.amp))));
+% out.one.per_mean = mean(out.one.per(~isnan(out.one.per)));
+% out.one.per_std =  std(out.one.per(~isnan(out.one.per)));
+% out.three.amp_mean = mean(abs(out.three.amp(~isnan(out.three.amp))));
+% out.three.amp_std = std(abs(out.three.amp(~isnan(out.three.amp))));
+% out.three.per_mean = mean(out.three.per(~isnan(out.three.per)));
+% out.three.per_std = std(out.three.per(~isnan(out.three.per)));
 
 saveOrNot = input('Append pk data to procData? (y/n)','s');
 if strcmpi(saveOrNot,'y')
     procData.Properties.Writable = true;
-    procData.elicitedSwimInfo = out; 
+    procData.elicitedSwimInfo = out;
 end
 
 varargout{1} = out;

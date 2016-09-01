@@ -220,13 +220,18 @@ function tc = SplineMidlineInds_ds(tailCurv,dsVec,distVec,smoothFactor,imgDims)
 r = tailCurv(:,2);
 c = tailCurv(:,1);
 ts= distVec;
-if length(dsVec) > length(distVec)
+if length(dsVec) > length(distVec) 
     rs = r(1:length(distVec));
-    cs = c(1:length(distVec));
+    cs = c(1:length(distVec));   
 else
-    t = linspace(distVec(1),distVec(end),min(length(distVec),length(dsVec)));
+    t = linspace(distVec(1),distVec(end),min(length(distVec),length(dsVec)));    
     rs = interp1(t,r,ts,'cubic');
     cs = interp1(t,c,ts,'cubic');
+%     [t,uniqInds] = unique(dsVec);
+%     r = r(uniqInds);
+%     c = c(uniqInds);
+%     rs = interp1(t,r,ts,'cubic','extrap');
+%     cs = interp1(t,c,ts,'cubic','extrap');   
 end
 
 % rs(rs==0) = 1;

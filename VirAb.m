@@ -6,7 +6,7 @@ imgStack_ab = imgStack;
 
 %% Getting rois
 nImages = size(imgStack,3);
-imgInds = 92:nImages;
+imgInds = 9:83;
 imgInds = imgInds(:)';
 roi = cell(nImages,1);
 for jj = imgInds
@@ -20,6 +20,8 @@ img_maxInt = max(imgStack(:,:,imgInds),[],3);
 % end
 
 %% Find background roi
+disp('Background ROI...')
+pause(3)
 backRoi = setEllipticalRois(img_maxInt,jet(256));
 backInds = [];
 for jj = 1:length(backRoi)
@@ -32,23 +34,27 @@ backInds = backInds(rp);
 n = nextpow2(numel(backInds))-1;
 f =2^n;
 backInds = backInds(1:f);
-backImg = img(backInds);
+backImg = img_maxInt(backInds);
 r = floor(n/2);
 c  = n-r;
 backImg = reshape(backImg,2^r,2^c);
 while numel(backImg)< numel(img_maxInt)
     backImg = repmat(backImg,2,2);
 end
-
+nPxls = numel(backImg);
+rp  = randperm(nPxls);
+backImg(1:nPxls) = backImg(rp);
+thr = mean(backImg(:)) + 7*std(backImg(:));
+break
 
 %% Adjusting
 % mn = min(imgStack(:));
 disp('Ablating...')
 blah = [];
 % imgInds = find(ones(size(imgStack,1),size(imgStack,2)));
-nPxls = numel(backImg);
 for jj = 1:length(roi)
-    imgInds_shuf = randperm(nPxls);
+    disp(['Slice # ' num2str(jj)])
+%     imgInds_shuf = randperm(nPxls);
     if ~isempty(roi{jj})
         img = imgStack_ab(:,:,jj);
         for rr = 1:length(roi{jj});
@@ -57,11 +63,17 @@ for jj = 1:length(roi)
             else
                 roi_current = roi{jj}{1};
             end
-            if ~isempty(roi_current)               
-                inds = roi_current.idx;
-%                 vals = img(inds);
+            if ~isempty(roi_current)
+                disp(['Roi # ' num2str(rr)])
+                inds = roi_current.idx;                
+                vals = img(inds);
 %                 sVals = zscore(vals);
 %                 overInds = find(sVals>1.5);
+                  overInds = find(vals>thr);
+                  if ~isempty(overInds)
+                      overInds= inds(overInds);
+                  end
+                  overInds = inds();
 %                 if ~isempty(overInds)
 %                 mu = mean(vals(:));
 %                 sig = std(vals(:));
@@ -71,7 +83,7 @@ for jj = 1:length(roi)
 %                 vals(overInds) = blah;      
 %                 end
 %                 img(inds) = vals;
-                  img(inds) = backImg(imgInds_shuf(inds));
+                  img(overInds) = backImg(overInds);
 %                   medImg = mean(img(:));
 %                   sigImg = std(img(:));
 %                   brightInds = find(img(inds)>medImg + 10*sigImg(:));
@@ -87,9 +99,8 @@ end
 disp('Noising...')
 sig = std(imgStack_ab(:));
 sig = repmat(sig,size(imgStack));
-imgStack_ab = imgStack_ab + 0.3*sig.*randn(size(imgStack)); 
+imgStack_ab = imgStack_ab + 0.2*sig.*randn(size(imgStack)); 
 
-break
 
 %% Standardizing and Saving
 disp('Standardizing...')
@@ -97,6 +108,6 @@ disp('Standardizing...')
 %     imgStack(:,:,jj) = Standardize(imgStack(:,:,jj));
 %     imgStack_ab(:,:,jj) = Standardize(imgStack_ab(:,:,jj));
 % end
-imgStack = Standardize(imgStack);
+% imgStack = Standardize(imgStack);
 imgStack_ab = Standardize(imgStack_ab);
 

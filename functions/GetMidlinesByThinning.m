@@ -44,7 +44,7 @@ nThr = 4;
 minThr = 0;
 mu = [];
 sigma = [];
-minPxls = 30;
+minPxls = 20;
 maxPxls = 100;
 fishPos = [];
 nIter = 20;
@@ -56,7 +56,7 @@ nWorkers = 10;
 
 for in = 1:numel(varargin)
     if ischar(varargin{in})
-        switch lower(varargin{in})      ;
+        switch lower(varargin{in})      
             case 'nthr'
                 nThr = varargin{in+1};
             case 'minthr'
@@ -109,11 +109,10 @@ if strcmpi(process,'serial')
     count = 0;
     for tt = imgInds(:)'
         img = conv2(imgStack(:,:,tt),ker,'same');
-        fp = fishPos(tt,:);       
+        fp = fishPos(tt,:);         
         blah = GetMidlineByThinning(img,'nThr',nThr,'minThr',minThr,'mu',mu,'sigma',sigma,...
-            'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fp);
-        [blah,dsVecs{tt}] = GetMidlineCaudalToFishPos(fp,blah,imgDims(1:2));
-        mlInds{tt} = blah;
+            'minPxls',minPxls,'maxPxls',maxPxls,'fishPos',fp);     
+        [mlInds{tt},dsVecs{tt}] = GetMidlineCaudalToFishPos(fp,blah,imgDims(1:2));       
         if plotBool
             cla
             img(mlInds{tt})= mu + 20*sigma;
@@ -256,10 +255,13 @@ end
         S2 = @(v1,v2)sqrt(sum((repmat(v1,size(v2,1),1)-v2).^2,2));
         img_bw = zeros(size(img));
         [thr,img_quant] = GetMultiThr(img,nThr,'minThr',minThr);
+        thr(thr<=minThr)=[];
+        thr(thr==0)=[];
         img_denoised = img;
         oneInds = [];
         lvls = unique(img_quant(:));
-        count = numel(thr);
+        lvls(lvls==0)=[];       
+        count = numel(lvls);
         for lvl = lvls(:)'
             inds = find(img_quant==lvl);
             if numel(inds)< 1000

@@ -191,6 +191,7 @@ disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
 procData.hOr_crop = hOr_crop;
 procData.midlineInds = midlineInds;
+procData.dsVecs = dsVecs;
 procData.tailCurv = tailCurv;
 procData.nFramesInTrl = nFramesInTrl;
 toc

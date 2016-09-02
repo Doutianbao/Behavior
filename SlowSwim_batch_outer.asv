@@ -1,5 +1,5 @@
 
-clear, close all
+close all
 fishDir = 'S:\Avinash\Ablations and behavior\Intermediate RS\20160901';
 
 %% Getting the names of fish image dirs
@@ -33,7 +33,7 @@ for fishNum = 1:length(imgDirs)
                nm = blah(kk).name;               
                if isempty(strfind(lower(nm),'.'))
                    imgDir = fullfile(path,nm);
-                   SlowSwim_batch(imgDir,fishName)
+                   SlowSwim_batch
                end
            end
         end

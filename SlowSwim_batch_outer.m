@@ -18,7 +18,8 @@ for jj = 1:length(blah)
 end
 toc
 
-%% Go into fast dir
+%% Go into fast dir and process
+tic
 for fishNum = 1:length(imgDirs)
     fishName = ['f' num2str(fishNum)];
     disp(['Fish # ' num2str(fishNum)]);
@@ -26,16 +27,17 @@ for fishNum = 1:length(imgDirs)
     for jj = 1:length(blah)
         nm = blah(jj).name;
         if isempty(strfind(lower(nm),'.')) && ~isempty(strfind(lower(nm),'fast'))
-           path = fullfile(imgDirs{fishNum},nm);
-           disp(nm)
-           blah = dir(path);
-           for kk = 1:length(blah)
-               nm = blah(kk).name;               
-               if isempty(strfind(lower(nm),'.'))
-                   imgDir = fullfile(path,nm);
-                   SlowSwim_batch(imgDir,fishName)
-               end
-           end
+            path = fullfile(imgDirs{fishNum},nm);
+            disp(nm)
+            blah2 = dir(path);
+            for kk = 1:length(blah2)
+                nm = blah2(kk).name;
+                if isempty(strfind(lower(nm),'.'))
+                    imgDir = fullfile(path,nm);
+                    SlowSwim_batch(imgDir,fishName)
+                end
+            end
         end
     end
 end
+toc

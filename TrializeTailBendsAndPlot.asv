@@ -69,8 +69,8 @@ toc
 
 
 %%
-% trls = [4 6 7 9 10 11 14 16 18 19];
-trls = 1:nTrls;
+trls = [4 7 9 10 11 14 16 18 19];
+% trls = 1:nTrls;
 xLim = [-inf 750];
 cLim = [-225 225];
 yShift = 300;

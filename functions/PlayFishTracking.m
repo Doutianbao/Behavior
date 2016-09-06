@@ -66,7 +66,7 @@ tailAngles = tailAngles(:,frameInds);
 imgDims =[size(IM,1), size(IM,2)];
 cLim = [min(IM(:)), max(IM(:))*0.9];
 
-figure('Name', 'Fish Tracking')
+fh = figure('Name', 'Fish Tracking');
 count = 0;
 blah = zeros(size(tailAngles,1),100);
 for imgNum = frameInds(:)'
@@ -74,6 +74,7 @@ for imgNum = frameInds(:)'
    x = tailCurv(:,1,count);
    y = tailCurv(:,2,count);  
     if plotCurv
+        figure(fh)
         ax1 = subplot(2,1,1);
         cla
         cMap = jet(64*4);
@@ -91,7 +92,8 @@ for imgNum = frameInds(:)'
         else            
             blah = zeros(size(tailAngles,1),100);
             blah(:,end-count+1:end) = tailAngles(:,1:count);          
-        end    
+        end
+        figure(fh)
         ax2 = subplot(2,1,2);
         cla
         imagesc(blah,'parent',ax2); colormap(ax2,cMap),set(gca,'clim',[-150 150]);
@@ -103,6 +105,7 @@ for imgNum = frameInds(:)'
         end
         
     else
+        figure(fh)
         cla
         imagesc(IM(:,:,imgNum)),axis image, axis on, colormap(gray)
         hold on

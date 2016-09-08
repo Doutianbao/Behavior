@@ -17,14 +17,18 @@ function varargout = SubtractBackground(varargin)
 poolSize = 10;
 IM = varargin{1};
 disp('Computing ref frame...')
-refFrames = 2:size(IM,3); % For some reason the 1st image doesn't record properly [AP - 20160621]
+if size(IM,3)>1
+    refFrames = 2:size(IM,3); % For some reason the 1st image doesn't record properly [AP - 20160621]
+else
+    refFrames = 1:size(IM,3);
+end
 if (nargin == 2)
     refFrames = varargin{2};
 end
 tic
-% im = median(IM(:,:,refFrames),3);
-% im = max(IM(:,:,refFrames),[],3);
-ref = mean(IM(:,:,refFrames),3);
+% ref = median(IM(:,:,refFrames),3);
+ref = max(IM(:,:,refFrames),[],3);
+% ref = mean(IM(:,:,refFrames),3);
 toc
 
 disp('Subtracting background...')

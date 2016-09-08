@@ -37,7 +37,7 @@ end
 
 
 %% Processing images block-by-block
-blockSize = 4;
+blockSize = 2;
 cropWid = 90; %( For imgDims ~ [900,900], use 70)
 lineLen = 15;
 

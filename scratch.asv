@@ -13,7 +13,7 @@
 
 %%
 cd 'S:\Avinash\Tracking demo'
-break
+
 readMode =  'fromImages';
 % readMode = 'fromMishVid';
 

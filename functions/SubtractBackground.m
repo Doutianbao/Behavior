@@ -27,8 +27,8 @@ if (nargin == 2)
 end
 tic
 % ref = median(IM(:,:,refFrames),3);
-ref = max(IM(:,:,refFrames),[],3);
-% ref = mean(IM(:,:,refFrames),3);
+% ref = max(IM(:,:,refFrames),[],3);
+ref = mean(IM(:,:,refFrames),3);
 toc
 
 disp('Subtracting background...')

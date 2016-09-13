@@ -11,7 +11,7 @@ nFramesInTrl = 750;
 preStimPeriod = 0.1;
 
 if nargin ==0
-    cd('S:\Avinash\Ablations and behavior\Ventral RS')
+    cd('S:\Avinash\Ablations and behavior\Intermediate RS')
     [fileName,pathName] = uigetfile('*.mat');
     procData = matfile(fullfile(pathName,fileName));
 elseif nargin ==1
@@ -70,7 +70,7 @@ for trl = 1:nTrls
     plot(time_trl*1000,tA_trl(:,trl))
     box off
 %     xlim([-inf (nFramesInTrl/fps)*1000])
-    xlim ([-inf 0.5*1000]);
+    xlim ([-inf 1.5*1000]);
     ylim([-300 300])
     set(gca,'xtick',[100 500 1000 15000])
     title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])

@@ -16,12 +16,19 @@ nTrls = size(tailCurv,3)/nFramesInTrl;
 disp('Calculating tail angles...')
 % tailCurv = tailCurv_uncorrected;
 % tA = GetTailTangents(tailCurv);
-tA = GetTailTangents(tailCurv,[],dsVecs);
+if exist('dsVecs')==1
+    tA = GetTailTangents(tailCurv,[],dsVecs);
+else
+    tA = GetTailTangents(tailCurv);
+end
+
 tA_trl = reshape(tA,size(tA,1),nFramesInTrl,nTrls);
 time_trl = reshape(time,nFramesInTrl,nTrls);
 
 tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
+% curv = (tA_5(end,:)-tA_5(1,:))';
+% curv = max(tA_5)';
 curv_trl = reshape(curv,nFramesInTrl,nTrls);
 
 toc

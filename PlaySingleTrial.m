@@ -1,12 +1,15 @@
 %% Read info from procData
+clear
 [fileName,pathName] = uigetfile('*.mat');
 disp('Reading data...')
 tic
 procData = matfile(fullfile(pathName,fileName));
 tailCurv = procData.tailCurv;
-dsVecs = procData.dsVecs;
 midlineInds = procData.midlineInds;
 IM_proc_crop = procData.IM_proc_crop;
+if sum(strcmpi(fieldnames(procData),'dsVecs'))
+   dsVecs = procData.dsVecs;
+end
 toc
 
 %%
@@ -16,7 +19,7 @@ break;
 
 %% Plot tail curvatures atop moving fish
 trl = 1;
-pauseDur = 0;
+pauseDur = 0.1;
 inds = (trl-1)*750 + 1: (trl-1)*750 + 750;
 % var1 = IM_proc_crop(:,:,inds);
 % var2 = repmat([71 71],numel(inds),1);

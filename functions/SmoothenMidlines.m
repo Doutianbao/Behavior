@@ -119,7 +119,11 @@ for iNum = 1:N
             tc = nan(size(tailCurv,1),size(tailCurv,2));
             tailCurv(:,:,iNum) = tc;
         else
-            tc = SplineMidlineInds_ds(tc,dsVecs{iNum},distVec,smoothFactor,imgDims);
+            try
+                tc = SplineMidlineInds_ds(tc,dsVecs{iNum},distVec,smoothFactor,imgDims);
+            catch
+                 tc = SplineMidlineInds_ds(tc,dsVecs{iNum},distVec,smoothFactor,imgDims);
+            end
             tailCurv(:,:,iNum) = SplineTailCurv(tc,smoothFactor);
         end
     else

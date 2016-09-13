@@ -1,12 +1,16 @@
 %% Read info from procData
+clear
 [fileName,pathName] = uigetfile('*.mat');
 disp('Reading data...')
 tic
 procData = matfile(fullfile(pathName,fileName));
 tailCurv = procData.tailCurv;
-dsVecs = procData.dsVecs;
 midlineInds = procData.midlineInds;
 IM_proc_crop = procData.IM_proc_crop;
+
+if sum(strcmpi(fieldnames(procData),'dsVecs'))
+end
+
 toc
 
 %%

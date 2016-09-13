@@ -47,10 +47,12 @@ for tt = 1:size(tAngles,2);
     dTC = diff(squeeze([tc(:,1,tt),tc(:,2,tt)]));
     C = dTC(:,1) + dTC(:,2)*1i;
     A = angle(C(1:end-1).*conj(C(2:end)));
-    tAngles(:,tt) = cumsum(A);
-    if ~isempty(dS)                   
-        tAngles(:,tt) = tAngles(:,tt)*(length(dS{tt})/tLen_all);        
-    end
+    blah = cumsum(A);
+    tAngles(:,tt) = blah;
+%     tAngles(:,tt) = blah -blah(1);
+%     if ~isempty(dS)                   
+%         tAngles(:,tt) = tAngles(:,tt)*(length(dS{tt})/tLen_all);        
+%     end
 end
 
 tA  = tAngles;

@@ -71,7 +71,7 @@ figure('Name','Pk info')
 for trl = 1:nTrls    
     trace = tA_trl(:,trl);
         mT = max(abs(trace));
-        dTrace = gradient(trace);
+        dTrace = gradient(chebfilt(trace,1/fps,20,'low'));
         mDT = max(dTrace);
         sf = 0.5*mT/mDT;
     for traceType = 1:2  
@@ -101,7 +101,7 @@ for trl = 1:nTrls
                 out.bendAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.bendPer{trl}(bend-1) = x(bend)-x(bend-1);
             end
-            out.onset{trl}(1) = x(1)-(preStimPeriod*1000);
+            out.onset(trl) = x(1)-(preStimPeriod*1000);
         else
             for bend = 1:numel(x)
                 out.bendAngVel{trl}(bend) = y(bend)/sf;

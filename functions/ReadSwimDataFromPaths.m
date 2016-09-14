@@ -121,6 +121,7 @@ disp('Extracted paths and stored in pData')
 disp('Extractd data  and stored in data')
 toc
 
+data.ablationType = ablationType{1};
 varargout{1} = data;
 varargout{2} = pData;
 

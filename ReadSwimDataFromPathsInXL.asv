@@ -3,13 +3,25 @@
 clear, close all
 path = 'S:\Avinash\Ablations and behavior';
 fName = 'Ablation data summary.xlsx';
+fPath = fullfile(path,fName);
 
-%## Filters
-stimType = 'tap';
+%% Read data
+[data,pData] = ReadSwimDataFromPaths(fPath);
+grpData = struct;
+grpData.data = data;
+grpData.paths = pData;
+fName2 =['ElicitedSwimData_' data.ablationType '_' datestr(now,30) '.mat'];
+save(fullfile(path,fName2), grpData);
+
+break;
+
 
 
 %% Read xl data
-fPath = fullfile(path,fName);
+
+
+
+
 [num,txt,raw] = xlsread(fPath,1);
 
 ablationTypes = raw(2:end,1);
@@ -44,8 +56,8 @@ raw_abFlt = raw(keepInds,:);
 disp('Filtered aby ablation type...')
 
 %% Get and store paths in data structure
-
 pData = struct;
+data = struct;
 c1 = 0;
 c2 = 0;
 c3 = 0;
@@ -63,7 +75,7 @@ for jj = 1:size(raw_abFlt)
         elseif strcmpi(raw_abFlt(jj,5),'dark')
             c2 = c2 + 1;
             p = raw_abFlt{jj,6};
-             [~,s] = fileparts(p);
+            [~,s] = fileparts(p);
             if strcmpi(s,'proc')==0
                 p = fullfile(p,'proc');
             end
@@ -73,7 +85,7 @@ for jj = 1:size(raw_abFlt)
         if strcmpi(raw_abFlt(jj,5),'tap') || strcmpi(raw_abFlt(jj,5),'vib')
             c3 = c3 + 1;
             p = raw_abFlt{jj,6};
-             [~,s] = fileparts(p);
+            [~,s] = fileparts(p);
             if strcmpi(s,'proc')==0
                 p = fullfile(p,'proc');
             end
@@ -81,15 +93,15 @@ for jj = 1:size(raw_abFlt)
         elseif strcmpi(raw_abFlt(jj,5),'dark')
             c4 = c4 + 1;
             p = raw_abFlt{jj,6};
-             [~,s] = fileparts(p);
+            [~,s] = fileparts(p);
             if strcmpi(s,'proc')==0
                 p = fullfile(p,'proc');
             end
-            pData.abl.dark{c4} =p;
+            pData.abl.dark{c4} = p;
         end
     end
 end
-
+disp('Extracted paths and stored in pData')
 break;
 
 
@@ -108,7 +120,7 @@ fishSess = [];
 for ii = 1:size(raw2,1)
     line = raw2{ii,1};
     if ischar(line) && isempty(strfind(lower(line),'nan')) && (ii~=1 && ii~=2)
-        newFishLines = [newFishLines; ii]; 
+        newFishLines = [newFishLines; ii];
         fishSess = [fishSess; {line}];
     end
 end
@@ -120,7 +132,7 @@ nFish = numel(newFishLines);
 fishData = cell(nFish,1);
 newFishLines = newFishLines-2;
 for ii = 1:nFish-1
-    fishData{ii} = num2(newFishLines(ii):newFishLines(ii+1)-1,:);    
+    fishData{ii} = num2(newFishLines(ii):newFishLines(ii+1)-1,:);
 end
 fishData{ii+1} = num2(newFishLines(ii+1):end,:);
 
@@ -135,7 +147,7 @@ for ii = 1:length(stimTypeVec);
         if num1(ii,2) ==1;
             ablatedFish = [ablatedFish; count];
         end
-    end    
+    end
 end
 ctrlFish = setdiff(1:nFish,ablatedFish);
 ablatedFishData = fishData(ablatedFish);

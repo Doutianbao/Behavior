@@ -7,6 +7,11 @@ fPath = fullfile(path,fName);
 
 %% Read data
 [data,pData] = ReadSwimDataFromPaths(fPath);
+grpData = struct;
+grpData.data = data;
+grpData.paths = pData;
+fName2 =['ElicitedSwimData_' data.ablationType '_' datestr(now,30) '.mat'];
+save(fullfile(path,fName2), 'grpData');
 
 break;
 

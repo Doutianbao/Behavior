@@ -46,7 +46,7 @@ trl = 1;
 y = curv_trl(:,trl);
 dj = 1/24;
 
-Wxy = ComputeMultibandXWT([y(:), y(:)], time_trl(:,1),'freqRange',[15 80],'dj',1/48,'timeRange',[0 0.6]);
+Wxy = ComputeMultibandXWT([y(:), y(:)], )
 
 
 

@@ -68,10 +68,15 @@ time_trl = time(1:nFramesInTrl);
 
 out = struct;
 figure('Name','Pk info')
+out.bendAmp = cell(nTrls,1);
+out.bendPer = out.bendAmp;
+out.onset = zeros(nTrls,1);
+out.bendAngVel = out.bendAmp;
+
 for trl = 1:nTrls    
     trace = tA_trl(:,trl);
         mT = max(abs(trace));
-        dTrace = gradient(chebfilt(trace,1/fps,20,'low'));
+        dTrace = gradient(chebfilt(trace,1/fps,30,'low'));
         mDT = max(dTrace);
         sf = 0.5*mT/mDT;
     for traceType = 1:2  
@@ -89,7 +94,7 @@ for trl = 1:nTrls
         minY = min(tA_trl(:,trl));
         box off
         %     xlim([-inf (nFramesInTrl/fps)*1000])
-        xlim([-inf 1.5*1000])
+        xlim([-inf 0.5*1000])
         ylim([min([minY,-250]) max([maxY,250])])
         set(gca,'xtick',[100 500 1000 15000])
         title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])

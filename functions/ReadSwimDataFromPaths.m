@@ -4,6 +4,7 @@ function varargout = ReadSwimDataFromPaths(varargin)
 %   execution asks to select a filter based on ablation type.
 % data = ReadSwimDataFromPaths(xlPath);
 % [data,pathData]  = ReadSwimDataFromPaths(xlPath);
+% [data,pathData,dataMat,dimLbls] = ReadSwimDataFromPaths(...);
 % Inputs:
 % xlPath - Path to xl sheet that in turn contains paths to data locations.
 %   The paths must be stored in the 1st sheet.
@@ -12,7 +13,9 @@ function varargout = ReadSwimDataFromPaths(varargin)
 %   standing for ablated or control, and y = 'vib' or 'dark', standing for
 %   stimulus type, i.e. vibration or dark flash.
 % pathData - Similar to data, but with paths to data instead of actual data
-%
+% dataMat = Multidimensional data matrix for ease of calculations
+% dimLbls = Cell array with labels for the dimensions of dataMat.
+% 
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 if nargin ==0
@@ -72,9 +75,9 @@ for jj = 1:size(raw_abFlt)
                 p = fullfile(p,'proc');
             end
             disp(p)
-            pData.ctrl.vib{c1} = p;            
+            pData.ctrl.vib{c1} = p;
             blah = GetProcData(p);
-            data.ctrl.dark{c1} = blah.elicitedSwimInfo;
+            data.ctrl.vib{c1} = blah.elicitedSwimInfo;
             toc
         elseif strcmpi(raw_abFlt(jj,5),'dark')
             c2 = c2 + 1;
@@ -84,7 +87,7 @@ for jj = 1:size(raw_abFlt)
                 p = fullfile(p,'proc');
             end
             disp(p)
-            pData.ctrl.dark{c2} = p;           
+            pData.ctrl.dark{c2} = p;
             blah = GetProcData(p);
             data.ctrl.dark{c2} = blah.elicitedSwimInfo;
             toc
@@ -100,7 +103,7 @@ for jj = 1:size(raw_abFlt)
             disp(p)
             pData.abl.vib{c3} = p;
             blah = GetProcData(p);
-            data.abl.dark{c3} = blah.elicitedSwimInfo;
+            data.abl.vib{c3} = blah.elicitedSwimInfo;
             toc
         elseif strcmpi(raw_abFlt(jj,5),'dark')
             c4 = c4 + 1;
@@ -125,19 +128,122 @@ data.ablationType = ablationType{1};
 varargout{1} = data;
 varargout{2} = pData;
 
+if nargout > 2
+    [dataMat, dimLbls] = GetDataMat(data);
+    varargout{3} = dataMat;
+    varargout{4} = dimLbls;
+end
 
+end
 
-    function data = GetProcData(procDataDir)
-        fNames = GetFilenames(procDataDir,'.mat');
-        currDir = cd;
-        if numel(fNames) > 1
-            cd(currDir)
-            [fName, ~] = uigetfile('*.mat','Select the procData to read...');
-            data = OpenMatFile(fullfile(procDataDir,fName));
-            cd(currDir)
-        else
-            data = OpenMatFile(fullfile(procDataDir,fNames{1}));
+function [dataMat, dimLbls] = GetDataMat(data)
+%# First need to determine dimensions of multidimensional matrix
+grps = {'ctrl','abl'};
+dim = zeros(1,6);
+for grpNum = 1:length(grps) % Dim 1  
+    dim(1) = max(dim(1),grpNum);
+    grp = grps{grpNum};
+    blah = data.(grp);    
+    disp(['Group: ' grp])
+    stimTypes = fieldnames(blah);
+    for stimNum = 1:length(stimTypes) % Dim 2  
+        dim(2)= max(dim(2),stimNum);
+        stimType = stimTypes{stimNum};
+        disp(['Stim type: ' stimType])
+        blah2 = blah.(stimType);
+        for fishNum = 1:length(blah2) % Dim 3  
+            dim(3) = max(dim(3),fishNum);
+            blah3 = blah2{fishNum};
+            parNames = fieldnames(blah3);
+            for parNum = 1:length(parNames) % Dim 4
+                dim(4) = max(dim(4),parNum);
+                parName = parNames{parNum};
+                blah4 = blah3.(parName);             
+                for trlNum = 1:length(blah4) % Dim 5
+                    dim(5) = max(dim(5),trlNum);
+                    if iscell(blah4(trlNum))
+                        blah5 = blah4{trlNum};                       
+                    else
+                        blah5 = blah4(trlNum);
+                    end                    
+                   if ~isempty(blah5)                        
+                       for pkNum = 1:length(blah5) % Dim 6  
+                           dim(6) = max(dim(6),pkNum);                                                 
+                       end
+                   end
+                end                
+            end
+        end        
+    end
+end
+disp(['Dimentions of data matrix = [ ' num2str(dim) ']']);
+
+%# Now get data matrix
+dataMat = nan(dim);
+dimLbls  = cell(6,1);
+dimLbls{1} = {'Ctrl','Abl'};
+dimLbls{2} = {'Dark','Vib'};
+dimLbls{3} = {'Fish #'};
+dimLbls{4} = {'BendAmp','BendPer','Onset','BendAngVel'};
+dimLbls{5} = {'Trl #'};
+dimLbls{6} = {'Peak #'};
+
+%##################################
+%## ndims(dataMat) = 6 ;
+%## Dim1 = # of grps - 'ctrl','abl'
+%## Dim2 = # of stim types - 'dark','vib'
+%## Dim3 = # of fish
+%## Dim4 = # of params - 'bendAmp','bendPer','onset','bendAngVel'
+%## Dim5 = # of trls
+%## Dim6 = # of pks
+%#################################
+
+disp('Getting data matrix...')
+for grpNum = 1:length(grps) % Dim 1
+    grp = grps{grpNum};
+    blah = data.(grp);
+    disp(['Group: ' grp])
+    stimTypes = fieldnames(blah);
+    for stimNum = 1:length(stimTypes) % Dim 2
+        stimType = stimTypes{stimNum};
+        disp(['Stim type: ' stimType])
+        blah2 = blah.(stimType);
+        for fishNum = 1:length(blah2) % Dim 3
+            blah3 = blah2{fishNum};
+            parNames = fieldnames(blah3);
+            for parNum = 1:length(parNames) % Dim 4
+                parName = parNames{parNum};
+                blah4 = blah3.(parName);
+                for trlNum = 1:length(blah4) % Dim 5
+                    if iscell(blah4(trlNum))
+                        blah5 = blah4{trlNum};
+                    else
+                        blah5 = blah4(trlNum);
+                    end
+                    if ~isempty(blah5)
+                        for pkNum = 1:length(blah5) % Dim 6
+                            dataMat(grpNum,stimNum,fishNum,parNum,trlNum,pkNum) = blah5(pkNum);
+                        end
+                    end
+                end
+            end
         end
     end
+end
+disp('Done!')
+
+end
+
+function data = GetProcData(procDataDir)
+fNames = GetFilenames(procDataDir,'.mat');
+currDir = cd;
+if numel(fNames) > 1
+    cd(currDir)
+    [fName, ~] = uigetfile('*.mat','Select the procData to read...');
+    data = OpenMatFile(fullfile(procDataDir,fName));
+    cd(currDir)
+else
+    data = OpenMatFile(fullfile(procDataDir,fNames{1}));
+end
 end
 

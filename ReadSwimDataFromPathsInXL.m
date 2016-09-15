@@ -6,14 +6,26 @@ fName = 'Ablation data summary.xlsx';
 fPath = fullfile(path,fName);
 
 %% Read data
-[data,pData] = ReadSwimDataFromPaths(fPath);
+[data,pData, dataMat, dimLbls] = ReadSwimDataFromPaths(fPath);
 grpData = struct;
 grpData.data = data;
 grpData.paths = pData;
-fName2 =['ElicitedSwimData_' data.ablationType '_' datestr(now,30) '.mat'];
-save(fullfile(path,fName2), 'grpData');
+grpData.dataMat = dataMat;
+grpData.dimLbls = dimLbls;
+
+
+%% Save data
+saveOrNot = input('Save data? (y/n) ','s');
+if strcmpi(saveOrNot,'y')
+    fName2 =['ElicitedSwimData_' data.ablationType '_' datestr(now,30) '.mat'];
+    save(fullfile(path,fName2), 'grpData');
+else
+    disp('Data not saved!')
+end
 
 break;
+
+
 
 
 

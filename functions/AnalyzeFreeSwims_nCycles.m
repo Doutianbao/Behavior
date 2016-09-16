@@ -64,7 +64,13 @@ tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
 time_trl = time(1:nFramesInTrl);
+pkThr1 = 1*std(tA_trl(:));
+maxFreq = 60;
+minIntPts = ceil((0.5/maxFreq)*fps);
 
+blah = chebfilt(tA_trl,1/fps,30,'low');
+dTrace_all = gradient(blah')';
+pkThr2 = std(dTrace_all(:));
 
 out = struct;
 figure('Name','Pk info')
@@ -72,76 +78,79 @@ out.bendAmp = cell(nTrls,1);
 out.bendPer = out.bendAmp;
 out.onset = zeros(nTrls,1);
 out.bendAngVel = out.bendAmp;
-
-for trl = 1:nTrls    
-    trace = tA_trl(:,trl);
-        mT = max(abs(trace));
-        dTrace = gradient(chebfilt(trace,1/fps,30,'low'));
-        mDT = max(dTrace);
-        sf = 0.5*mT/mDT;
-    for traceType = 1:2  
+for trl = 1:nTrls
+    tr = tA_trl(:,trl);
+    pks1 = GetPks(tr,'polarity',0, 'peakThr',pkThr1,'thrType','rel','minPkDist',minIntPts);
+    mT = max(abs(tr));
+    dTrace = dTrace_all(:,trl);
+    pks2 = GetPks(dTrace,'polarity',0, 'peakThr',pkThr2,'thrType','rel','minPkDist',minIntPts);
+    mDT = max(dTrace);
+    sf = 0.5*mT/mDT;
+    for traceType = 1:2
         cla
         if traceType ==1
-            plot(time_trl*1000,trace)
+            plot(time_trl*1000,tr)
             hold on
+            plot(time_trl(pks1)*1000,tr(pks1),'ko')
             plot(time_trl*1000,dTrace*sf,'r:')
-        else            
-            plot(time_trl*1000,trace,'b:')
+        else
+            plot(time_trl*1000,tr,'b:')
             hold on
             plot(time_trl*1000,dTrace*sf,'r')
+            plot(time_trl(pks2,:)*1000,dTrace(pks2)*sf,'ko')
         end
         maxY = max(tA_trl(:,trl));
         minY = min(tA_trl(:,trl));
         box off
         %     xlim([-inf (nFramesInTrl/fps)*1000])
-        xlim([-inf 0.5*1000])
+        xlim([-inf 1.5*1000])
         ylim([min([minY,-250]) max([maxY,250])])
         set(gca,'xtick',[100 500 1000 15000])
         title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])
         shg
-        [x,y,button] = ginput_plot();
+        [x,y,~] = ginput_plot();
         
-        if ~isempty(x) && traceType ==1
+        if ~isempty(x) && traceType ==1           
+            preInds = find((time_trl(pks1)*1000) < min(x));
+            postInds = find((time_trl(pks1)*1000) > max(x));
+            prePostInds = union(preInds,postInds);           
+            pks1(prePostInds)=[];
+            time_trl = time_trl(:);
+            tr = tr(:);
+            x = [x(:);time_trl(pks1)*1000];
+            y = [y(:); tr(pks1)];
+            [x,inds] = sort(x);
+            y = y(inds);            
             for bend = 2:numel(x)
                 out.bendAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.bendPer{trl}(bend-1) = x(bend)-x(bend-1);
             end
             out.onset(trl) = x(1)-(preStimPeriod*1000);
+        elseif ~isempty(x) && traceType ==2
+            [~, inds] = sort(x);
+            y = y(inds);
+            preInds = find((time_trl(pks2)*1000) < min(x));
+            postInds = find((time_trl(pks2)*1000) > max(x));
+            prePostInds = union(preInds,postInds);
+            pks2(prePostInds)=[];
+            time_trl = time_trl(:);
+            dTrace = dTrace(:);
+            x = [x(:);time_trl(pks2)*1000];
+            y = [y(:); dTrace(pks2)];
+            [x,inds] = sort(x);
+            y = y(inds); 
+            for bend = 1:numel(x)
+                out.bendAngVel{trl}(bend) = y(bend)/sf;
+            end
         else
             for bend = 1:numel(x)
                 out.bendAngVel{trl}(bend) = y(bend)/sf;
             end
         end
     end
-    %     evens = 2:2:numel(x);
-    %     if ~isempty(evens) && (evens(end)== numel(x));
-    %         x(end) = [];
-    %         evens = 2:2:numel(x);
-    %     end
-    %     if all(button==1) && ~isempty(button)
-    %         for cyc = 1:numel(evens)
-    %             ind = evens(cyc);
-    %             out.pk{trl}(cyc) =y(ind)-y(ind-1);
-    %             out.per{trl}(cyc) = x(ind+1)-x(ind-1);
-    %         end
-    %         out.onset(trl) = x(1)-(preStimPeriod)*1000;
-    %     else
-    %         out.onset(trl) = nan;
-    %         out.pk{trl} = nan;
-    %         out.per{trl} = nan;
-    %     end
     
 end
-% out.onset_mean = mean(out.onset(~isnan(out.onset)));
-% out.onset_std = std(out.onset(~isnan(out.onset)));
-% out.one.amp_mean = mean(abs(out.one.amp(~isnan(out.one.amp))));
-% out.one.amp_std  = std(abs(out.one.amp(~isnan(out.one.amp))));
-% out.one.per_mean = mean(out.one.per(~isnan(out.one.per)));
-% out.one.per_std =  std(out.one.per(~isnan(out.one.per)));
-% out.three.amp_mean = mean(abs(out.three.amp(~isnan(out.three.amp))));
-% out.three.amp_std = std(abs(out.three.amp(~isnan(out.three.amp))));
-% out.three.per_mean = mean(out.three.per(~isnan(out.three.per)));
-% out.three.per_std = std(out.three.per(~isnan(out.three.per)));
+
 
 saveOrNot = input('Append pk data to procData? (y/n)','s');
 if strcmpi(saveOrNot,'y')

@@ -48,137 +48,27 @@
 % 
 % Wxy = ComputeMultibandXWT([y(:), y(:)], time_trl(:,1),'freqRange',[15 80],'dj',1/48,'timeRange',[0 0.6]);
 
+%% Make some plots from group data
 
-%% Analyze data
-% grps = {'ctrl','abl'};
-% parNames = ['amp','per','angVel'];
-% par = struct;
-% testMat = 0;
-% for grpNum = 1:length(grps) % Dim 1   
-%     grp = grps{grpNum};
-%     blah = data.(grp);    
-%     disp(['Group: ' grp])
-%     stimTypes = fieldnames(blah);
-%     for stimNum = 1:length(stimTypes) % Dim 2      
-%         stimType = stimTypes{stimNum};
-%         disp(['Stim type: ' stimType])
-%         blah2 = blah.(stimType);
-%         for fishNum = 1:length(blah2) % Dim 3            
-%             blah3 = blah2{fishNum};
-%             parNames = fieldnames(blah3);
-%             for parNum = 1:length(parNames) % Dim 4                
-%                 parName = parNames{parNum};
-% %                 eval([parName '.(stimType)= {};']);
-%                 blah4 = blah3.(parName);             
-%                 for trlNum = 1:length(blah4) % Dim 5                 
-%                     if iscell(blah4(trlNum))
-%                         blah5 = blah4{trlNum};                       
-%                     else
-%                         blah5 = blah4(trlNum);
-%                     end                    
-%                    if ~isempty(blah5)                        
-%                        for pkNum = 1:length(blah5) % Dim 6                             
-%                            if iscell(blah4)
-%                                eval([parName '.(stimType){fishNum} =  TransposeCell(blah4);']);
-%                            else
-%                                eval([parName '.(stimType){fishNum} =  blah4;'])
-%                            end                          
-%                        end
-%                    end
-%                 end                
-%             end
-%         end        
-%     end
-% end
-% 
+stimNum = 2; %(1 = Dark, 2 = Vib)
+bendNum = 2;
 
+blah = squeeze(grpData.dataMat(1,stimNum,:,1,:,bendNum));
+ctrl.vib.amp{1}  = abs(blah(:));
 
-%% Analyze data - Dimensions of multidimensional matrix
-grps = {'ctrl','abl'};
-%# First need to determine dimensions of multidimensional matrix
-dim = zeros(1,6);
-for grpNum = 1:length(grps) % Dim 1  
-    dim(1) = max(dim(1),grpNum);
-    grp = grps{grpNum};
-    blah = data.(grp);    
-    disp(['Group: ' grp])
-    stimTypes = fieldnames(blah);
-    for stimNum = 1:length(stimTypes) % Dim 2  
-        dim(2)= max(dim(2),stimNum);
-        stimType = stimTypes{stimNum};
-        disp(['Stim type: ' stimType])
-        blah2 = blah.(stimType);
-        for fishNum = 1:length(blah2) % Dim 3  
-            dim(3) = max(dim(3),fishNum);
-            blah3 = blah2{fishNum};
-            parNames = fieldnames(blah3);
-            for parNum = 1:length(parNames) % Dim 4
-                dim(4) = max(dim(4),parNum);
-                parName = parNames{parNum};
-                blah4 = blah3.(parName);             
-                for trlNum = 1:length(blah4) % Dim 5
-                    dim(5) = max(dim(5),trlNum);
-                    if iscell(blah4(trlNum))
-                        blah5 = blah4{trlNum};                       
-                    else
-                        blah5 = blah4(trlNum);
-                    end                    
-                   if ~isempty(blah5)                        
-                       for pkNum = 1:length(blah5) % Dim 6  
-                           dim(6) = max(dim(6),pkNum);                                                 
-                       end
-                   end
-                end                
-            end
-        end        
-    end
-end
-disp(['Dimentions of data matrix = [ ' num2str(dim) ']']);
+blah = squeeze(grpData.dataMat(1,stimNum,:,2,:,bendNum));
+ctrl.vib.per{1}  = blah(:);
 
-%% Analyze data - Filling in multidimensional matrix
+blah = squeeze(grpData.dataMat(2,stimNum,:,1,:,bendNum));
+abl.vib.amp{1}  = abs(blah(:));
 
-%# First need to determine dimensions of multidimensional matrix
-dataMat = nan(dim);
-for grpNum = 1:length(grps) % Dim 1     
-    grp = grps{grpNum};
-    blah = data.(grp);    
-    disp(['Group: ' grp])
-    stimTypes = fieldnames(blah);
-    for stimNum = 1:length(stimTypes) % Dim 2          
-        stimType = stimTypes{stimNum};
-        disp(['Stim type: ' stimType])
-        blah2 = blah.(stimType);
-        for fishNum = 1:length(blah2) % Dim 3            
-            blah3 = blah2{fishNum};
-            parNames = fieldnames(blah3);
-            for parNum = 1:length(parNames) % Dim 4               
-                parName = parNames{parNum};         
-                blah4 = blah3.(parName);             
-                for trlNum = 1:length(blah4) % Dim 5                   
-                    if iscell(blah4(trlNum))
-                        blah5 = blah4{trlNum};                       
-                    else
-                        blah5 = blah4(trlNum);
-                    end                    
-                   if ~isempty(blah5)                        
-                       for pkNum = 1:length(blah5) % Dim 6 
-                           try
-                           dataMat(grpNum,stimNum,fishNum,parNum,trlNum,pkNum) = blah5(pkNum);
-                           catch
-                                  dataMat(grpNum,stimNum,fishNum,parNum,trlNum,pkNum) = blah5(pkNum);
-                           end
-%                            if iscell(blah4)
-%                                eval([parName '.(stimType){fishNum} =  TransposeCell(blah4);']);
-%                            else
-%                                eval([parName '.(stimType){fishNum} =  blah4;'])
-%                            end                          
-                       end
-                   end
-                end                
-            end
-        end        
-    end
-end
+blah = squeeze(grpData.dataMat(2,stimNum,:,2,:,bendNum));
+abl.vib.per{1}  = blah(:);
 
-
-
+figure
+scatter(ctrl.vib.per{1},ctrl.vib.amp{1},'.')
+hold on
+scatter(abl.vib.per{1},abl.vib.amp{1},'ro');
+xlim([0 inf])
+ylim([0 inf])
+shg

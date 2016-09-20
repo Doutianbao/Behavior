@@ -1,45 +1,3 @@
-% 
-% %% Plot tail curvatures atop moving fish
-% trl = 2;
-% pauseDur = 0.1;
-% inds = (trl-1)*750 + 1: (trl-1)*750 + 750;
-% var1 = IM_proc_crop(:,:,inds);
-% var2 = repmat([71 71],numel(inds),1);
-% mlInds2 = midlineInds(inds);
-% tC = tailCurv(:,:,inds);
-% 
-% PlayFishTracking2(IM_proc_crop,'fishPos',[71 71], 'midlineInds',midlineInds,'tailAngles',tA,'plotCurv',1,'tailCurv',tailCurv,'frameInds',inds,'pauseDur',pauseDur);
-
-% 
-% 
-% 
-% %% Writing sequences
-% outDir = 'c:\users\pujalaa\documents\outDir'
-% procDir = fullfile(imgDir,'trl1');
-% mkdir(procDir);
-% disp('Writing processed images...')
-% tic
-% trl{1} = Standardize(trl{1});
-% for jj = 1:size(trl{1},3)
-%     fName = ['Img_' sprintf('%0.4d', jj) '.bmp'];    
-%     imwrite(trl{1}(:,:,jj),fullfile(procDir,fName),'bmp')
-%     disp(num2str(jj))
-% end
-% toc
-% 
-% 
-% procDir = fullfile(imgDir,'trl2');
-% mkdir(procDir);
-% disp('Writing processed images...')
-% tic
-% trl{2} = Standardize(trl{2});
-% for jj = 1:size(trl{2},3)
-%     fName = ['Img_' sprintf('%0.4d', jj) '.bmp'];    
-%     imwrite(trl{2}(:,:,jj),fullfile(procDir,fName),'bmp')
-%     disp(num2str(jj))
-% end
-% toc
-
 %% Multiband XWT of curvature timeseries
 
 % trl = 1;
@@ -51,24 +9,143 @@
 %% Make some plots from group data
 
 stimNum = 2; %(1 = Dark, 2 = Vib)
-bendNum = 2;
+bendNum = 1;
 
 blah = squeeze(grpData.dataMat(1,stimNum,:,1,:,bendNum));
-ctrl.vib.amp{1}  = abs(blah(:));
+amp1 = abs(blah(:));
+lowInds = find(amp1< 20);
+amp1(lowInds) = [];
 
 blah = squeeze(grpData.dataMat(1,stimNum,:,2,:,bendNum));
-ctrl.vib.per{1}  = blah(:);
+per1 = blah(:);
+per1(lowInds) = [];
 
 blah = squeeze(grpData.dataMat(2,stimNum,:,1,:,bendNum));
-abl.vib.amp{1}  = abs(blah(:));
+amp2 = abs(blah(:));
+lowInds = find(amp2 < 20);
+amp2(lowInds) = [];
 
 blah = squeeze(grpData.dataMat(2,stimNum,:,2,:,bendNum));
-abl.vib.per{1}  = blah(:);
+per2 = blah(:);
+per2(lowInds)=[];
 
 figure
-scatter(ctrl.vib.per{1},ctrl.vib.amp{1},'.')
+% scatter(ctrl.vib.per{1},ctrl.vib.amp{1},'.')
+scatter(per1,amp1,'r.')
 hold on
-scatter(abl.vib.per{1},abl.vib.amp{1},'ro');
-xlim([0 inf])
-ylim([0 inf])
+% scatter(abl.vib.per{1},abl.vib.amp{1},'ro');
+scatter(per2,amp2,'go')
+xlim([0 80])
+ylim([0 360])
+box off
+set(gca,'tickdir','out','color','k')
+xlabel('Bend period (ms)')
+ylabel('Bend amplitude (deg)')
 shg
+
+
+%% Subplots - N bends, amp vs per
+stimNum = 1; %(1 = Dark, 2 = Vib)
+
+
+figure('Name','Multiple bend comparison for ctrl and abl (inter RS)')
+nBends = 12;
+nRows = 3;
+nCols = 4;
+xLim = [0 100];
+yLim = [0 420];
+for bendNum = 1:nBends
+    blah = squeeze(grpData.dataMat(1,stimNum,:,1,:,bendNum));
+    amp1 = abs(blah(:));
+    lowInds = find(amp1< 20);
+    amp1(lowInds) = [];
+    
+    blah = squeeze(grpData.dataMat(1,stimNum,:,2,:,bendNum));
+    per1 = blah(:);
+    per1(lowInds) = [];
+    
+    blah = squeeze(grpData.dataMat(2,stimNum,:,1,:,bendNum));
+    amp2 = abs(blah(:));
+    lowInds = find(amp2 < 20);
+    amp2(lowInds) = [];
+    
+    blah = squeeze(grpData.dataMat(2,stimNum,:,2,:,bendNum));
+    per2 = blah(:);
+    per2(lowInds)=[];
+    
+    subaxis(nRows,nCols,bendNum,'SpacingVert',0.05,'MR',0.05,'ML',0.1,'SpacingHoriz',0.01)
+    scatter(per1,amp1,'r.')
+    hold on
+    scatter(per2,amp2,'g.')
+    xlim(xLim)
+    ylim(yLim)
+    box off
+    set(gca,'tickdir','out','color','k')
+     hold off
+    if bendNum ==1
+        ylabel('Bend amp (deg)')
+        title(['Bend # ' num2str(bendNum)])
+        set(gca,'xtick',[])
+    else
+        title(num2str(bendNum))
+        set(gca,'ytick',[])
+    end
+    
+    if bendNum == nBends
+        xlabel('Bend per (ms)')
+        set(gca,'ytick',[])  
+    else
+        set(gca,'xtick',[])
+    end
+end
+
+%% Subplots - Dynamic bend amp and per
+stimNum = 2; %(1 = Dark, 2 = Vib)
+paramNum = 1; % (1 = Bend amp, 2 = Bend per)
+
+figure('Name','Dynamic bend amp for ctrl and abl (inter RS)')
+for grpNum = 1:2
+    subplot(2,1,grpNum)
+    if grpNum ==1
+        lbl = 'Control';
+        clr = 'r';
+    else
+        lbl = 'Ablated';
+        clr = 'g';
+    end
+    for paramNum = 2
+        if paramNum ==1
+            lbl = 'Bend Amplitude';
+        elseif paramNum ==2
+            lbl = 'Bend Period';
+        end
+%         title(lbl)       
+        for pkNum = 1:size(dataMat,6)
+            var = squeeze(dataMat(grpNum,stimNum,:,paramNum,:,pkNum));
+            var = var(:);
+            plot(pkNum,var,'.','color',clr)
+            hold on
+            set(gca,'color','k','tickdir','out')
+            box off
+            xlim([0 size(dataMat,6)+1])
+            ylim([-inf inf])
+        end
+    end   
+end
+xlabel('Bend Num')
+shg
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

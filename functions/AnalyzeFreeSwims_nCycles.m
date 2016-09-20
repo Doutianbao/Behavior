@@ -9,6 +9,9 @@ function varargout = AnalyzeFreeSwims_nCycles(varargin)
 fps = 500;
 nFramesInTrl = 750;
 preStimPeriod = 0.1;
+xLim = [0 1.5*1000];  % For vibration
+% xLim = [0 1.5*1000]; % For dark flash
+stringency = 1.5;
 
 if nargin ==0
     cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
@@ -42,21 +45,9 @@ disp('Reading data from procData...')
 tic
 disp('Tail curvature...')
 tailCurv = procData.tailCurv;
-
+procData.Properties.Writable = true;
 toc
-try
-    imgDims = procData.imgDims_crop;
-catch
-    disp('Extracting image dimensions...')
-    imgDims = size(procData.IM_proc_crop);
-    procData.Properties.Writable = true;
-    procData.imgDims_crop = imgDims;
-end
 
-imgDims = imgDims(1:2);
-disp('Calculating tail angles...')
-tAngles = GetTailTangents(tailCurv);
-toc
 time = (0:size(tailCurv,3)-1)*(1/fps);
 nTrls = length(time)/nFramesInTrl;
 
@@ -64,13 +55,13 @@ tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
 time_trl = time(1:nFramesInTrl);
-pkThr1 = 1*std(tA_trl(:));
+pkThr1 = stringency*std(tA_trl(:));
 maxFreq = 60;
 minIntPts = ceil((0.5/maxFreq)*fps);
 
 blah = chebfilt(tA_trl,1/fps,30,'low');
 dTrace_all = gradient(blah')';
-pkThr2 = std(dTrace_all(:));
+pkThr2 = stringency*std(dTrace_all(:));
 
 out = struct;
 figure('Name','Pk info')
@@ -86,6 +77,7 @@ for trl = 1:nTrls
     pks2 = GetPks(dTrace,'polarity',0, 'peakThr',pkThr2,'thrType','rel','minPkDist',minIntPts);
     mDT = max(dTrace);
     sf = 0.5*mT/mDT;
+    x_trace1 = 0;
     for traceType = 1:2
         cla
         if traceType ==1
@@ -96,31 +88,34 @@ for trl = 1:nTrls
         else
             plot(time_trl*1000,tr,'b:')
             hold on
-            plot(time_trl*1000,dTrace*sf,'r')
-            plot(time_trl(pks2,:)*1000,dTrace(pks2)*sf,'ko')
+            plot(time_trl*1000,dTrace*sf,'r')       
+            plot(time_trl(pks2)*1000,dTrace(pks2)*sf,'ko')         
         end
         maxY = max(tA_trl(:,trl));
         minY = min(tA_trl(:,trl));
         box off
-        %     xlim([-inf (nFramesInTrl/fps)*1000])
-        xlim([-inf 1.5*1000])
+        xlim(xLim)
         ylim([min([minY,-250]) max([maxY,250])])
         set(gca,'xtick',[100 500 1000 15000])
         title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])
         shg
-        [x,y,~] = ginput_plot();
-        
-        if ~isempty(x) && traceType ==1           
+        [x,y,~] = ginput_plot();        
+        if ~isempty(x) && traceType ==1
+            x_trace1 = x;
             preInds = find((time_trl(pks1)*1000) < min(x));
             postInds = find((time_trl(pks1)*1000) > max(x));
-            prePostInds = union(preInds,postInds);           
+            prePostInds = union(preInds,postInds);
             pks1(prePostInds)=[];
             time_trl = time_trl(:);
             tr = tr(:);
             x = [x(:);time_trl(pks1)*1000];
-            y = [y(:); tr(pks1)];
+            y = [y(:); tr(pks1)];           
             [x,inds] = sort(x);
-            y = y(inds);            
+            y = y(inds);
+            dx = (diff(x)/1000)*fps;
+            inds = find(dx < minIntPts);
+            x(inds) = [];
+            y(inds)=[];
             for bend = 2:numel(x)
                 out.bendAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.bendPer{trl}(bend-1) = x(bend)-x(bend-1);
@@ -129,8 +124,8 @@ for trl = 1:nTrls
         elseif ~isempty(x) && traceType ==2
             [~, inds] = sort(x);
             y = y(inds);
-            preInds = find((time_trl(pks2)*1000) < min(x));
-            postInds = find((time_trl(pks2)*1000) > max(x));
+            preInds = find((time_trl(pks2)*1000) < min(x_trace1));
+            postInds = find((time_trl(pks2)*1000) > max(x_trace1));
             prePostInds = union(preInds,postInds);
             pks2(prePostInds)=[];
             time_trl = time_trl(:);
@@ -138,7 +133,11 @@ for trl = 1:nTrls
             x = [x(:);time_trl(pks2)*1000];
             y = [y(:); dTrace(pks2)];
             [x,inds] = sort(x);
-            y = y(inds); 
+            y = y(inds);
+            dx = (diff(x)/1000)*fps;
+            inds = find(dx < minIntPts);
+            x(inds) = [];
+            y(inds)=[];
             for bend = 1:numel(x)
                 out.bendAngVel{trl}(bend) = y(bend)/sf;
             end
@@ -150,7 +149,6 @@ for trl = 1:nTrls
     end
     
 end
-
 
 saveOrNot = input('Append pk data to procData? (y/n)','s');
 if strcmpi(saveOrNot,'y')

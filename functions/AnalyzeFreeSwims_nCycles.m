@@ -9,7 +9,7 @@ function varargout = AnalyzeFreeSwims_nCycles(varargin)
 fps = 500;
 nFramesInTrl = 750;
 preStimPeriod = 0.1;
-xLim = [0 1.5*1000];  % For vibration
+xLim = [0 0.7*1000];  % For vibration
 % xLim = [0 1.5*1000]; % For dark flash
 stringency = 1.5;
 

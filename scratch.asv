@@ -51,8 +51,8 @@ shg
 %% Combined bend period vs bend amp for group data
 
 stimNum = 1; %(1 = Dark, 2 = Vib)
-bendNums = [5 6]; % Bend nums to combine
-bendNum_amp = bendNums(1);
+bendNums = [1 2]; % Bend nums to combine
+bendNum_amp = 1;
 xLim = [0 100];
 yLim = [0 360];
 
@@ -64,29 +64,25 @@ end
 dataMat = grpData.dataMat;
 bendPer = cell(2,1);
 bendAmp = bendPer;
-perVec = xLim(1):xLim(2);
-ampVec = yLim(1):yLim(2);
+perVec = 0:100;
+ampVec = 0:360;
 paMat = zeros(length(ampVec),length(perVec),2);
 gKer = gausswin(60)*gausswin(30)';
 gKer = gKer/sum(gKer(:));
 for grp = 1:2
-    nanInds =[];
     per = [];
     for bend = 1:numel(bendNums);
         blah = squeeze(dataMat(grp,stimNum,:,2,:,bendNums(bend)));
-        blah = blah(:);
-        nanInds = union(nanInds,find(isnan(blah)));
-        per = [per, blah];
-    end   
-    bendPer{grp} = sum(per,2)/size(per,2);    
-    blah = squeeze(dataMat(grp,stimNum,:,1,:,bendNum_amp));
-    blah = abs(blah(:));
+        blah = blah(~isnan(blah));
+        per = [per, blah(:)];
+    end
+    bendPer{grp} = sum(per,2)/size(per,2);
+    
+    blah = squeeze(dataMat(grp,stimNum,:,bendNum_amp,:,1));
+    blah = abs(blah(~isnan(blah)));
     lowInds = find(blah < 20);
-    highInds = find(blah > 360);
-    remInds = union(lowInds,nanInds);
-    remInds = union(remInds,highInds);
-    blah(remInds) = [];
-    bendPer{grp}(remInds)=[];
+    blah(lowInds) = [];
+    bendPer{grp}(lowInds)=[];
     bendAmp{grp} = blah;
     
     
@@ -94,12 +90,7 @@ for grp = 1:2
     y = round(bendAmp{grp});
     tempMat = paMat(:,:,grp);
     for jj = 1:numel(x);
-        try
         tempMat(y(jj),x(jj)) = tempMat(y(jj),x(jj))+1;
-        catch
-            disp('Error: try changing xLim or yLim to fit all points!')
-            tempMat(y(jj),x(jj)) = tempMat(y(jj),x(jj))+1;
-        end
     end
     paMat(:,:,grp) = Standardize(conv2(tempMat,gKer,'same'));
 end

@@ -29,9 +29,6 @@ break;
 
 %% Read xl data
 
-
-
-
 [num,txt,raw] = xlsread(fPath,1);
 
 ablationTypes = raw(2:end,1);

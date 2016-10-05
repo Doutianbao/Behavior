@@ -9,7 +9,7 @@ function varargout = AnalyzeFreeSwims_nCycles(varargin)
 fps = 500;
 nFramesInTrl = 750;
 preStimPeriod = 0.1;
-xLim = [0 0.7*1000];  % For vibration
+xLim = [0 0.2*1000];  % For vibration
 % xLim = [0 1.5*1000]; % For dark flash
 stringency = 1.5;
 
@@ -53,9 +53,12 @@ nTrls = length(time)/nFramesInTrl;
 
 tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
+curv_head = tA_5(1,:)';
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
+tA_trl_head = reshape(curv_head,nFramesInTrl,nTrls);
 time_trl = time(1:nFramesInTrl);
 pkThr1 = stringency*std(tA_trl(:));
+pkThr3 = stringency*std(tA_trl_head(:));
 maxFreq = 60;
 minIntPts = ceil((0.5/maxFreq)*fps);
 
@@ -71,35 +74,46 @@ out.onset = zeros(nTrls,1);
 out.bendAngVel = out.bendAmp;
 for trl = 1:nTrls
     tr = tA_trl(:,trl);
+    tr_head = tA_trl_head(:,trl);
     pks1 = GetPks(tr,'polarity',0, 'peakThr',pkThr1,'thrType','rel','minPkDist',minIntPts);
     mT = max(abs(tr));
     dTrace = dTrace_all(:,trl);
     pks2 = GetPks(dTrace,'polarity',0, 'peakThr',pkThr2,'thrType','rel','minPkDist',minIntPts);
+    pks3 = GetPks(tr_head,'polarity',0, 'peakThr',pkThr3,'thrType','rel','minPkDist',minIntPts);
     mDT = max(dTrace);
     sf = 0.5*mT/mDT;
     x_trace1 = 0;
-    for traceType = 1:2
+    for traceType = 1:3
         cla
+        maxY = max(tA_trl(:,trl));
+        minY = min(tA_trl(:,trl));
         if traceType ==1
             plot(time_trl*1000,tr)
             hold on
             plot(time_trl(pks1)*1000,tr(pks1),'ko')
             plot(time_trl*1000,dTrace*sf,'r:')
-        else
+             ylim([min([minY,-250]) max([maxY,250])])
+        elseif traceType ==2
             plot(time_trl*1000,tr,'b:')
             hold on
-            plot(time_trl*1000,dTrace*sf,'r')       
-            plot(time_trl(pks2)*1000,dTrace(pks2)*sf,'ko')         
+            plot(time_trl*1000,dTrace*sf,'r')
+            plot(time_trl(pks2)*1000,dTrace(pks2)*sf,'ko')
+             ylim([min([minY,-250]) max([maxY,250])])
+        else
+            cla
+            plot(time_trl*1000,tr_head)
+            hold on
+            plot(time_trl(pks3)*1000,tr_head(pks3),'ro')
+            ylim([min([minY,-100]) max([maxY,100])])
         end
-        maxY = max(tA_trl(:,trl));
-        minY = min(tA_trl(:,trl));
+        
         box off
         xlim(xLim)
-        ylim([min([minY,-250]) max([maxY,250])])
+       
         set(gca,'xtick',[100 500 1000 15000])
         title(['Click on 5 pts to get onset, 1st and 3rd undulation info, Trl # ' num2str(trl)])
         shg
-        [x,y,~] = ginput_plot();        
+        [x,y,~] = ginput_plot();
         if ~isempty(x) && traceType ==1
             x_trace1 = x;
             preInds = find((time_trl(pks1)*1000) < min(x));
@@ -109,7 +123,7 @@ for trl = 1:nTrls
             time_trl = time_trl(:);
             tr = tr(:);
             x = [x(:);time_trl(pks1)*1000];
-            y = [y(:); tr(pks1)];           
+            y = [y(:); tr(pks1)];
             [x,inds] = sort(x);
             y = y(inds);
             dx = (diff(x)/1000)*fps;
@@ -140,6 +154,26 @@ for trl = 1:nTrls
             y(inds)=[];
             for bend = 1:numel(x)
                 out.bendAngVel{trl}(bend) = y(bend)/sf;
+            end
+        elseif ~isempty(x) && traceType ==3
+            x_trace1 = x;
+            preInds = find((time_trl(pks3)*1000) < min(x));
+            postInds = find((time_trl(pks3)*1000) > max(x));
+            prePostInds = union(preInds,postInds);
+            pks3(prePostInds)=[];
+            time_trl = time_trl(:);
+            tr = tr(:);
+            x = [x(:);time_trl(pks3)*1000];
+            y = [y(:); tr_head(pks3)];
+            [x,inds] = sort(x);
+            y = y(inds);
+            dx = (diff(x)/1000)*fps;
+            inds = find(dx < minIntPts);
+            x(inds) = [];
+            y(inds)=[];
+            for bend = 2:numel(x)
+                out.headAmp{trl}(bend-1) = y(bend)-y(bend-1);
+                out.headPer{trl}(bend-1) = x(bend)-x(bend-1);
             end
         else
             for bend = 1:numel(x)

@@ -261,7 +261,7 @@ stimNum = 1; %(1 = Dark, 2 = Vib)
 paramNum = 1; % (1 = Bend amp, 2 = Bend per)
 
 maxPkNum = 25;
-ttl = ['Bend amplitude and period vs bend # for ctrl and abl (' data.ablationType ')'];
+ttl = ['Bend amp and per for ctrl and abl (' data.ablationType ')'];
 figure('Name',ttl)
 count = 0;
 for paramNum = 1:2

@@ -139,7 +139,7 @@ end
 function [dataMat, dimLbls] = GetDataMat(data)
 %##################################
 %## ndims(dataMat) = 6 ;
-%## Dim1 = # of grps - 'ctrl','abl'
+%## Dim1 = # of grps - 'abl','ctrl'
 %## Dim2 = # of stim types - 'dark','vib'
 %## Dim3 = # of fish
 %## Dim4 = # of params - 'bendAmp','bendPer','onset','bendAngVel'
@@ -148,7 +148,7 @@ function [dataMat, dimLbls] = GetDataMat(data)
 %#################################
 
 %# First need to determine dimensions of multidimensional matrix
-grps = {'ctrl','abl'};
+grps = {'abl','ctrl'};
 dim = zeros(1,6);
 for grpNum = 1:length(grps) % Dim 1
     dim(1) = max(dim(1),grpNum);

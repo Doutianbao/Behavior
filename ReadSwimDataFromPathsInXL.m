@@ -14,6 +14,7 @@ grpData.dataMat = dataMat;
 grpData.dimLbls = dimLbls;
 
 
+
 %% Save data as .mat file
 saveOrNot = input('Save data as .mat file? (y/n) ','s');
 if strcmpi(saveOrNot,'y')
@@ -23,6 +24,7 @@ else
     disp('Data not saved!')
 end
 
+break;
 
 %% Save data as .csv file
 tic
@@ -31,7 +33,7 @@ if strcmpi(saveOrNot,'y')
     disp('Creating xls type array')
     data_cell = CreateCellArray(data,dataMat);
     fName2 =['ElicitedSwimData_' data.ablationType '_' datestr(now,30) '.csv'];
-    xlswrite(fName2,data_cell)
+    xlswrite(fullfile(path,fName2),data_cell)
     disp('Saved!')
 else
     disp('Data not saved!')

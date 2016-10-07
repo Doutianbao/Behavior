@@ -78,6 +78,7 @@ for jj = 1:size(raw_abFlt)
             pData.ctrl.vib{c1} = p;
             blah = GetProcData(p);
             data.ctrl.vib{c1} = blah.elicitedSwimInfo;
+            data.ctrl.vib{c1}.sessionNum = raw_abFlt{jj,4};
             toc
         elseif strcmpi(raw_abFlt(jj,5),'dark')
             c2 = c2 + 1;
@@ -90,6 +91,7 @@ for jj = 1:size(raw_abFlt)
             pData.ctrl.dark{c2} = p;
             blah = GetProcData(p);
             data.ctrl.dark{c2} = blah.elicitedSwimInfo;
+            data.ctrl.dark{c2}.sessionNum = raw_abFlt{jj,4};
             toc
         end
     elseif raw_abFlt{jj,3} ==1
@@ -104,6 +106,7 @@ for jj = 1:size(raw_abFlt)
             pData.abl.vib{c3} = p;
             blah = GetProcData(p);
             data.abl.vib{c3} = blah.elicitedSwimInfo;
+            data.abl.vib{c3}.sessionNum = raw_abFlt{jj,4};
             toc
         elseif strcmpi(raw_abFlt(jj,5),'dark')
             c4 = c4 + 1;
@@ -116,6 +119,7 @@ for jj = 1:size(raw_abFlt)
             pData.abl.dark{c4} = p;
             blah = GetProcData(p);
             data.abl.dark{c4} = blah.elicitedSwimInfo;
+            data.abl.dark{c4}.sessionNum = raw_abFlt{jj,4};
             toc
         end
     end
@@ -191,7 +195,7 @@ disp(['Dimentions of data matrix = [ ' num2str(dim) ']']);
 %# Now get data matrix
 dataMat = nan(dim);
 dimLbls  = cell(6,1);
-dimLbls{1} = {'Ctrl','Abl'};
+dimLbls{1} = {'Abl','Ctrl'};
 dimLbls{2} = {'Dark','Vib'};
 dimLbls{3} = {'Fish #'};
 dimLbls{4} = {'BendAmp','BendPer','Onset','BendAngVel'};

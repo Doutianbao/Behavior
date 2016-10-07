@@ -1,5 +1,4 @@
 
-%% Write ablation data to .csv
 
 paramNames = fieldnames(data.abl.vib{1})';
 for paramNum = 1:length(paramNames)

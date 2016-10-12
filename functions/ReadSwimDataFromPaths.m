@@ -198,7 +198,7 @@ dimLbls  = cell(6,1);
 dimLbls{1} = {'Abl','Ctrl'};
 dimLbls{2} = {'Dark','Vib'};
 dimLbls{3} = {'Fish #'};
-dimLbls{4} = {'BendAmp','BendPer','Onset','BendAngVel'};
+dimLbls{4} = {'BendAmp','BendPer','Onset','BendAngVel','HeadAmp','HeadPer'};
 dimLbls{5} = {'Trl #'};
 dimLbls{6} = {'Peak #'};
 

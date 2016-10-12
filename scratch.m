@@ -66,8 +66,7 @@ for abGrp = ablatedOrNotGrps
                         bendNum = nan;
                         data_line = [{ablationType,ablatedBool,stimType,totalFishCount,sessionCount,trlNum,bendNum}, valArray];
                         data_cell = [data_cell; data_line];
-                    end
-                    
+                    end                    
                 end
             end
         end

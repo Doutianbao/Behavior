@@ -90,7 +90,8 @@ nTrls = length(time)/nFramesInTrl;
 
 tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
-curv_head = tA_5(1,:)';
+% curv_head = tA_5(1,:)';
+curv_head = chebfilt(GetHeadOrientationFromTailCurv(tailCurv),1/fps,50,'low');
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
 tA_trl_head = reshape(curv_head,nFramesInTrl,nTrls);
 time_trl = time(1:nFramesInTrl);
@@ -142,10 +143,10 @@ for trl = 1:nTrls
             plot(time_trl*1000,tr_head)
             hold on
             plot(time_trl(pks3)*1000,tr_head(pks3),'ro')
-            ylim([min([minY,-100]) max([maxY,100])])
+            plot(time_trl*1000,tr/2 + tr_head(1),'m:')
+            ylim([-inf inf])           
         end
-        ylabel(paramList_all{traceType})
-        
+        ylabel(paramList_all{traceType})        
         box off
         xlim(xLim)
         set(gca,'xtick',[100 500 1000 15000])
@@ -225,6 +226,7 @@ end
 saveOrNot = input('Append pk data to procData? (y/n)','s');
 if strcmpi(saveOrNot,'y')
     procData.Properties.Writable = true;
+    procData.hOr = hOr;
     procData.elicitedSwimInfo = out;
 end
 

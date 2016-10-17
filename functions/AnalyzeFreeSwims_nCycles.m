@@ -14,7 +14,7 @@ function varargout = AnalyzeFreeSwims_nCycles(varargin)
 %   'bodyAmp' - Total body bending amplitudes
 %   'angVel' - Period for total body bends
 %   'headAmp' - Amplitudes for only head segment bends
-% 
+% 'freqRange' - Frequency range for crosswavelet transform
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 fps = 500;
@@ -25,6 +25,7 @@ xLim = [0 0.8*1000];  % For vibration
 stringency = 1.5;
 paramList_all = {'bodyAmp','angVel','headAmp'};
 paramList = paramList_all;
+freqRange = [15 60];
 
 % cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
 if nargin ==0
@@ -62,6 +63,8 @@ else
                     paramList = varargin{jj+1};
                 case lower('xLim')
                     xLim = varargin{jj+1};
+                case lower('freqRange')
+                    freqRange = varargin{jj+1};
             end
         end
     end
@@ -73,9 +76,11 @@ if ~iscell(paramList)
 end
 
 paramInds = zeros(length(paramList),1);
-for jj = 1:length(paramList)   
+for jj = 1:length(paramList)
     ind = find(strcmpi(paramList_all,paramList{jj}));
-    paramInds(jj) = ind;
+    if ~isempty(ind)
+        paramInds(jj) = ind;
+    end
 end
 
 disp('Reading data from procData...')
@@ -90,15 +95,20 @@ nTrls = length(time)/nFramesInTrl;
 
 tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
+curv_seg1 = tA_5(1,:)';
 % curv_head = tA_5(1,:)';
-curv_head = chebfilt(GetHeadOrientationFromTailCurv(tailCurv),1/fps,50,'low');
+curv_head = GetHeadOrientationFromTailCurv(tailCurv);
+curv_head = chebfilt(curv_head,1/fps,50,'low');
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
+tA_trl_seg1 = reshape(curv_seg1,nFramesInTrl,nTrls);
 tA_trl_head = reshape(curv_head,nFramesInTrl,nTrls);
+tA_trl_head = tA_trl_head - repmat(tA_trl_head(1,:),size(tA_trl_head,1),1);
+curv_head = reshape(tA_trl_head,1,prod(size(tA_trl_head)));
 time_trl = time(1:nFramesInTrl);
 pkThr1 = stringency*std(tA_trl(:));
 pkThr3 = stringency*std(tA_trl_head(:));
-maxFreq = 60;
-minIntPts = ceil((0.5/maxFreq)*fps);
+maxFreq = 80;
+minIntPts = max(floor((0.5/maxFreq)*fps),1);
 
 blah = chebfilt(tA_trl,1/fps,30,'low');
 dTrace_all = gradient(blah')';
@@ -112,15 +122,17 @@ out.onset = zeros(nTrls,1);
 out.bendAngVel = out.bendAmp;
 for trl = 1:nTrls
     tr = tA_trl(:,trl);
+    tr_seg1 = tA_trl_seg1(:,trl);
     tr_head = tA_trl_head(:,trl);
     pks1 = GetPks(tr,'polarity',0, 'peakThr',pkThr1,'thrType','rel','minPkDist',minIntPts);
     mT = max(abs(tr));
     dTrace = dTrace_all(:,trl);
     pks2 = GetPks(dTrace,'polarity',0, 'peakThr',pkThr2,'thrType','rel','minPkDist',minIntPts);
-    pks3 = GetPks(tr_head,'polarity',0, 'peakThr',pkThr3,'thrType','rel','minPkDist',minIntPts);
+    pks3 = GetPks(tr_head,'polarity',0, 'peakThr',20,'thrType','rel','minPkDist',minIntPts);
     mDT = max(dTrace);
     sf = 0.5*mT/mDT;
     x_trace1 = 0;
+    paramInds(paramInds==0)=[];
     for traceType = paramInds(:)'
         cla
         maxY = max(tA_trl(:,trl));
@@ -130,7 +142,7 @@ for trl = 1:nTrls
             hold on
             plot(time_trl(pks1)*1000,tr(pks1),'ko')
             plot(time_trl*1000,dTrace*sf,'r:')
-            ylim([min([minY,-250]) max([maxY,250])])           
+            ylim([min([minY,-250]) max([maxY,250])])
         elseif traceType ==2
             plot(time_trl*1000,tr,'b:')
             hold on
@@ -144,9 +156,9 @@ for trl = 1:nTrls
             hold on
             plot(time_trl(pks3)*1000,tr_head(pks3),'ro')
             plot(time_trl*1000,tr/2 + tr_head(1),'m:')
-            ylim([-inf inf])           
+            ylim([-inf inf])
         end
-        ylabel(paramList_all{traceType})        
+        ylabel(paramList_all{traceType})
         box off
         xlim(xLim)
         set(gca,'xtick',[100 500 1000 15000])
@@ -169,9 +181,29 @@ for trl = 1:nTrls
             inds = find(dx < minIntPts);
             x(inds) = [];
             y(inds)=[];
+            tr = chebfilt(tr,1/fps,10,'high');
+            tr_seg1 = chebfilt(tr_seg1,1/fps,10,'high');
+            [Wxy,freq] =  ComputeXWT(tr(:),tr_seg1(:),time_trl(:),freqRange,1/64,0,'all');
+            [~, freq_pow] = GetWaveFreqTimeseries(Wxy,freq);
+            inds = find((time_trl*1000)>=x(1) & (time_trl*1000) <= x(end));
+            per = (1000./freq_pow.freq(inds));
+            ph = freq_pow.phase(inds);
+            %             w = freq_pow.pow(inds);  % Not using weighted linear fit at the moment, which I can do using lscov, if need be
+            tau = time_trl(inds);
+            try
+                tau = (tau-tau(1));
+            catch
+                error('Must click at two locations at least')
+            end
+            B_per = polyfit(tau(:),per(:),1);
+            B_ph = polyfit(tau(:),ph(:),1);
             for bend = 2:numel(x)
                 out.bendAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.bendPer{trl}(bend-1) = x(bend)-x(bend-1);
+                out.perSlope{trl}(bend-1) = B_per(1);
+                out.perOff{trl}(bend-1) = B_per(2);
+                out.phSlope{trl}(bend-1) = B_ph(1);
+                out.phOff{trl}(bend-1) = B_ph(2);
             end
             out.onset(trl) = x(1)-(preStimPeriod*1000);
         elseif ~isempty(x) && traceType ==2
@@ -210,9 +242,21 @@ for trl = 1:nTrls
             inds = find(dx < minIntPts);
             x(inds) = [];
             y(inds)=[];
+            
+            tr_head = chebfilt(tr_head,1/fps,10,'high');
+            [Wxy,freq] =  ComputeXWT(tr_head(:),tr_head(:),time_trl(:),freqRange,1/64,0,'all');
+            [~, freq_pow] = GetWaveFreqTimeseries(Wxy,freq);
+            inds = find((time_trl*1000)>=x(1) & (time_trl*1000) <= x(end));
+            per = (1000./freq_pow.freq(inds));
+            %             w = freq_pow.pow(inds);  % Not using weighted linear fit at the moment, which I can do using lscov, if need be
+            tau = time_trl(inds);
+            tau = (tau-tau(1));
+            B_per = polyfit(tau(:),per(:),1);
             for bend = 2:numel(x)
                 out.headAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.headPer{trl}(bend-1) = x(bend)-x(bend-1);
+                out.headPerSlope{trl}(bend-1) = B_per(1);
+                out.headPerOff{trl}(bend-1) = B_per(2);
             end
         else
             for bend = 1:numel(x)
@@ -226,7 +270,7 @@ end
 saveOrNot = input('Append pk data to procData? (y/n)','s');
 if strcmpi(saveOrNot,'y')
     procData.Properties.Writable = true;
-    procData.hOr = hOr;
+    procData.hOr = curv_head;
     procData.elicitedSwimInfo = out;
 end
 

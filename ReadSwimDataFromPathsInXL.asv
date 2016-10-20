@@ -33,7 +33,7 @@ if strcmpi(saveOrNot,'y')
     disp('Creating xls type array')
     data_cell = CreateCellArray_fast(data,dataMat);
     fName2 =['ElicitedSwimData_' data.ablationType '_' datestr(now,30) '.xlsx'];
-    xlswrite(fullfile(fPath,fName2),data_cell)
+    xlswrite(fullfile(path,fName2),data_cell)
     disp('Saved!')
 else
     disp('Data not saved!')

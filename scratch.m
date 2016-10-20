@@ -56,3 +56,24 @@ ylim([0 180])
 
 linkaxes(ax,'x')
 
+
+
+%%
+% trl  = 1;
+figure('Name', 'Dynamic pow in freq channels')
+for trl = 1:20
+blah = [out.xw_pow_15_30{trl}; out.xw_pow_30_45{trl}; out.xw_pow_45_60{trl}];  
+blah = blah./repmat(max(blah,[],2),1,size(blah,2));
+plot(blah(1,:),'.-')
+hold on
+% plot(blah(2,:),'.-','color',[0 0.4 0])
+% plot(blah(3,:),'r.-')
+box off
+xlim([-inf inf])
+end
+legend('15-30 Hz', '30-45 Hz', '45-60 Hz' )
+
+
+
+
+

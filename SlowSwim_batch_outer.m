@@ -1,6 +1,6 @@
 
 clear, close all
-fishDir = 'S:\Avinash\Ablations and behavior\Ventral RS\20160929\20160929_behavior';
+fishDir = 'S:\Avinash\Ablations and behavior\M and homologs\20160629\Behavior\tempForProc';
 
 %% Getting the names of fish image dirs
 

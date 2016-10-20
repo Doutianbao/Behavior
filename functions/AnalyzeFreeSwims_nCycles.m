@@ -26,6 +26,7 @@ stringency = 1.5;
 paramList_all = {'bodyAmp','angVel','headAmp'};
 paramList = paramList_all;
 freqRange = [15 60];
+freqChannels = linspace(freqRange(1),freqRange(2),4);
 
 % cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
 if nargin ==0
@@ -97,6 +98,7 @@ tA_5 = GetTailTangents(tailCurv,5);
 curv = tA_5(end,:)';
 curv_seg1 = tA_5(1,:)';
 % curv_head = tA_5(1,:)';
+disp('Getting head orientation from body curve..')
 curv_head = GetHeadOrientationFromTailCurv(tailCurv);
 curv_head = chebfilt(curv_head,1/fps,50,'low');
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
@@ -114,11 +116,12 @@ blah = chebfilt(tA_trl,1/fps,30,'low');
 dTrace_all = gradient(blah')';
 pkThr2 = stringency*std(dTrace_all(:));
 
+disp('Getting peak info...')
 out = struct;
 figure('Name','Pk info')
 out.bendAmp = cell(nTrls,1);
 out.bendPer = out.bendAmp;
-out.onset = zeros(nTrls,1);
+out.onset = out.bendAmp;
 out.bendAngVel = out.bendAmp;
 for trl = 1:nTrls
     tr = tA_trl(:,trl);
@@ -197,15 +200,27 @@ for trl = 1:nTrls
             end
             B_per = polyfit(tau(:),per(:),1);
             B_ph = polyfit(tau(:),ph(:),1);
+            onset = x(1)- (preStimPeriod*1000);
             for bend = 2:numel(x)
+                out.onset{trl}(bend-1) = onset;
                 out.bendAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.bendPer{trl}(bend-1) = x(bend)-x(bend-1);
                 out.perSlope{trl}(bend-1) = B_per(1);
                 out.perOff{trl}(bend-1) = B_per(2);
                 out.phSlope{trl}(bend-1) = B_ph(1);
                 out.phOff{trl}(bend-1) = B_ph(2);
+                [~, ind] = min(abs((time_trl*1000)-x(bend)));
+                out.xwPer{trl}(bend-1) = (1000/freq_pow.freq(ind));
+                out.xWPhase{trl}(bend-1) = freq_pow.phase(ind);
+                for freqChan = 1:numel(freqChannels)-1                    
+                    fInds = find(freq > freqChannels(freqChan) & freq <= freqChannels(freqChan+1));
+                    suffix = [num2str(freqChannels(freqChan)) '_' num2str(freqChannels(freqChan+1))];
+                    fldName = ['xw_pow_' suffix];
+                    out.(fldName){trl}(bend-1) = mean(abs(Wxy(fInds,ind)));
+                    fldName = ['xw_phase_' suffix];
+                    out.(fldName){trl}(bend-1) = angle(mean(Wxy(fInds,ind)))*180/pi;
+                end
             end
-            out.onset(trl) = x(1)-(preStimPeriod*1000);
         elseif ~isempty(x) && traceType ==2
             [~, inds] = sort(x);
             y = y(inds);
@@ -257,6 +272,13 @@ for trl = 1:nTrls
                 out.headPer{trl}(bend-1) = x(bend)-x(bend-1);
                 out.headPerSlope{trl}(bend-1) = B_per(1);
                 out.headPerOff{trl}(bend-1) = B_per(2);
+                for freqChan = 1:numel(freqChannels)-1
+                    [~, ind] = min(abs((time_trl*1000)-x(bend)));
+                    fInds = size(Wxy,1)-find(freq > freqChannels(freqChan) & freq <= freqChannels(freqChan+1));
+                    suffix = [num2str(freqChannels(freqChan)) '_' num2str(freqChannels(freqChan+1))];
+                    fldName = ['head_xw_pow_' suffix];
+                    out.(fldName){trl}(bend-1) = mean(abs(Wxy(fInds,ind)));                   
+                end
             end
         else
             for bend = 1:numel(x)

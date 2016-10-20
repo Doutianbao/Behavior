@@ -198,7 +198,25 @@ dimLbls  = cell(6,1);
 dimLbls{1} = {'Abl','Ctrl'};
 dimLbls{2} = {'Dark','Vib'};
 dimLbls{3} = {'Fish #'};
-dimLbls{4} = {'BendAmp','BendPer','Onset','BendAngVel','HeadAmp','HeadPer'};
+blah =[];
+count = 0;
+while isempty(blah) && count < 20   
+    for trl = 1:length(data.abl.vib);
+        count = count  + 1;
+        blah = data.abl.vib{trl};
+    end
+end
+if isempty(blah)
+    error('Cannot read parameter names!')
+else
+    fldNames = fieldnames(blah);
+end
+
+dimLbls{4} = cell(1,length(fldNames));
+for paramNum = 1:length(fldNames)
+    dimLbls{4}{paramNum} = fldNames{paramNum}; 
+end
+% dimLbls{4} = {'BendAmp','BendPer','Onset','BendAngVel','HeadAmp','HeadPer'};
 dimLbls{5} = {'Trl #'};
 dimLbls{6} = {'Peak #'};
 

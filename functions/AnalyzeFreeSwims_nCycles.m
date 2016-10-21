@@ -99,7 +99,7 @@ curv = tA_5(end,:)';
 curv_seg1 = tA_5(1,:)';
 % curv_head = tA_5(1,:)';
 disp('Getting head orientation from body curve..')
-curv_head = GetHeadOrientationFromTailCurv(tailCurv);
+curv_head = GetSegOrientationFromTailCurv(tailCurv);
 curv_head = chebfilt(curv_head,1/fps,50,'low');
 tA_trl = reshape(curv,nFramesInTrl,nTrls);
 tA_trl_seg1 = reshape(curv_seg1,nFramesInTrl,nTrls);

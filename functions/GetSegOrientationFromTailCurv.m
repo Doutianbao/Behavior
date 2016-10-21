@@ -22,7 +22,7 @@ function varargout = GetSegOrientationFromTailCurv(tailCurv,varargin)
 %   segment points
 % Avinash Pujala, Koyama lab/HHMI
 
-segRange = [0, 10];
+segRange = [0, 25];
 % theta = @(v1,v2) acos(dot(v1,v2)/(norm(v1)*norm(v2)))* pi/180;
 Complexify = @(v) v(1) + v(2)*1i;
 if nargin == 2   

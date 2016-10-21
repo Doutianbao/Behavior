@@ -3,11 +3,14 @@ function out = AnalyzeFreeSwims_nCycles_batch(pathList,varargin)
 %   procData.mat files created by SlowSwim and related scripts, appends
 %   elicited swim info to procData and also returns a cell array containing
 %   all this info.
+% out = AnalyzeFreeSwims_nCycles_batch();
+% out = AnalyzeFreeSwims_nCycles_batch([]);
 % out = AnalyzeFreeSwims_nCycles_batch(pathList);
-% out = AnalyzeFreeSwims_ncycles_batch(procData,'fps',fps,'nFramesInTrl',nFramesInTrl,'paramList', paramList,'xLim',xLim);
+% out = AnalyzeFreeSwims_ncycles_batch(pathList,'fps',fps,'nFramesInTrl',nFramesInTrl,'paramList', paramList,'xLim',xLim);
 % Inputs:
-% pathList - A list (cell array) of paths to procData.m
-%   scripts
+% pathList - A list (cell array) of paths to procData.mat. If no inputs are
+%   given, or if pathList is empty, then interactively allows the opening
+%   of an excel sheet where paths are stored on the first sheet.
 % 'fps'  - Frames per second (default: 500)
 % 'nFramesInTrl' - Number frames in a single trial (default: 750)
 % 'paramList' - List of params to extract in this function (default:
@@ -16,7 +19,7 @@ function out = AnalyzeFreeSwims_nCycles_batch(pathList,varargin)
 %   'angVel' - Period for total body bends
 %   'headAmp' - Amplitudes for only head segment bends
 % 'xLim' - Limits of x-axes for interative selection of peaks
-% 
+%
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 fps = 500;
@@ -28,8 +31,8 @@ stringency = 1.5;
 paramList_all = {'bodyAmp','angVel','headAmp'};
 paramList = paramList_all;
 
-if isempty(pathList)
-    error('Must input a list of paths')
+if isempty(pathList) || nargin ==0
+ pathList = GetPathsFromXLS(); 
 end
 
 if ~iscell(pathList)
@@ -68,3 +71,17 @@ end
 
 end
 
+function pathList = GetPathsFromXLS()
+   [xFile, xPath] = uigetfile('*.xlsx','Select xl sheet with paths');    
+    fullPath =fullfile(xPath,xFile);    
+    [~,~, raw] = xlsread(fullPath,1);        
+    pathList = cell(size(raw,1),1);
+    count = 0;
+    for pp = 1:size(raw,1)
+        cp = raw{pp};
+        if ischar(cp)
+            count = count + 1;
+            pathList{count} = cp;
+        end
+    end  
+end

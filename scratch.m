@@ -2,7 +2,8 @@
 trl =1;
 nFramesInTrl = 750;
 fps = 500;
-freqRange = [10 60];
+freqRange = [20 50];
+dj = 1/64;
 time = (0:size(tA_5,2)-1)*(1/fps);
 inds = (trl-1)*nFramesInTrl + 1 : (trl-1)*nFramesInTrl + 500;
 x = chebfilt(tA_5(end,inds),1/fps,10,'high');

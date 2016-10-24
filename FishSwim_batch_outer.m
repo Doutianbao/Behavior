@@ -34,7 +34,7 @@ for fishNum = 1:length(imgDirs)
                 nm = blah2(kk).name;
                 if isempty(strfind(lower(nm),'.'))
                     imgDir = fullfile(path,nm);
-                    SlowSwim_batch(imgDir,fishName)
+                    FishSwim_batch(imgDir,fishName)
                 end
             end
         end

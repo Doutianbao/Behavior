@@ -1,4 +1,4 @@
-function SlowSwim_batch(imgDir,fishName)
+function FishSwim_batch(imgDir,fishName)
 
 
 readMode =  'fromImages';

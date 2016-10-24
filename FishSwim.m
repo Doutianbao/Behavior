@@ -1,8 +1,4 @@
 
-% switch  'LoadingNewFilm'  %'LoadingNewFilm' 'RerunAnalysis' 'LoadingCoordinates'
-%     case 'LoadingNewFilm'
-%
-
 clear all
 close all
 

@@ -21,6 +21,9 @@ function varargout = GetFishWaves_fish(procData,varargin)
 % 'noiseType' - 'red' or 'white', for statistical significance testing of
 %   the WT (Default = 'red').
 % 'stringency' - Stringency for significance testing (Default = 0).
+% 'sigmaXY' - Divisor for normalization of coefficients in wavelet
+%   transform. Can be input for group data. If empty, computes
+%   automatically
 % 'plotOrNot' - 0 or 1; the latter results in plotting
 % 'trlList' - The list of trials to plot. If trList = [], then plots all
 %   trials
@@ -49,6 +52,7 @@ stimTime = 100; % In ms
 cLim = [1 100];
 onsetAlign = 1;
 saveToProc = 1;
+sigmaXY = [];
 
 if nargin ==0 || isempty(procData)
     disp('Getting procData...')
@@ -86,6 +90,8 @@ for jj = 1:numel(varargin)
                 noiseType = varargin{jj+1};
             case 'stringency'
                 stringency = varargin{jj+1};
+            case 'sigmaxy'
+                sigmaXY = varargin{jj+1};
             case 'plotornot'
                 plotOrNot = varargin{jj+1};
             case 'trllist'
@@ -156,6 +162,7 @@ data.dj = dj;
 data.stringency = stringency;
 data.freqScale = freqScale;
 data.xLim = xLim;
+data.sigmaXY = sigmaXY;
 
 
 
@@ -186,6 +193,7 @@ nTrls = numel(trlList);
 xLim = data.xLim;
 time = data.time;
 fps = data.fps;
+sigmaXY = data.sigmaXY;
 tLen_exp = (abs(diff(xLim))/1000)*fps;
 freqRange = data.freqRange;
 onsets = data.onsets;
@@ -197,11 +205,18 @@ W.tail.ts = W.head.coeff;
 W.head.avg = [];
 W.tail.avg = [];
 W.time = [];
-sigma.hh = std(chebfilt(data.or.head,1/fps,freqRange));
-sigma.tt =  std(chebfilt(data.or.tail,1/fps,freqRange));
-sigma.ht = sigma.hh*sigma.tt;
+if isempty(sigmaXY)
+    sigma.hh = std(chebfilt(data.or.head,1/fps,freqRange));
+    sigma.tt =  std(chebfilt(data.or.tail,1/fps,freqRange));
+    sigma.ht = sigma.hh*sigma.tt;
+else
+    sigma.ht = sigmaXY;
+end
+
 shortTrls = [];
 count = 0;
+responseCount = 0;
+firstNonZeroFlag = 1;
 for trl = trlList(:)'
     count = count + 1;
     onInd = find(time>= onsets(count),1,'first');
@@ -221,23 +236,26 @@ for trl = trlList(:)'
             'sigmaXY',sigma.ht,'freqScale',data.freqScale);
         [W.tail.coeff{trl},freq] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale);
-        if count ==1
-            W.head.avg = W.head.coeff{count};
-            W.tail.avg = W.tail.coeff{count};
-        else           
+        if  (~isempty(W.head.coeff{trl}) || ~isempty(W.tail.coeff{trl})) && firstNonZeroFlag
+            W.head.avg = W.head.coeff{trl};
+            W.tail.avg = W.tail.coeff{trl};
+            firstNonZeroFlag = 0;
+        elseif ~isempty(W.head.coeff{trl}) || ~isempty(W.tail.coeff{trl})
+            responseCount = responseCount  + 1;
             W.head.avg = W.head.avg + W.head.coeff{trl};
-            W.tail.avg = W.tail.avg + W.tail.coeff{trl};          
+            W.tail.avg = W.tail.avg + W.tail.coeff{trl};
         end
     end
 end
+W.head.avg = W.head.avg/responseCount;
+W.tail.avg = W.tail.avg/responseCount;
 [~,delInds] = intersect(trlList,shortTrls);
 trlList = setdiff(trlList,shortTrls);
 W.head.coeff(delInds) = [];
 W.head.ts(delInds) = [];
 W.tail.coeff(delInds) = [];
 W.tail.ts(delInds) = [];
-W.head.avg = W.head.avg/count;
-W.tail.avg = W.tail.avg/count;
+
 if ~isempty(t)
     W.time = t;
 else
@@ -285,11 +303,7 @@ for trl = trlList(:)'
     
     % -- Head and tail orientation timeseries
     axes(axH(3))
-    try
-        plot(t,W.head.ts{trl},'g.')
-    catch
-        a = 1;
-    end
+    plot(t,W.head.ts{trl},'g.')
     hold on
     plot(t,W.tail.ts{trl},'m.')
     xlim([t(1) t(end)])

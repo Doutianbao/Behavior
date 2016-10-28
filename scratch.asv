@@ -22,7 +22,7 @@ for ablOrNot = 1:2
                 disp('Processing dark flash stimulus...')
                 xLim =[-99 300];
                 paths = GetFilteredPathsFromXLS();
-                [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',1,'sigmaXY',nan,'plotOrNot',0);
+                [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',1,'sigmaXY',nan);
                 data.ctrl.dark = procData;
             end
         end
@@ -34,7 +34,7 @@ for ablOrNot = 1:2
                 xLim  = [-50 750];
                 paths = GetFilteredPathsFromXLS();
                 pause(5)
-                [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',1,'sigmaXY',nan,'plotOrNot',0);
+                [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',1,'sigmaXY',nan);
                 data.abl.vib = procData;
             else
                 disp('Processing ablated...')
@@ -42,7 +42,7 @@ for ablOrNot = 1:2
                 xLim =[-99 300];
                 paths = GetFilteredPathsFromXLS();
                 pause(5)
-                [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',1,'sigmaXY',nan,'plotOrNot',0);
+                [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',1,'sigmaXY',nan);
                 data.abl.dark = procData;
             end
         end

@@ -36,27 +36,25 @@ varNames = raw(1,:);
 nanInds = GetNanInds(varNames);
 varNames(nanInds) = [];
 
-clc
 disp(varNames)
 filtList = input('Select filt inds, e.g. [1 3 4]: ');
 
-rowInds_sub = 2:length(raw);
+rowInds_sub = 1:length(raw);
 paramVals = struct;
 for ff = 1:length(filtList)
     colInd = filtList(ff);
     valArray = raw(2:end,colInd);
-    nanInds = GetNanInds(valArray);
+    nanInds = find(GetNanInds(valArray));
     valArray(nanInds) = [];
+    raw(nanInds+1,:)=[];
     if ischar(valArray{1})
-        blah = unique(valArray);
-        clc
+        blah = unique(valArray);        
         fprintf('\n')
         disp(blah')
         ind = input(['Index of ' num2str(varNames{colInd}) ': ']);
         rowInds = find(strcmpi(valArray,blah(ind)));
     else
-        blah = unique(cell2mat(valArray));
-        clc
+        blah = unique(cell2mat(valArray));       
         fprintf('\n')
         disp(blah')
         ind = input(['Index of ' num2str(varNames{colInd}) ': ']);
@@ -72,7 +70,7 @@ for ff = 1:length(filtList)
 end
 
 pathCol = strcmpi(varNames,'path');
-paths = raw(rowInds_sub,pathCol);
+paths = raw(rowInds_sub+1,pathCol);
 
 varargout{1} = paths;
 varargout{2} = paramVals;

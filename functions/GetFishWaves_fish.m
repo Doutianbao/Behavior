@@ -163,6 +163,7 @@ data.stringency = stringency;
 data.freqScale = freqScale;
 data.xLim = xLim;
 data.sigmaXY = sigmaXY;
+data.cLim = cLim;
 
 
 
@@ -170,9 +171,8 @@ data.sigmaXY = sigmaXY;
 W = GetWTs(data);
 
 %% Plotting wavelet transforms
-if plotOrNot
-    W.cLim = cLim;
-    PlotWTs(W,data)
+if plotOrNot   
+    PlotWTs(W)
 end
 
 if saveToProc
@@ -217,13 +217,13 @@ shortTrls = [];
 count = 0;
 responseCount = 0;
 firstNonZeroFlag = 1;
+t = [];
 for trl = trlList(:)'
     count = count + 1;
     onInd = find(time>= onsets(count),1,'first');
     time_align = time - time(onInd);
     tInds = find(time_align >= xLim(1) & time_align <= xLim(2));
     if numel(tInds)< tLen_exp
-        count = count-1;
         shortTrls = [shortTrls,trl];
     else
         t  = time_align(tInds);
@@ -231,19 +231,20 @@ for trl = trlList(:)'
         x = x(tInds);
         y  = chebfilt(data.or.tail_trl(trl,:),1/fps,freqRange);
         y = y(tInds);
-        [W.head.ts{trl},W.tail.ts{trl}] = deal(x,y);
-        [W.head.coeff{trl},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+        [W.head.ts{count},W.tail.ts{count}] = deal(x,y);
+        [W.head.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale);
-        [W.tail.coeff{trl},freq] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+        [W.tail.coeff{count},~] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale);
-        if  (~isempty(W.head.coeff{trl}) || ~isempty(W.tail.coeff{trl})) && firstNonZeroFlag
-            W.head.avg = W.head.coeff{trl};
-            W.tail.avg = W.tail.coeff{trl};
+        if  (~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})) && firstNonZeroFlag
+            W.head.avg = W.head.coeff{count};
+            W.tail.avg = W.tail.coeff{count};
             firstNonZeroFlag = 0;
-        elseif ~isempty(W.head.coeff{trl}) || ~isempty(W.tail.coeff{trl})
+            responseCount = 1;
+        elseif ~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})
             responseCount = responseCount  + 1;
-            W.head.avg = W.head.avg + W.head.coeff{trl};
-            W.tail.avg = W.tail.avg + W.tail.coeff{trl};
+            W.head.avg = W.head.avg + W.head.coeff{count};
+            W.tail.avg = W.tail.avg + W.tail.coeff{count};
         end
     end
 end
@@ -263,15 +264,16 @@ else
 end
 W.freqRange = data.freqRange;
 W.stringency = data.stringency;
+W.sigma = sigma;
 W.freqScale = data.freqScale;
 W.dj = data.dj;
 W.freq = freq;
 W.trlList = trlList;
 W.shortTrls = shortTrls;
+W.cLim = data.cLim;
 end
 
-function PlotWTs(W,data)
-yShift = 300;
+function PlotWTs(W)
 trlList = W.trlList;
 t = W.time;
 freq = W.freq;

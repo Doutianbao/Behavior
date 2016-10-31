@@ -241,10 +241,15 @@ for trl = trlList(:)'
             W.tail.avg = W.tail.coeff{count};
             firstNonZeroFlag = 0;
             responseCount = 1;
-        elseif ~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})
-            responseCount = responseCount  + 1;
-            W.head.avg = W.head.avg + W.head.coeff{count};
-            W.tail.avg = W.tail.avg + W.tail.coeff{count};
+        elseif ~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})           
+            if any(size(W.head.avg) ~= size(W.head.coeff{count}));
+                shortTrls = [shortTrls,trl];
+            else
+                responseCount = responseCount  + 1;
+                W.head.avg = W.head.avg + W.head.coeff{count};
+                W.tail.avg = W.tail.avg + W.tail.coeff{count};
+            end
+            
         end
     end
 end

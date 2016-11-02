@@ -72,6 +72,7 @@ end
 pathCol = strcmpi(varNames,'path');
 paths = raw(rowInds_sub+1,pathCol);
 
+paths(GetNanIndsFromCellArray(paths))=[];
 varargout{1} = paths;
 varargout{2} = paramVals;
 

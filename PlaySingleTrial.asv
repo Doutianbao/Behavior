@@ -14,7 +14,7 @@ TrializeTailBendsAndPlot
 
 
 %% Plot tail curvatures atop moving fish
-trl = 2;
+trl = 1;
 plotCurv = 1;
 writeVideo = 0;
 pauseDur = 0.05;

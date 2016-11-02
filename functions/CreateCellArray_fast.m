@@ -31,10 +31,10 @@ stimNames = fieldnames(data.(grpNames{1}));
 count = 0;
 tic
 rowInd_start = 1;
-for d1 = 1:size(dataMat,1) % Ablated or not   
+for d1 = 1:size(dataMat,1) % Ablated or not
     for d2 = 1:size(dataMat,2) % Stim type - dark or vib
-        for d3 = 1:size(dataMat,3) % Fish Num
-           sessionNum = data.(grpNames{d1}).(stimNames{d2}){d3}.sessionNum;
+        for d3 = 1:length(data.(grpNames{d1}).(stimNames{d2})) % Fish Num
+            sessionNum = data.(grpNames{d1}).(stimNames{d2}){d3}.sessionNum;
             for d5 = 1:size(dataMat,5)
                 blah = squeeze(dataMat(d1,d2,d3,:,d5,:))';
                 blah(:,end)=[]; % Remove session num from here
@@ -43,7 +43,7 @@ for d1 = 1:size(dataMat,1) % Ablated or not
                 rowInd_end = rowInd_start + size(blah,1)-1;
                 temp  = repmat([d1,d2,sessionNum,d3,d5],size(blah,1),1);
                 bendVec = 1:size(blah,1);
-                temp = cat(2,temp,bendVec(:),blah);                
+                temp = cat(2,temp,bendVec(:),blah);
                 fData(rowInd_start:rowInd_end,:) = temp;
                 rowInd_start = rowInd_end + 1;
                 count  = count + 1;
@@ -68,8 +68,17 @@ toc
 fldNames = fieldnames(data.ctrl);
 darkPos = find(strcmpi(fldNames,'dark'));
 vibPos = find(strcmpi(fldNames,'vib'));
-darkInds = find(fData(:,2)==darkPos);
-vibInds = find(fData(:,2) == vibPos);
+if ~isempty(darkPos)
+    darkInds = find(fData(:,2)==darkPos);
+else
+    darkInds = [];
+end
+if ~isempty(vibPos)
+    vibInds = find(fData(:,2) == vibPos);
+else
+    vibInds = [];
+end
+
 
 % data_cell(darkInds,2) = num2cell(repmat({'dark'},length(darkInds),1));
 % data_cell(vibInds,2) = num2cell(repmat('vib',length(vibInds),1));
@@ -92,8 +101,8 @@ data_cell = [abTypeArray, data_cell, fishIdArray];
 %## Creating column name vector and cocatenating with data array
 fldNames = []; count = 0;
 while isempty(fldNames) && count < size(dataMat,5)
-    count = count + 1;    
-        fldNames = fieldnames(data.abl.vib{count});
+    count = count + 1;
+    fldNames = fieldnames(data.abl.vib{count});
 end
 sessInd = find(strcmpi(fldNames,'sessionNum'));
 fldNames(sessInd) = [];
@@ -108,7 +117,7 @@ varNames_all = [{'AblationType','AblationBool','StimType',...
     'SessionNum','FishNumInGroup','TrialNum','BendNum'}, ...
     varNames_sub,'FishID'];
 
-if size(varNames_all,2) ~= size(data_cell)
+if size(varNames_all,2) ~= size(data_cell,2)
     error('Column labels do not match the size of the data array!')
 end
 

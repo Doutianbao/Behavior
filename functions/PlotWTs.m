@@ -3,6 +3,7 @@ trlList = W.trlList;
 t = W.time;
 freq = W.freq;
 cLim = W.cLim;
+cLim(2) = cLim(2)* 1.2;
 cLim_avg = [cLim(1) cLim(2)*0.7];
 ax = {};
 ax{1} = [1 0.39 0 0.61];

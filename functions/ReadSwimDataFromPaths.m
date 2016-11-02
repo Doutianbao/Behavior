@@ -19,7 +19,7 @@ function varargout = ReadSwimDataFromPaths(varargin)
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 if nargin ==0
-    [file,path] = uigetfile('*.xls');
+    [file,path] = uigetfile('*.xlsx');
     fPath = fullfile(path,file);
 else
     fPath = varargin{1};

@@ -85,6 +85,13 @@ for in = 1:numel(varargin)
     end
 end
 
+%-------------------------
+% I am hoping that zeroing negative elements will help because if the fish
+% is stationary in many frames then the pxls where the fish was stationary
+% can have very negative values that can affect thresholding 
+imgStack(imgStack<0)=0;
+% ------------------------
+
 if isempty(mu)
     Z = @(x) (x-mean(x(:)))/std(x(:));
     imgStack = Z(imgStack);
@@ -100,7 +107,6 @@ mlInds = cell(size(imgStack,3),1);
 dsVecs = mlInds;
 imgInds = 1:size(imgStack,3);
 dispChunk = round(size(imgStack,3)/5);
-% dispChunk = 1;
 if plotBool && ~strcmpi(process,'parallel')
     figure('Name','Midline inds by thinning')
 end

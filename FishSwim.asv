@@ -6,6 +6,7 @@ cd 'S:\Avinash\Tracking demo'
 
 readMode =  'fromImages';
 % readMode = 'fromMishVid';
+askInput = false;
 
 poolSize  = 10;
 switch readMode
@@ -14,16 +15,25 @@ switch readMode
         [IM, outDir] = ReadMishVid();
         imgInds = 1:size(IM,3);
     case 'fromImages'
-        imgDir = input('Enter image dir path:  ', 's')
-        imgExt = input('Enter image extension, e.g. jpg:  ','s')
-        imgInds = input('Enter indices of images to read as a vector:  ');
-        fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
-        bpMessg =['Filter bandpass for finding fish pos, e.g. [15 25]. ' ...
-            'Press enter [] to skip (filtering is recommended if using collimated ' ...
-            'light during behavior): '];
-        fps = input('Enter frame rate (frames/sec): ');
-        nFramesInTrl  = input('# of frames in each trl (default = 750): ');
-        bp = input(bpMessg);        
+        imgDir = input('Enter image dir path:  ', 's');
+        if askInput
+            imgExt = input('Enter image extension, e.g. jpg:  ','s')
+            imgInds = input('Enter indices of images to read as a vector:  ');
+            fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
+            bpMessg =['Filter bandpass for finding fish pos, e.g. [15 25]. ' ...
+                'Press enter [] to skip (filtering is recommended if using collimated ' ...
+                'light during behavior): '];
+            fps = input('Enter frame rate (frames/sec): ');
+            nFramesInTrl  = input('# of frames in each trl (default = 750): ');
+            bp = input(bpMessg);
+        else
+            imgExt = 'bmp';
+            imgInds = [];
+            bp = 30;
+            fps = 500;
+            nFramesInTrl = 750;
+            fName_prefix 
+        end
         outDir = fullfile(imgDir,'proc');
         IM = ReadImgSequence(imgDir,imgExt,imgInds);
 end
@@ -54,23 +64,23 @@ hOr = cell(size(IM,3),1);
 ref = zeros(imgDims(1),imgDims(2),blockSize);
 im_proc = [];
 for block = 1:numel(blockInds)-1
-    imgFrames = blockInds(block):blockInds(block+1);    
+    imgFrames = blockInds(block):blockInds(block+1);
     disp(['Block # ' num2str(block),...
-        ', images: ' num2str(imgFrames(1)) ' - ' num2str(imgFrames(end))])  
+        ', images: ' num2str(imgFrames(1)) ' - ' num2str(imgFrames(end))])
     disp('Subtracting background...')
-    [im_proc,ref(:,:,block)] = SubtractBackground(IM(:,:,imgFrames));   
+    [im_proc,ref(:,:,block)] = SubtractBackground(IM(:,:,imgFrames));
     if ~isempty(bp)
-%         [fp,hOr_temp] = GetFishPos(im_proc, 25,'filter',bp,'process','parallel',...
-%             'lineLen',lineLen);
-       fp = GetFishPos(im_proc,nPxls,'filter',bp,'process','parallel');
+        %         [fp,hOr_temp] = GetFishPos(im_proc, 25,'filter',bp,'process','parallel',...
+        %             'lineLen',lineLen);
+        fp = GetFishPos(im_proc,nPxls,'filter',bp,'process','parallel');
     else
-%         [fp,hOr_temp] = GetFishPos(im_proc, 25,'process','parallel','lineLen',lineLen);
-       fp = GetFishPos(im_proc,nPxls,'process','parallel');
+        %         [fp,hOr_temp] = GetFishPos(im_proc, 25,'process','parallel','lineLen',lineLen);
+        fp = GetFishPos(im_proc,nPxls,'process','parallel');
     end
     fishPos(imgFrames,:) = fp;
-%     hOr(imgFrames) = hOr_temp;  
+    %     hOr(imgFrames) = hOr_temp;
     disp('Cropping images...')
-    IM_proc_crop(:,:,imgFrames) = CropImgsAroundPxl(im_proc,fp,cropWid);     
+    IM_proc_crop(:,:,imgFrames) = CropImgsAroundPxl(im_proc,fp,cropWid);
 end
 ref = mean(ref,3);
 clear im_proc fp hOr_temp
@@ -167,7 +177,7 @@ trlStartFrames =  (0:nTrls-1)*750 + 1;
 disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
 % procData.hOr_crop = hOr_crop; % No longer computing head orientation from
-%                                   
+%                                 script that also gets fish position
 procData.midlineInds = midlineInds;
 procData.dsVecs = dsVecs;
 procData.tailCurv = tailCurv;
@@ -200,8 +210,8 @@ if strcmpi('y',saveOrNot)
     tic
     procData.IM_crop = IM_crop;
     toc
-%     procData.IM_proc = IM_proc_crop; % This is to save some time and space
-%     toc
+    %     procData.IM_proc = IM_proc_crop; % This is to save some time and space
+    %     toc
 else
     disp('Data not saved!')
 end
@@ -214,8 +224,8 @@ saveOrNot = input('Detect and save peak info (y/n)?  ','s');
 tic
 if strcmpi('y',saveOrNot)
     disp('Getting peak info...')
-%     GetTapDark1st2ndLeftRightPks;
-%     procData.pks = pks;
+    %     GetTapDark1st2ndLeftRightPks;
+    %     procData.pks = pks;
     [out,procData] = AnalyzeFreeSwims(procData);
 else
     disp('Pk info not saved!')

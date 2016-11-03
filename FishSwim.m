@@ -37,7 +37,6 @@ end
 blockSize = 3;
 cropWid = 90; %( For imgDims ~ [900,900], use 70)
 lineLen = 15;
-
 tic
 if matlabpool('size')==0
     matlabpool(poolSize)
@@ -166,7 +165,6 @@ tic
 fp = repmat(ceil([size(IM_proc_crop,1), size(IM_proc_crop,2)]/2),size(fishPos,1),1);
 [midlineInds,dsVecs,failedInds] = GetMidlinesByThinning(IM_proc_crop,...
     'fishPos',fp,'process','parallel','plotBool',1,'kerSize',9);
-
 toc
 
 if ~exist('nFramesInTrl')

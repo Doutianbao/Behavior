@@ -5,7 +5,7 @@
 var1 = data.ctrl.vib;
 nFish = length(var1);
 W = cell(nFish,1);
-for fn = 5
+for fn = 1:nFish
     disp(['Fish # ' num2str(fn)])
     disp('Reading W... ')
     W = var1{fn}.W;

@@ -167,7 +167,7 @@ trlStartFrames =  (0:nTrls-1)*750 + 1;
 disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
 % procData.hOr_crop = hOr_crop; % No longer computing head orientation from
-%                                 script that also gets fish position
+%                                   
 procData.midlineInds = midlineInds;
 procData.dsVecs = dsVecs;
 procData.tailCurv = tailCurv;

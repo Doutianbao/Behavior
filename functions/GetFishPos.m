@@ -17,7 +17,8 @@ function varargout = GetFishPos(IM,nPxls,varargin)
 %   instead of using 'gaussianbpf'
 % 'process' - 'serial' or 'parallel'; Process in serial or parallel
 % 'lineLen' - Length of line segment to use to determine head orientation
-%   (default: 15 pxls)
+%   (default: 15 pxls). If not specified, then does not get head
+%   orientation, which is computationally time-consuming.
 % 'pxlLim' - Limit of how many pixels the fish can traverse in the imaging
 %   setup. This is can be used to reduce false positives. (Not yet implemented)
 %
@@ -33,9 +34,9 @@ process = 'serial';
 filterFlag = 0;
 fltOrKer = [];
 orFlag = 0;
-nHood = 3;
 plotBool = 1;
 poolSize = 10;
+lineLen = [];
 
 nArgs = length(varargin);
 for jj = 1:nArgs
@@ -85,15 +86,11 @@ if filterFlag
 end
 
 dispChunk = round(size(IM,3)/50)+1;
-% dispChunk = 1;
 fishPos = zeros(size(IM,3),2);
 tic
 disp('Tracking fish...')
 if strcmpi(process,'serial')
-    for jj=1:size(IM,3)
-        if jj==1
-            a = 1;
-        end
+    for jj=1:size(IM,3)      
         [fishPos(jj,:),hOr{jj},img] = FishPosAndHeadVec(IM(:,:,jj),filterFlag,orFlag,...
             fltOrKer,nPxls,method,lineLen);
         if mod(jj,dispChunk)==0
@@ -109,7 +106,7 @@ elseif strcmpi(process, 'parallel')
         matlabpool(poolSize)
     end
     parfor jj=imgFrames
-        [fishPos(jj,:),hOr{jj},img] = FishPosAndHeadVec(IM(:,:,jj),filterFlag,orFlag,...
+        [fishPos(jj,:),hOr{jj},~] = FishPosAndHeadVec(IM(:,:,jj),filterFlag,orFlag,...
             fltOrKer,nPxls,method,lineLen);
         if mod(jj,dispChunk)==0
             disp(['Img # ' num2str(jj)])
@@ -117,7 +114,11 @@ elseif strcmpi(process, 'parallel')
     end
 end
 disp('Correcting head orientation for jumps...')
-hOr_corr = JumpCorrectHeadOr(hOr);
+if ~isempty(cell2mat(hOr))
+    hOr_corr = JumpCorrectHeadOr(hOr);
+else
+    hOr_corr = [];
+end
 toc
 varargout{1} = fishPos;
 varargout{2} = hOr_corr;
@@ -133,12 +134,10 @@ end
 x = c;
 y = r;
 if orFlag
-    blah= GetMidlines(img,[c,r],lineLen,'plotBool',0);
-    %             hOr{jj} = SmoothenMidline(blah{1}{1},img,nHood);
+    blah= GetMidlines(img,[c,r],lineLen,'plotBool',0);  
     inds = blah{1}{1};
     [yy,xx] = ind2sub(size(img),inds);
-    hOr = [xx,yy];
-    
+    hOr = [xx,yy];    
 else
     hOr = [];
 end

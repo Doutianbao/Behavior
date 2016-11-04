@@ -44,7 +44,7 @@ end
 
 
 %% Processing images block-by-block
-blockSize = 1;
+blockSize = 4;
 cropWid = 90; %( For imgDims ~ [900,900], use 70)
 lineLen = 15;
 nPxls = 25; % # of bright pixels to use for head centroid determination.

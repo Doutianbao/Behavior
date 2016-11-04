@@ -81,9 +81,9 @@ toc
 
 
 %%
-trls = [2 5 7 9 13];  % ctrl
+% trls = [2 5 7 9 13];  % ctrl
 % trls = [3 4 6 11 12] ; % abl
-% trls = 1:nTrls;
+trls = 1:nTrls;
 xLim = [25 250]; % In frames
 cLim = [-225 225];
 yShift = 350;

@@ -128,7 +128,8 @@ W = cell(nPaths,1);
 procData = cell(nPaths,1);
 for pp = 1:nPaths
     cd(pathList{pp})
-    procData{pp} = OpenMatFile();
+    disp(pathList{pp})
+    procData{pp} = OpenMatFile(pathList{pp});
     if isnan(sigmaXY) % Use group sigmaXY
         plotOrNot_new = 0;
         sigmaXY_new = [];

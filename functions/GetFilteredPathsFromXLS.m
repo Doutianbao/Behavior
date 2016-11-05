@@ -19,7 +19,7 @@ fileDir = 'S:\Avinash\Ablations and behavior';
 currDir = cd;
 cd(fileDir)
 if nargin==0
-    [xlFile,xlPath] = uigetfile('*.xlsx');
+    [xlFile,xlPath] = uigetfile('*.xlsx','Select XL sheet with path info...');
     fullPath = fullfile(xlPath,xlFile);
 elseif nargin == 1
     fullPath = varargin{1};     

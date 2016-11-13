@@ -62,7 +62,7 @@ if nargin ==0 || isempty(procData)
 elseif nargin > 0
     try
         if isdir(procData)
-            procData = OpenMatFile(procData);
+            procData = OpenMatFile(procData,'nameMatchStr','proc');
         end
     catch
         a = 1;

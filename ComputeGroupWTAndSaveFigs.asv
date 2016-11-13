@@ -24,7 +24,7 @@ for fish = 1:length(procData);
     [outDir, ~] = fileparts(procData{fish}.Properties.Source);
     subDirName = 'WT';
     outDir = fullfile(outDir,subDirName);
-    if exist(outDir,)~=7
+    if ~exist(outDir,'dir')
         mkdir(outDir)
     end
     close all
@@ -50,13 +50,13 @@ for pp  = 1:length(paths)
         paths{pp} = fullfile(paths{pp},'proc');
     end
 end
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim,'onsetAlign',onsetAlign,'sigmaXY',nan,'plotOrNot',plotOrNot);
+[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,'onsetAlign',onsetAlign,'sigmaXY',nan,'plotOrNot',plotOrNot);
 data.abl.vib = procData;
 for fish = 1:length(procData);
     [outDir, ~] = fileparts(procData{fish}.Properties.Source);
     subDirName = 'WT';
     outDir = fullfile(outDir,subDirName);
-    if exist(outDir,'dir')
+    if ~exist(outDir,'dir')
         mkdir(outDir)
     end
     close all
@@ -66,10 +66,10 @@ for fish = 1:length(procData);
     for fig = 1:length(h)
         saveas(h(fig), fullfile(outDir,['Fig_' sprintf('%.2d',h(fig))]))
     end
-   dispNext = input('Display next set of figures?(y/n): ','s');
-   if strcmpi(dispNext,'n')
-       break
-   end    
+%    dispNext = input('Display next set of figures?(y/n): ','s');
+%    if strcmpi(dispNext,'n')
+%        break
+%    end    
 end
 
 %% Ctrl, dark flash
@@ -96,7 +96,7 @@ if strcmpi(saveOrNot,'y')
     disp('Saving data...')
     tic
     timeStamp = datestr(now,30);
-    fName = ['procData_grp_BilInter_' timeStamp '.mat'];
+    fName = ['procData_grp_' data.ablationType timeStamp '.mat'];
     save(fullfile(outDir,fName),'data');
     toc
 end

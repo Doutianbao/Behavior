@@ -6,7 +6,6 @@ stimTime = 100; % In ms
 
 tailCurv = procData.tailCurv;
 
-
 time = (0:size(tailCurv,3)-1)*(1/fps);
 % time = time-stimTime/1000;
 nTrls = size(tailCurv,3)/nFramesInTrl;

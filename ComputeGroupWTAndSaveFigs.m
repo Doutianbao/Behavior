@@ -16,7 +16,10 @@ for pp  = 1:length(paths)
         paths{pp} = fullfile(paths{pp},'proc');
     end
 end
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,'onsetAlign',onsetAlign,'sigmaXY',nan,'plotOrNot',plotOrNot);
+out = AnalyzeFreeSwims_nCycles_batch(paths(4), 'xLim',[0 750],'paramList',...
+    {'bodyAmp','headAmp'});
+[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',onsetAlign,'sigmaXY',nan,'plotOrNot',plotOrNot);
 data.ctrl.vib = procData;
 data.ablationType = paramVals.AblationType;
 

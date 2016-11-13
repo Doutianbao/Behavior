@@ -188,13 +188,11 @@ toc
 close all
 TrializeTailBendsAndPlot
 disp('Saving trialized tail curvature figures figures...')
-suffix = ['_Trialized tail curvatures_' ts];
+suffix = ['_Trialized tail curvatures_' ];
 h = get(0,'children');
 for fig = 1:length(h)
-    prefix = ['Fig_' sprintf('%0.2d', fig)];
-    saveas(h(fig), fullfile(outDir,[prefix, suffix]))
+    saveas(h(fig),)
 end
-
 %% Motion Info
 % motionThr = 1;
 % % [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);

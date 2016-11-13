@@ -30,13 +30,15 @@ freqChannels = linspace(freqRange(1),freqRange(2),4);
 
 % cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
 if nargin ==0
-    [fileName,pathName] = uigetfile('*.mat');
-    procData = matfile(fullfile(pathName,fileName));
+%     [fileName,pathName] = uigetfile('*.mat');
+%     procData = matfile(fullfile(pathName,fileName));
+    procData = OpenMatFile();
 elseif nargin == 1
     procData = varargin{1};
     if isempty(procData)
-        [fileName,pathName] = uigetfile('*.mat');
-        procData = matfile(fullfile(pathName,fileName));
+%         [fileName,pathName] = uigetfile('*.mat');
+%         procData = matfile(fullfile(pathName,fileName));
+        procData = OpenMatFile();
     end
     fNames = fieldnames(procData);
     if  any(strcmpi(fNames,'fps'))
@@ -48,8 +50,9 @@ elseif nargin == 1
 else
     procData = varargin{1};
     if isempty(procData)
-        [fileName,pathName] = uigetfile('*.mat');
-        procData = matfile(fullfile(pathName,fileName));
+%         [fileName,pathName] = uigetfile('*.mat');
+%         procData = matfile(fullfile(pathName,fileName));
+        procData = OpenMatFile();
     end
     for jj = 1:numel(varargin)
         if ischar(varargin{jj})
@@ -71,7 +74,7 @@ else
     end
 end
 
-cd(pathName)
+% cd(pathName)
 if ~iscell(paramList)
     paramList ={paramList};
 end

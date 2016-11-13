@@ -132,6 +132,11 @@ if onsetAlign
     blah = blah.onset;
     nanInds = [];
     for trl = 1:nTrls
+        try 
+            isempty(blah{trl})
+        catch
+            a = 1;
+        end
         if ~isempty(blah{trl})
             onsets(trl) = blah{trl}(1);
         else

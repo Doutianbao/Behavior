@@ -3,6 +3,7 @@ clear
 procData = OpenMatFile();
 tailCurv = procData.tailCurv;
 midlineInds = procData.midlineInds;
+disp('Reading cropped image stack...')
 IM_proc_crop = procData.IM_proc_crop;
 if sum(strcmpi(fieldnames(procData),'dsVecs'))
    dsVecs = procData.dsVecs;
@@ -14,7 +15,7 @@ TrializeTailBendsAndPlot
 
 
 %% Plot tail curvatures atop moving fish
-trl = 2;
+trl = 17;
 plotCurv = 1;
 writeVideo = 0;
 pauseDur = 0.05;

@@ -4,6 +4,7 @@ t = W.time;
 freq = W.freq;
 cLim = W.cLim;
 cLim_avg = [cLim(1) cLim(2)*0.75];
+cLim_std = [0 10];
 ax = {};
 ax{1} = [1 0.39 0 0.61];
 ax{2} = [1 0.39 0 0.21];
@@ -83,6 +84,57 @@ xlabel('$\Sigma$ power','interpreter','latex')
 
 axes(axH(5))
 y = Standardize(mean(abs(W.tail.avg),1)) - Standardize(mean(abs(W.head.avg),1));
+plot(t,y,'r')
+hold on
+plot(t, zeros(size(t)),'y--')
+box off
+set(gca,'tickdir','out','color','k','xtick',xTick)
+xlim([t(1) t(end)])
+ylim([-inf inf])
+xlabel('Time(ms)')
+ylabel('$\Sigma |T| - \Sigma |H|$','interpreter','latex')
+
+
+% -- Std head and tail --
+fh = figure('Name','Std/Mean WT for head and tail');
+ax{1} =[0.8 0.4 0 0.6];
+ax{2} = [0.2 0.4 0.8 0.6];
+ax{3} = [0.8 0.4 0 0.2];
+ax{4} = [0.2 0.4 0.8 0.2];
+ax{5} = [0.8 0.2 0 0];
+axH = CreateSubaxes(fh,ax{1},ax{2},ax{3},ax{4},ax{5});
+axes(axH(1))
+M_head = abs(W.head.std)./(abs(W.head.avg)+1);
+imagesc(t, freq,M_head)
+set(gca,'ydir','normal','xtick',[],'clim',cLim_std);
+ylabel({'Head' ; 'Freq (Hz)'})
+xlim([t(1) t(end)])
+title('Std/Mean WT for head and tail orientation')
+
+axes(axH(2))
+plot(mean(M_head,2),freq,'g')
+ylim([freq(end) freq(1)])
+box off
+xlim([-inf inf])
+set(gca,'ytick',[],'xaxislocation','top','color','k')
+
+axes(axH(3))
+M_tail = abs(W.tail.std)./(abs(W.tail.avg)+1);
+imagesc(t, freq, M_tail)
+set(gca,'ydir','normal','xtick',[],'clim',cLim_std);
+ylabel({'Tail' ; 'Freq (Hz)'})
+xlim([t(1) t(end)])
+
+axes(axH(4))
+plot(mean(M_tail,2),freq,'m')
+box off
+ylim([freq(end) freq(1)])
+xlim([-inf inf])
+set(gca,'ytick',[],'color','k')
+xlabel('$\Sigma$ power','interpreter','latex')
+
+axes(axH(5))
+y = Standardize(mean(M_tail,1)) - Standardize(mean(M_head,1));
 plot(t,y,'r')
 hold on
 plot(t, zeros(size(t)),'y--')

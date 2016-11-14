@@ -30,15 +30,13 @@ freqChannels = linspace(freqRange(1),freqRange(2),4);
 
 % cd('S:\Avinash\Ablations and behavior\Intermediate RS\20160715')
 if nargin ==0
-%     [fileName,pathName] = uigetfile('*.mat');
-%     procData = matfile(fullfile(pathName,fileName));
     procData = OpenMatFile();
 elseif nargin == 1
     procData = varargin{1};
     if isempty(procData)
-%         [fileName,pathName] = uigetfile('*.mat');
-%         procData = matfile(fullfile(pathName,fileName));
         procData = OpenMatFile();
+    elseif isdir(procData)
+        procData = OpenMatFile(procData,'nameMatchStr','proc');
     end
     fNames = fieldnames(procData);
     if  any(strcmpi(fNames,'fps'))
@@ -50,9 +48,9 @@ elseif nargin == 1
 else
     procData = varargin{1};
     if isempty(procData)
-%         [fileName,pathName] = uigetfile('*.mat');
-%         procData = matfile(fullfile(pathName,fileName));
         procData = OpenMatFile();
+    elseif isdir(procData)
+        procData = OpenMatFile(procData,'nameMatchStr','proc');
     end
     for jj = 1:numel(varargin)
         if ischar(varargin{jj})
@@ -134,7 +132,11 @@ for trl = 1:nTrls
     mT = max(abs(tr));
     dTrace = dTrace_all(:,trl);
     pks2 = GetPks(dTrace,'polarity',0, 'peakThr',pkThr2,'thrType','rel','minPkDist',minIntPts);
+    try
     pks3 = GetPks(tr_head,'polarity',0, 'peakThr',20,'thrType','rel','minPkDist',minIntPts);
+    catch
+        pks3 = GetPks(tr_head,'polarity',0, 'peakThr',20,'thrType','rel','minPkDist',minIntPts);
+    end
     mDT = max(dTrace);
     sf = 0.5*mT/mDT;
     x_trace1 = 0;
@@ -220,7 +222,7 @@ for trl = 1:nTrls
                 [~, ind] = min(abs((time_trl*1000)-x(bend)));
                 out.xwPer{trl}(bend-1) = (1000/freq_pow.freq(ind));
                 out.xWPhase{trl}(bend-1) = freq_pow.phase(ind);
-                for freqChan = 1:numel(freqChannels)-1                    
+                for freqChan = 1:numel(freqChannels)-1
                     fInds = find(freq > freqChannels(freqChan) & freq <= freqChannels(freqChan+1));
                     suffix = [num2str(freqChannels(freqChan)) '_' num2str(freqChannels(freqChan+1))];
                     fldName = ['xw_pow_' suffix];
@@ -276,8 +278,7 @@ for trl = 1:nTrls
             tau = (tau-tau(1));
             B_per = polyfit(tau(:),per(:),1);
             onset_head = x(1)- (preStimPeriod*1000);
-            for bend = 2:numel(x)
-%                 out.HeadOnset{trl}(bend-1) = onset_head;
+            for bend = 2:numel(x)               
                 out.headAmp{trl}(bend-1) = y(bend)-y(bend-1);
                 out.headPer{trl}(bend-1) = x(bend)-x(bend-1);
                 out.headPerSlope{trl}(bend-1) = B_per(1);
@@ -287,7 +288,7 @@ for trl = 1:nTrls
                     fInds = size(Wxy,1)-find(freq > freqChannels(freqChan) & freq <= freqChannels(freqChan+1));
                     suffix = [num2str(freqChannels(freqChan)) '_' num2str(freqChannels(freqChan+1))];
                     fldName = ['head_xw_pow_' suffix];
-                    out.(fldName){trl}(bend-1) = mean(abs(Wxy(fInds,ind)));                   
+                    out.(fldName){trl}(bend-1) = mean(abs(Wxy(fInds,ind)));
                 end
             end
         else

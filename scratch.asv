@@ -43,9 +43,4 @@ end
 data.abl.vib_mean = mean(W_all{2},3);
 data.abl.vib_std = std(W_all{2},[],3);
 data.abl.vib_cv = data.abl.vib_std./(data.abl.vib_mean + 1);
-corrVec = nan(1,nFish);
-for fishNum = 1:nFish
-    corrVec(fishNum) = corr2(data.abl.vib_mean,W_all{2}(:,:,fishNum));
-end
-data.abl.vib_corrVec = corrVec;
 toc

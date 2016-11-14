@@ -131,12 +131,7 @@ if onsetAlign
     blah = procData.elicitedSwimInfo;
     blah = blah.onset;
     nanInds = [];
-    for trl = 1:nTrls
-        try 
-            isempty(blah{trl})
-        catch
-            a = 1;
-        end
+    for trl = 1:nTrls        
         if ~isempty(blah{trl})
             onsets(trl) = blah{trl}(1);
         else
@@ -266,6 +261,16 @@ W.head.coeff(delInds) = [];
 W.head.ts(delInds) = [];
 W.tail.coeff(delInds) = [];
 W.tail.ts(delInds) = [];
+W_all_head = reshape([W.head.coeff{:}],[size(W.head.avg),numel(trlList)]);
+W.head.std = std(W_all_head,[],3);
+W_all_tail = reshape([W.tail.coeff{:}],[size(W.tail.avg),numel(trlList)]);
+W.tail.std = std(W_all_tail,[],3);
+C.head = nan(numel(trlList),1);
+C.tail = C.head;
+for trl = 1:numel(trlList)
+    C.head(trl) = corr2(W.head.coeff{trl},W.head.avg);
+    C.tail(trl) = corr2(W.tail.coeff{trl},W.tail.avg);
+end
 
 if ~isempty(t)
     W.time = t;
@@ -281,6 +286,8 @@ W.freq = freq;
 W.trlList = trlList;
 W.shortTrls = shortTrls;
 W.cLim = data.cLim;
+W.head.corrVec = C.head;
+W.tail.corrVec = C.tail;
 end
 
 function PlotWTs(W)

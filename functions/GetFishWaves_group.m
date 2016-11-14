@@ -137,6 +137,8 @@ for pp = 1:nPaths
         saveToProc_new = 0;
     else
         plotOrNot_new = plotOrNot;
+        saveToProc_new = saveToProc;
+        sigmaXY_new = sigmaXY;
     end
     W{pp}  = GetFishWaves_fish(procData{pp},'hr',headRange,'tr',tailRange,...
         'nFramesInTrl',nFramesInTrl,'fps',fps,'freqRange',freqRange,'dj',dj,...

@@ -5,7 +5,8 @@ xLim_tap = [-50 650];
 xLim_dark = [-100 300];
 onsetAlign = 1;
 plotOrNot = 0;
-data = struct;
+sigmaXY = 100; %(default = NaN);
+cLim = [0 400];
 
 %% Ctrl, tap
 disp('Getting ctrl, tap data...')
@@ -16,10 +17,10 @@ for pp  = 1:length(paths)
         paths{pp} = fullfile(paths{pp},'proc');
     end
 end
-out = AnalyzeFreeSwims_nCycles_batch(paths(4), 'xLim',[0 750],'paramList',...
-    {'bodyAmp','headAmp'});
+% out = AnalyzeFreeSwims_nCycles_batch(paths, 'xLim',[0 750],'paramList',...
+%     {'bodyAmp','headAmp'});
 [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',onsetAlign,'sigmaXY',nan,'plotOrNot',plotOrNot);
+    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim);
 data.ctrl.vib = procData;
 data.ablationType = paramVals.AblationType;
 
@@ -37,10 +38,10 @@ for fish = 1:length(procData);
     for fig = 1:length(h)
         saveas(h(fig), fullfile(outDir,['Fig_' sprintf('%.2d',h(fig))]))
     end
-   dispNext = input('Display next set of figures?(y/n): ','s');
-   if strcmpi(dispNext,'n')
-       break
-   end    
+    dispNext = input('Display next set of figures?(y/n): ','s');
+    if strcmpi(dispNext,'n')
+        break
+    end
 end
 
 
@@ -53,7 +54,10 @@ for pp  = 1:length(paths)
         paths{pp} = fullfile(paths{pp},'proc');
     end
 end
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,'onsetAlign',onsetAlign,'sigmaXY',nan,'plotOrNot',plotOrNot);
+% out = AnalyzeFreeSwims_nCycles_batch(paths(end), 'xLim',[0 750],'paramList',...
+%     {'bodyAmp','headAmp'});
+[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim);
 data.abl.vib = procData;
 for fish = 1:length(procData);
     [outDir, ~] = fileparts(procData{fish}.Properties.Source);
@@ -69,10 +73,10 @@ for fish = 1:length(procData);
     for fig = 1:length(h)
         saveas(h(fig), fullfile(outDir,['Fig_' sprintf('%.2d',h(fig))]))
     end
-%    dispNext = input('Display next set of figures?(y/n): ','s');
-%    if strcmpi(dispNext,'n')
-%        break
-%    end    
+    dispNext = input('Display next set of figures?(y/n): ','s');
+    if strcmpi(dispNext,'n')
+        break
+    end
 end
 
 %% Ctrl, dark flash
@@ -93,6 +97,59 @@ data.abl.dark = procData;
 
 data.ablationType = paramVals.AblationType;
 
+%% The average WT across fish from average WTs for fish across trials
+tic
+W_all = cell(2,1);
+
+%--- Ctrl ---
+disp('Avg WTs from all control fish...')
+var = data.ctrl.vib;
+nFish = length(var);
+for fishNum = 1:nFish
+    disp(['Fish # ' num2str(fishNum)])
+    W = var{fishNum}.W;
+    W = cat(1,W.head.avg,W.tail.avg);
+    if fishNum ==1
+        W_all{1} = W;
+    else
+        W_all{1} = cat(3,W_all{1},W);
+    end    
+end
+data.ctrl.vib_mean = mean(W_all{1},3);
+data.ctrl.vib_std = std(W_all{1},[],3);
+data.ctrl.vib_cv = data.ctrl.vib_std./(data.ctrl.vib_mean + 1);
+corrVec = nan(1,nFish);
+for fishNum = 1:nFish
+    corrVec(fishNum) = corr2(data.ctrl.vib_mean,W_all{1}(:,:,fishNum));
+end
+data.ctrl.vib_corrVec = corrVec;
+
+%--- Abl ---
+disp('Avg WTs from all ablated fish...')
+var = data.abl.vib;
+nFish = length(var);
+for fishNum = 1:nFish
+    disp(['Fish # ' num2str(fishNum)])
+    W = var{fishNum}.W;
+    W = cat(1,W.head.avg,W.tail.avg);
+    if fishNum ==1
+        W_all{2} = W;
+    else
+        W_all{2} = cat(3,W_all{2},W);
+    end    
+end
+
+data.abl.vib_mean = mean(W_all{2},3);
+data.abl.vib_std = std(W_all{2},[],3);
+data.abl.vib_cv = data.abl.vib_std./(data.abl.vib_mean + 1);
+corrVec = nan(1,nFish);
+for fishNum = 1:nFish
+    corrVec(fishNum) = corr2(data.abl.vib_mean,W_all{2}(:,:,fishNum));
+end
+data.abl.vib_corrVec = corrVec;
+toc
+
+
 %% Saving data
 saveOrNot = input('Save group data?(y/n): ', 's');
 if strcmpi(saveOrNot,'y')
@@ -104,15 +161,55 @@ if strcmpi(saveOrNot,'y')
     toc
 end
 
+%% Plot Figs
+ax = {};
+ax{1} = [0.5 0.5 0 0.5];
+ax{2} = [0.5 0.5 0 0];
+ax{3} = [0.5 0.5 0.5 0.5];
+ax{4} = [0.5 0.5 0.5 0];
+fh = figure('Name','Avg WT for ctrl and abl');
+axH = CreateSubaxes(fh,ax{1},ax{2},ax{3},ax{4});
+W = data.ctrl.vib{1}.W;
+freq = W.freq;
+time = W.time;
 
+cl = W.cLim;
+cl(2) = cl(2).^0.6; 
+cl_cv = [0 10];
+midRow = size(data.ctrl.vib_mean,1)/2;
 
-%% Plotting a few SLC and a few LLC responses in ctrl and M-hom abl fish 
-procData_grp = struct;
-[paths_abl, paramVals] = GetFilteredPathsFromXLS();
+%--- Mean head for ctrl --
+axes(axH(1))
+imagesc(time,freq,abs(data.ctrl.vib_mean(1:midRow,:)).^0.5)
+set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
+box off
+title('CONTROL')
+ylabel('Freq (Hz)')
 
-ablInds = 3;
+%--- Mean tail for ctrl --
+axes(axH(2))
+imagesc(time,freq,abs(data.ctrl.vib_mean(midRow+1:end,:)).^0.5)
+set(gca,'clim',cl,'ydir','normal','tickdir','out')
+box off
+xlabel('Time (ms)')
+ylabel('Freq (Hz)')
 
-[paths_ctrl,paramVals] = GetFilteredPathsFromXLS();
+%--- Mean head for abl --
+axes(axH(3))
+imagesc(time,freq,abs(data.abl.vib_mean(1:midRow,:)).^0.5)
+set(gca,'clim',cl,'ydir','normal','tickdir','out','ytick',[],'xtick',[],'yaxislocation','right')
+box off
+ylabel('HEAD')
+title('ABLATED')
+
+%--- CV tail --
+axes(axH(4))
+imagesc(time,freq,abs(data.abl.vib_mean(midRow+1:end,:)).^0.5)
+set(gca,'clim',cl,'ydir','normal','tickdir','out','ytick',[],'yaxislocation','right')
+box off
+xlabel('Time (ms)')
+ylabel('TAIL')
+
 
 
 

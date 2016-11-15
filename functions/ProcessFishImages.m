@@ -1,8 +1,8 @@
-function varargout = FishSwim(varargin)
+function varargout = ProcessFishImages(varargin)
 % FishSwim();
-% procData = FishSwim();
-% procData = FishSwim(imgDir);
-% procData = FishSwim(imgDir,'readMode',readMode,'fps',fps,'imgExt',imgExt,'nFramesInTrl',nFramesInTrl,...
+% procData = ProcessFishImages();
+% procData = ProcessFishImages(imgDir);
+% procData = ProcessFishImages(imgDir,'readMode',readMode,'fps',fps,'imgExt',imgExt,'nFramesInTrl',nFramesInTrl,...
 %   'nHeadPxls',nHeadPxls,'lineLen',lineLen,'spatialFilt',spatialFilt,'imgInds',imgInds,'blockSize',blockSize,'cropWid',cropWid);
 % Inputs:
 % If no inputs are specified, allows for interactive selection of image
@@ -48,8 +48,8 @@ blockSize = 4;
 cropWid = 90; %( For imgDims ~ [900,900])
 poolSize  = 10;
 
-for jj  = 1:nargin
-    if ischar(varrgin{jj})
+for jj  = 2:nargin
+    if ischar(varargin{jj})
         val = varargin{jj+1};
         switch lower(varargin{jj})
             case 'readmode'
@@ -123,7 +123,7 @@ for block = 1:numel(blockInds)-1
     disp('Subtracting background...')
     [im_proc,ref(:,:,block)] = SubtractBackground(IM(:,:,imgFrames));
     if ~isempty(spatialFilt)
-        [fp,hOr_temp] = GetFishPos(im_proc, nHeadhPxls,'filter',spatialFilt,'process','parallel',...
+        [fp,hOr_temp] = GetFishPos(im_proc, nHeadPxls,'filter',spatialFilt,'process','parallel',...
             'lineLen',lineLen);
     else
         [fp,hOr_temp] = GetFishPos(im_proc, nHeadPxls,'process','parallel','lineLen',lineLen);
@@ -184,7 +184,6 @@ catch
     toc
 end
 
-clear IM_proc
 toc
 disp('Saving fish position, ref image, and cropped images....')
 if isempty(imgInds)
@@ -236,9 +235,6 @@ end
 
 %% Saving processed images
 saveOrNot = 'y';
-if isempty(cropWid)
-    cropWid = 70;
-end
 tic
 if strcmpi('y',saveOrNot)
     disp('Cropping images...')

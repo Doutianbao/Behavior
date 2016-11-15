@@ -177,8 +177,8 @@ zerInds  = find(lens==0);
 nonZerInds = setdiff(1:length(mlInds),zerInds);
 if length(mlInds)>1
     for jj = zerInds(:)'
-        if jj==1
-            mlInds{jj} = mlInds{nonZerInds(1)};
+        if jj==1           
+            mlInds{jj} = mlInds{nonZerInds(1)};           
             dsVecs{jj} = dsVecs{nonZerInds(1)};
         elseif jj == length(mlInds)
             mlInds{jj} = mlInds{jj-1};

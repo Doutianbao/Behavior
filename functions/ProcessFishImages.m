@@ -1,46 +1,106 @@
-function FishSwim_batch(imgDir,fishName)
+function varargout = FishSwim(varargin)
+% FishSwim();
+% procData = FishSwim();
+% procData = FishSwim(imgDir);
+% procData = FishSwim(imgDir,'readMode',readMode,'fps',fps,'imgExt',imgExt,'nFramesInTrl',nFramesInTrl,...
+%   'nHeadPxls',nHeadPxls,'lineLen',lineLen,'spatialFilt',spatialFilt,'imgInds',imgInds,'blockSize',blockSize,'cropWid',cropWid);
+% Inputs:
+% If no inputs are specified, allows for interactive selection of image
+%   directory and use default parameters for processing.
+% imgDir - Path to image directory. If empty, allows for interactive
+%   selection of path by selecting any file in the directory.
+% readMode - 'fromImages' or 'fromMishVid'. The former results in reading
+%   of an image sequence, whereas the latter reads .mishVid created by
+%   Misha Ahrens.
+% imgExt - Image extension; reads only images in specified folder with this
+%   extension ['bmp']
+% fps - Frames per second [500].
+% nFramesInTrl = Number of frames in a single trial [750];
+% spatialFilt - Spatial filter used to smooth images before finding fish's
+%   head centroid
+% imgInds - Vector of image indices to read. If empty, reads all images.
+%   By default reads all images
+% nHeadPxls - Number of head pixels; This is the number of pixels to use
+%   for finding head centroid of fish [25]
+% blockSize - Loading all images can take up too much memory, so this
+%   allows processing by splitting total number of images in this many
+%   blocks and processing one block at a time. If empty, or by default
+%   blockSize = 4.
+% cropWid - Crop width. After finding fish, crops image by this width after
+%   aroung the fish to save space
+% lineLen - Length of line in pixels to use for estimating head orienation
+%   [15].
+% Outputs:
+% procData - Mat file saving all relevant info after processing
+% 
+% Avinash Pujala, Koyama lab/HHMI, 2016
 
-
+imgDir = [];
 readMode =  'fromImages';
-% readMode = 'fromMishVid';
-
+imgExt = 'bmp';
+imgInds = [];
+fps = 500;
+nFramesInTrl = 750;
+spatialFilt = 30;
+nHeadPxls = 25;
+lineLen = 15;
+blockSize = 4;
+cropWid = 90; %( For imgDims ~ [900,900])
 poolSize  = 10;
+
+for jj  = 1:nargin
+    if ischar(varrgin{jj})
+        val = varargin{jj+1};
+        switch lower(varargin{jj})
+            case 'readmode'
+                readMode = val;
+            case 'imgext'
+                imgExt = val;
+            case 'imginds'
+                imgInds = val;
+            case 'fps'
+                fps = val;
+            case 'nframesintrl'
+                nFramesInTral = val;
+            case 'spatialfilt'
+                spatialFilt = val;
+            case 'nheadpxls'
+                nHeadPxls = val;
+            case 'linelen'
+                lineLen = val;
+            case 'blocksize'
+                blockSize = val;
+            case 'cropwid'
+                cropWid = val;
+        end
+    end
+end
+
+imgExt(strfind(imgExt,'.'))=[];
+if nargin ==0
+    [~, imgDir] = uigetfile(['*.' imgExt]);
+else
+    imgDir = varargin{1};
+    if isempty(imgDir)
+        [~,imgDir] = uigetfile(['*.' imgExt]);
+    end
+end
+
 switch readMode
-    case 'fromMishVid'
-        fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
+    case 'fromMishVid'       
         [IM, outDir] = ReadMishVid();
         imgInds = 1:size(IM,3);
-    case 'fromImages'
-        %         imgDir = input('Enter fish dir path:  ', 's')
-        %         imgExt = input('Enter image extension, e.g. jpg:  ','s')
-        imgExt = 'bmp';
-        %         imgInds = input('Enter indices of images to read as a vector:  ');
-        imgInds = [];
-        %         fName_prefix = input('Enter fish name, e.g., Fish1: ','s');
-        fName_prefix  = fishName;
-        %         bpMessg =['Filter bandpass for finding fish pos, e.g. [15 25]. ' ...
-        %             'Press enter [] to skip (filtering is recommended if using collimated ' ...
-        %             'light during behavior): '];
-        %         fps = input('Enter frame rate (frames/sec): ');
-        fps = 500;
-        %         nFramesInTrl  = input('# of frames in each trl (default = 750): ');
-        nFramesInTrl = 750;
-        %         bp = input(bpMessg);
-        bp = 30;
-        outDir = fullfile(imgDir,'proc');
+    case 'fromImages'           
         IM = ReadImgSequence(imgDir,imgExt,imgInds);
 end
 
-if exist(outDir)~=7
+outDir = fullfile(imgDir,'proc');
+if ~exist(outDir,'dir')
     mkdir(outDir)
 end
 
 
 %% Processing images block-by-block
-blockSize = 4;
-cropWid = 90; %( For imgDims ~ [900,900], use 70)
-lineLen = 15;
-
 tic
 if matlabpool('size')==0
     matlabpool(poolSize)
@@ -62,11 +122,11 @@ for block = 1:numel(blockInds)-1
         ', images: ' num2str(imgFrames(1)) ' - ' num2str(imgFrames(end))])
     disp('Subtracting background...')
     [im_proc,ref(:,:,block)] = SubtractBackground(IM(:,:,imgFrames));
-    if ~isempty(bp)
-        [fp,hOr_temp] = GetFishPos(im_proc, 25,'filter',bp,'process','parallel',...
+    if ~isempty(spatialFilt)
+        [fp,hOr_temp] = GetFishPos(im_proc, nHeadhPxls,'filter',spatialFilt,'process','parallel',...
             'lineLen',lineLen);
     else
-        [fp,hOr_temp] = GetFishPos(im_proc, 25,'process','parallel','lineLen',lineLen);
+        [fp,hOr_temp] = GetFishPos(im_proc, nHeadPxls,'process','parallel','lineLen',lineLen);
     end
     fishPos(imgFrames,:) = fp;
     hOr(imgFrames) = hOr_temp;
@@ -96,7 +156,6 @@ toc
 
 %% Cropping images, adjusting head orientation vector for cropped images, and saving
 tic
-
 disp('Adjusting head orientation vector for cropped images...')
 hOr_crop = hOr;
 imgDims = size(IM);
@@ -121,7 +180,7 @@ try
 catch
     disp('Getting head orientation in cropped stack...')
     tic
-    [~,hOr_crop] =  GetFishPos(IM_proc_crop, 25,'filter',bp,'process','parallel','lineLen',15);
+    [~,hOr_crop] =  GetFishPos(IM_proc_crop, nHeadPxls,'filter',spatialFilt,'process','parallel','lineLen',lineLen);
     toc
 end
 
@@ -131,8 +190,6 @@ disp('Saving fish position, ref image, and cropped images....')
 if isempty(imgInds)
     imgInds = 1:size(IM,3);
 end
-fName_suffix = [num2str(round(imgInds(1)/60/30)) '-' num2str(round(imgInds(end)/60/30)) 'mins'];
-fName = strcat(fName_prefix,'_',fName_suffix);
 ts = datestr(now,30);
 procData = matfile(fullfile(outDir,['procData_' ts '.mat']),'Writable',true);
 procData.fishPos = fishPos;
@@ -149,22 +206,12 @@ tic
 fp = repmat(ceil([size(IM_proc_crop,1), size(IM_proc_crop,2)]/2),size(fishPos,1),1);
 [midlineInds,dsVecs,failedInds] = GetMidlinesByThinning(IM_proc_crop,...
     'fishPos',fp,'process','parallel','plotBool',1,'kerSize',9);
-
 toc
-
-if ~exist('nFramesInTrl')
-    nFramesInTrl = 750; %(Default when collecting images at 500 fps)
-elseif isempty(nFramesInTrl)
-    nFramesInTrl = 750;
-end
 
 nTrls = size(IM_proc_crop,3)/nFramesInTrl;
 trlStartFrames =  (0:nTrls-1)*750 + 1;
 [tailCurv, tailCurv_uncorrected] = SmoothenMidlines(midlineInds,IM_proc_crop,3,'plotBool',0,...
     'pauseDur',0,'smoothFactor',8,'dsVecs',dsVecs,'trlStartFrames',trlStartFrames);
-
-% orientation = GetFishOrientationFromMidlineInds(midlineInds,imgDims(1:2),'s');
-% orientation_backup = orientation;
 
 disp('Saving midline inds, and tailCurv...')
 % procData.orientation = orientation;
@@ -176,16 +223,19 @@ procData.nFramesInTrl = nFramesInTrl;
 toc
 
 %% Plot trialized tail bends
+close all
 TrializeTailBendsAndPlot
+disp('Saving trialized tail curvature figures figures...')
+suffix = ['_Trialized tail curvatures_' ts];
+h = get(0,'children');
+for fig = 1:length(h)
+    prefix = ['Fig_' sprintf('%0.2d', fig)];
+    saveas(h(fig), fullfile(outDir,[prefix, suffix]))
+end
 
-%% Motion Info
-% motionThr = 1;
-% % [motionFrames, swimStartFrames] = GetMotionFrames(fishPos,motionThr);
-% motionInfo = GetMotionInfo(fishPos,orientation,imgDims(1),'motionThr',motionThr);
 
 %% Saving processed images
 saveOrNot = 'y';
-
 if isempty(cropWid)
     cropWid = 70;
 end

@@ -37,6 +37,8 @@ function varargout = GetFishWaves_group(pathList,varargin)
 % 'onsetAlign' = 0 or 1. If 1, aligns timeseries of different trials based
 %   onset of response (stored in procData.elicitedSwimInfo). If 0, aligns
 %   w.r.t stimulus frame
+% traceType - 'headTail','curv','both'. If 'headTail', plots head and tail
+%   orientations; 'curv' - plots total body curvature; 'both' - plots both.
 % Outputs:
 % W - Cell array containig wavelet transform data for each fish
 % procData - Cell array containing pointers to procData.mat files
@@ -60,6 +62,7 @@ stimTime = 100; % In ms
 cLim = [1 100];
 onsetAlign = 1;
 saveToProc = 1;
+traceType = 'headTail'; %('headTail','curv','both');
 
 currPath = cd;
 if nargin ==0 || isempty(pathList)
@@ -82,41 +85,44 @@ if ~iscell(pathList)
 end
 for jj = 1:numel(varargin)
     if ischar(varargin{jj})
+        val = varargin{jj+1};
         switch lower(varargin{jj})
             case 'hr'
-                headRange = varargin{jj+1};
+                headRange = val;
             case 'tr'
-                tailRange = varargin{jj+1};
+                tailRange = val;
             case lower('nFramesInTrl')
-                nFramesInTrl = varargin{jj+1};
+                nFramesInTrl = val;
             case 'fps'
-                fps = varargin{jj+1};
+                fps = val;
             case 'dj'
-                dj = varargin{jj+1};
+                dj = val;
             case 'freqrange'
-                freqRange = varargin{jj+1};
+                freqRange = val;
             case 'freqscale'
-                freqScale = varargin{jj+1};
+                freqScale = val;
             case 'noisetype'
-                noiseType = varargin{jj+1};
+                noiseType = val;
             case 'stringency'
-                stringency = varargin{jj+1};
+                stringency = val;
             case 'sigmaxy'
-                sigmaXY = varargin{jj+1};
+                sigmaXY = val;
             case 'plotornot'
-                plotOrNot = varargin{jj+1};
+                plotOrNot = val;
             case 'trllist'
-                trlList = varargin{jj+1};
+                trlList = val;
             case 'xlim'
-                xLim = varargin{jj+1};
+                xLim = val;
             case 'clim'
-                cLim = varargin{jj+1};
+                cLim = val;
             case 'stimtime'
-                stimTime = varargin{jj+1};
+                stimTime = val;
             case 'onsetalign'
-                onsetAlign = varargin{jj+1};
+                onsetAlign = val;
             case 'savetoproc'
-                saveToProc = varargin{jj+1};
+                saveToProc = val;
+            case 'tracetype'
+                traceType = val;
         end
     end
 end
@@ -144,7 +150,7 @@ for pp = 1:nPaths
         'nFramesInTrl',nFramesInTrl,'fps',fps,'freqRange',freqRange,'dj',dj,...
         'plotOrNot',plotOrNot_new,'xLim',xLim,'cLim',cLim,'stimTime',stimTime,...
         'onsetAlign',onsetAlign,'saveToProc',saveToProc_new,'noiseType',noiseType,...
-        'stringency',stringency,'sigmaXY',sigmaXY_new);
+        'stringency',stringency,'sigmaXY',sigmaXY_new,'traceType', traceType);
     sigmaXY_grp(pp) = W{pp}.sigma.ht;
     disp(['Completed for ' pathList{pp}])
 end

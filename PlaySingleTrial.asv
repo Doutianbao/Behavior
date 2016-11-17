@@ -15,10 +15,10 @@ TrializeTailBendsAndPlot
 
 
 %% Plot tail curvatures atop moving fish
-trl = 3;
+trl = ;
 plotCurv = 1;
 writeVideo = 0;
-pauseDur = [];
+pauseDur = 0.05;
 inds = (trl-1)*750 + 70: (trl-1)*750 + 750;
 % var1 = IM_proc_crop(:,:,inds);
 % var2 = repmat([71 71],numel(inds),1);

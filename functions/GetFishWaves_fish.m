@@ -53,6 +53,7 @@ cLim = [1 100];
 onsetAlign = 1;
 saveToProc = 1;
 sigmaXY = [];
+traceType = 'headTail';
 
 if nargin ==0 || isempty(procData)
     disp('Getting procData...')
@@ -69,43 +70,46 @@ elseif nargin > 0
     end
 end
 
-for jj = 1:numel(varargin)
+for jj = 2:numel(varargin)
     if ischar(varargin{jj})
+        val = varargin{jj};
         switch lower(varargin{jj})
             case 'hr'
-                headRange = varargin{jj+1};
+                headRange = val;
             case 'tr'
-                tailRange = varargin{jj+1};
+                tailRange = val;
             case lower('nFramesInTrl')
-                nFramesInTrl = varargin{jj+1};
+                nFramesInTrl = val;
             case 'fps'
-                fps = varargin{jj+1};
+                fps = val;
             case 'dj'
-                dj = varargin{jj+1};
+                dj = val;
             case 'freqrange'
-                freqRange = varargin{jj+1};
+                freqRange = val;
             case 'freqscale'
-                freqScale = varargin{jj+1};
+                freqScale = val;
             case 'noisetype'
-                noiseType = varargin{jj+1};
+                noiseType = val;
             case 'stringency'
-                stringency = varargin{jj+1};
+                stringency = val;
             case 'sigmaxy'
-                sigmaXY = varargin{jj+1};
+                sigmaXY =val;
             case 'plotornot'
-                plotOrNot = varargin{jj+1};
+                plotOrNot = val;
             case 'trllist'
-                trlList = varargin{jj+1};
+                trlList = val;
             case 'xlim'
-                xLim = varargin{jj+1};
+                xLim = val;
             case 'clim'
-                cLim = varargin{jj+1};
+                cLim = val;
             case 'stimtime'
-                stimTime = varargin{jj+1};
+                stimTime = val;
             case 'onsetalign'
-                onsetAlign = varargin{jj+1};
+                onsetAlign = val;
             case 'savetoproc'
-                saveToProc = varargin{jj+1};
+                saveToProc = val;
+            case 'tracetype'
+                traceType = val;
         end
     end
 end
@@ -113,17 +117,26 @@ end
 %% Compute head and tail segment orientations
 disp('Reading tailCurv...')
 tailCurv = procData.tailCurv;
-disp('Getting head orientation...')
-or.head = GetSegOrientationFromTailCurv(tailCurv,headRange);
-disp('Getting tail orientation')
-or.tail = GetSegOrientationFromTailCurv(tailCurv,tailRange);
 nTrls = size(tailCurv,3)/nFramesInTrl;
-or.head_trl = reshape(or.head,nFramesInTrl,nTrls)';
-or.head_trl = or.head_trl - repmat(or.head_trl(:,1),1,size(or.head_trl,2)); % Zero 1st point in trl
-or.head = reshape(or.head_trl',1,numel(or.head_trl)); % To prevent outrageous std because of jumps at start of trls
-or.tail_trl = reshape(or.tail,nFramesInTrl,nTrls)';
-or.tail_trl = or.tail_trl - repmat(or.tail_trl(:,1),1,size(or.tail_trl,2));
-or.tail = reshape(or.tail_trl',1,numel(or.tail_trl));
+if strcmpi(traceType, 'headTail') || strcmpi(traceType,'both')
+    disp('Getting head orientation...')
+    or.head = GetSegOrientationFromTailCurv(tailCurv,headRange);
+    disp('Getting tail orientation...')
+    or.tail = GetSegOrientationFromTailCurv(tailCurv,tailRange);
+    or.head_trl = reshape(or.head,nFramesInTrl,nTrls)';
+    or.head_trl = or.head_trl - repmat(or.head_trl(:,1),1,size(or.head_trl,2)); % Zero 1st point in trl
+    or.head = reshape(or.head_trl',1,numel(or.head_trl)); % To prevent outrageous std because of jumps at start of trls
+    or.tail_trl = reshape(or.tail,nFramesInTrl,nTrls)';
+    or.tail_trl = or.tail_trl - repmat(or.tail_trl(:,1),1,size(or.tail_trl,2));
+    or.tail = reshape(or.tail_trl',1,numel(or.tail_trl));
+    data.or = or;
+elseif strcmpi(traceType, 'curv') || strcmpi(traceType,'both')
+    disp('Getting whole body curvature...')
+    curv = GetTailTangents(tailCurv,5);
+    curv.trl = reshape(curv,nFramesInTrl,nTrls);
+    data.curv_trl = curv_trl;  
+end
+
 time_trl = (0:nFramesInTrl-1)*1000/fps; % In ms
 
 if onsetAlign
@@ -144,7 +157,6 @@ else
     onsets = repmat(stimTime,nTrls,1);
 end
 
-data.or = or;
 data.time = time_trl;
 if isempty(trlList)
     trlList = 1:nTrls;
@@ -164,11 +176,18 @@ data.freqScale = freqScale;
 data.xLim = xLim;
 data.sigmaXY = sigmaXY;
 data.cLim = cLim;
-
+data.noiseType = noiseType;
+data.traceType = traceType;
 
 
 %% Computing wavelet transforms
-W = GetWTs(data);
+if strcmpi(traceType,'headTail')
+    W = GetWTs_headTail(data);
+elseif strcmpi(traceType,'curv')
+    W = GetWTs_curv(data);
+elseif strcmpi(traceType,'both')
+    W = MergeStructs(GetWTs_headTail(data), GetWTs_curv(data));
+end
 
 %% Plotting wavelet transforms
 if plotOrNot   
@@ -187,16 +206,18 @@ varargout{1} = W;
 
 end
 
-function W = GetWTs(data)
+function W = GetWTs_headTail(data)
 trlList = data.trlList;
 nTrls = numel(trlList);
 xLim = data.xLim;
 time = data.time;
+noiseType = data.noiseType;
 fps = data.fps;
 sigmaXY = data.sigmaXY;
 tLen_exp = (abs(diff(xLim))/1000)*fps;
 freqRange = data.freqRange;
 onsets = data.onsets;
+
 disp('Computing wavelet transforms...')
 W.head.coeff = cell(nTrls,1);
 W.tail.coeff = W.head.coeff;
@@ -208,11 +229,10 @@ W.time = [];
 if isempty(sigmaXY)
     sigma.hh = std(chebfilt(data.or.head,1/fps,freqRange));
     sigma.tt =  std(chebfilt(data.or.tail,1/fps,freqRange));
-    sigma.ht = sigma.hh*sigma.tt;
+    sigma.ht = sigma.hh*sigma.tt;    
 else
     sigma.ht = sigmaXY;
 end
-
 shortTrls = [];
 count = 0;
 responseCount = 0;
@@ -233,9 +253,9 @@ for trl = trlList(:)'
         y = y(tInds);
         [W.head.ts{count},W.tail.ts{count}] = deal(x,y);
         [W.head.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
-            'sigmaXY',sigma.ht,'freqScale',data.freqScale);
+            'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);
         [W.tail.coeff{count},~] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
-            'sigmaXY',sigma.ht,'freqScale',data.freqScale);
+            'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);
         if  (~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})) && firstNonZeroFlag
             W.head.avg = W.head.coeff{count};
             W.tail.avg = W.tail.coeff{count};
@@ -248,8 +268,7 @@ for trl = trlList(:)'
                 responseCount = responseCount  + 1;
                 W.head.avg = W.head.avg + W.head.coeff{count};
                 W.tail.avg = W.tail.avg + W.tail.coeff{count};
-            end
-            
+            end            
         end
     end
 end
@@ -288,6 +307,91 @@ W.shortTrls = shortTrls;
 W.cLim = data.cLim;
 W.head.corrVec = C.head;
 W.tail.corrVec = C.tail;
+end
+
+function W = GetWTs_curv(data)
+trlList = data.trlList;
+nTrls = numel(trlList);
+xLim = data.xLim;
+time = data.time;
+noiseType = data.noiseType;
+fps = data.fps;
+sigmaXY = data.sigmaXY;
+tLen_exp = (abs(diff(xLim))/1000)*fps;
+freqRange = data.freqRange;
+onsets = data.onsets;
+
+disp('Computing wavelet transforms...')
+W.curv.coeff = cell(nTrls,1);
+W.tail.coeff = W.head.coeff;
+W.curv.ts = W.head.coeff;
+W.curv.avg = [];
+W.time = [];
+if isempty(sigmaXY)
+    sigma.curv = std(chebfilt(data.curv,1/fps,freqRange))^2;
+else
+    sigma.curv = sigmaXY;
+end
+shortTrls = [];
+count = 0;
+responseCount = 0;
+firstNonZeroFlag = 1;
+t = [];
+for trl = trlList(:)'
+    count = count + 1;
+    onInd = find(time>= onsets(count),1,'first');
+    time_align = time - time(onInd);
+    tInds = find(time_align >= xLim(1) & time_align <= xLim(2));
+    if numel(tInds)< tLen_exp
+        shortTrls = [shortTrls,trl];
+    else
+        t  = time_align(tInds);
+        x = chebfilt(data.curv_trl(trl,:),1/fps,freqRange);
+        x = x(tInds);       
+        W.curv.ts{count} = x;
+        [W.curv.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+            'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);   
+        if  ~isempty(W.curv.coeff{count}) && firstNonZeroFlag
+            W.curv.avg = W.curv.coeff{count};            
+            firstNonZeroFlag = 0;
+            responseCount = 1;
+        elseif ~isempty(W.curv.coeff{count})           
+            if any(size(W.curv.avg) ~= size(W.curv.coeff{count}));
+                shortTrls = [shortTrls,trl];
+            else
+                responseCount = responseCount  + 1;
+                W.curv.avg = W.curv.avg + W.curv.coeff{count};                
+            end            
+        end
+    end
+end
+W.curv.avg = W.curv.avg/responseCount;
+[~,delInds] = intersect(trlList,shortTrls);
+trlList = setdiff(trlList,shortTrls);
+W.curv.coeff(delInds) = [];
+W.curv.ts(delInds) = [];
+W_all_curv = reshape([W.curv.coeff{:}],[size(W.curv.avg),numel(trlList)]);
+W.curv.std = std(W_all_curv,[],3);
+C.curv = nan(numel(trlList),1);
+for trl = 1:numel(trlList)
+    C.curv(trl) = corr2(W.curv.coeff{trl},W.curv.avg); 
+end
+
+if ~isempty(t)
+    W.time = t;
+else
+    error('Not a single complete trial found, please check X limits!')
+end
+W.freqRange = data.freqRange;
+W.stringency = data.stringency;
+W.sigma = sigma;
+W.freqScale = data.freqScale;
+W.dj = data.dj;
+W.freq = freq;
+W.trlList = trlList;
+W.shortTrls = shortTrls;
+W.cLim = data.cLim;
+W.curv.corrVec = C.curv;
 end
 
 function PlotWTs(W)

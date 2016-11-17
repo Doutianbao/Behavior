@@ -6,7 +6,8 @@ xLim_dark = [-100 300];
 onsetAlign = 1;
 plotOrNot = 0;
 sigmaXY = 100; %(default = NaN);
-cLim = [0 400];
+cLim = [0 200];
+freqRange_dark = [5 35];
 
 %% Ctrl, tap
 disp('Getting ctrl, tap data...')
@@ -19,7 +20,7 @@ for pp  = 1:length(paths)
 end
 % out = AnalyzeFreeSwims_nCycles_batch(paths, 'xLim',[0 750],'paramList',...
 %     {'bodyAmp','headAmp'});
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
+[~, procData] = GetFishWaves_group(paths(1), 'saveToProc',1,'xLim',xLim_tap,...
     'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim);
 data.ctrl.vib = procData;
 data.ablationType = paramVals.AblationType;
@@ -88,11 +89,11 @@ for pp  = 1:length(paths)
         paths{pp} = fullfile(paths{pp},'proc');
     end
 end
-out = AnalyzeFreeSwims_nCycles_batch(paths(1), 'xLim',[0 1500],'paramList',...
-    {'bodyAmp','headAmp'});
+% out = AnalyzeFreeSwims_nCycles_batch(paths, 'xLim',[0 1500],'paramList',...
+%     {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_dark,...
-    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim);
+[~, procData] = GetFishWaves_group(paths(1), 'saveToProc',1,'xLim',xLim_dark,...
+    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,'freqRange',freqRange_dark,'noiseType','white');
 data.ctrl.dark = procData;
 for fish = 1:length(procData);
     [outDir, ~] = fileparts(procData{fish}.Properties.Source);

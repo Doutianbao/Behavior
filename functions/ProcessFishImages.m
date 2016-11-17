@@ -1,5 +1,108 @@
 function varargout = ProcessFishImages(varargin)
-% FishSwim();
+% ProcessFishImages(pathList);
+% procData = ProcessFishImages(pathList);
+% procData = ProcessFishImages(pathList,'readMode',readMode,'fps',fps,'imgExt',imgExt,'nFramesInTrl',nFramesInTrl,...
+%   'nHeadPxls',nHeadPxls,'lineLen',lineLen,'spatialFilt',spatialFilt,'imgInds',imgInds,'blockSize',blockSize,'cropWid',cropWid);
+% Inputs:
+% If no inputs are specified, allows for interactive selection of image
+%   directory and use default parameters for processing.
+% pathList - Cell array of paths, where each path points to the location of
+%   a set of images such as all vibration or dark flash trials from an
+%   experiment.
+% readMode - 'fromImages' or 'fromMishVid'. The former results in reading
+%   of an image sequence, whereas the latter reads .mishVid created by
+%   Misha Ahrens.
+% imgExt - Image extension; reads only images in specified folder with this
+%   extension ['bmp']
+% fps - Frames per second [500].
+% nFramesInTrl = Number of frames in a single trial [750];
+% spatialFilt - Spatial filter used to smooth images before finding fish's
+%   head centroid
+% imgInds - Vector of image indices to read. If empty, reads all images.
+%   By default reads all images
+% nHeadPxls - Number of head pixels; This is the number of pixels to use
+%   for finding head centroid of fish [25]
+% blockSize - Loading all images can take up too much memory, so this
+%   allows processing by splitting total number of images in this many
+%   blocks and processing one block at a time. If empty, or by default
+%   blockSize = 4.
+% cropWid - Crop width. After finding fish, crops image by this width after
+%   aroung the fish to save space
+% lineLen - Length of line in pixels to use for estimating head orienation
+%   [15].
+% Outputs:
+% procData - Mat file saving all relevant info after processing
+% 
+% Avinash Pujala, Koyama lab/HHMI, 2016
+
+readMode =  'fromImages';
+imgExt = 'bmp';
+imgInds = [];
+fps = 500;
+nFramesInTrl = 750;
+spatialFilt = 30;
+nHeadPxls = 25;
+lineLen = 15;
+blockSize = 4;
+cropWid = 90; %( For imgDims ~ [900,900])
+
+for jj  = 2:nargin
+    if ischar(varargin{jj})
+        val = varargin{jj+1};
+        switch lower(varargin{jj})
+            case 'readmode'
+                readMode = val;
+            case 'imgext'
+                imgExt = val;
+            case 'imginds'
+                imgInds = val;
+            case 'fps'
+                fps = val;
+            case 'nframesintrl'
+                nFramesInTral = val;
+            case 'spatialfilt'
+                spatialFilt = val;
+            case 'nheadpxls'
+                nHeadPxls = val;
+            case 'linelen'
+                lineLen = val;
+            case 'blocksize'
+                blockSize = val;
+            case 'cropwid'
+                cropWid = val;
+        end
+    end
+end
+
+pathList = varargin{1};
+if length(pathList) ==1  && ~iscell(pathList)
+    pathList = {pathList}; % Encapsulate single path string in a cell.
+    
+end
+procData = cell(length(pathList),1);
+
+tic
+for pp = 1:length(pathList)
+    [currPath,currFile] = fileparts(pathList{pp});
+   if ~strcmpi(currFile,'proc')
+      currPath = fullfile(currPath,currFile);
+   end
+    fprintf('Processing ... \n')
+    disp(currPath)
+    procData{pp} = ProcessFishImages_subset(currPath,'readMode',readMode,'imgInds',imgInds,'fps',fps,...
+        'imgExt',imgExt,'nFramesInTrl',nFramesInTrl,'nHeadPxls',nHeadPxls,'lineLen',lineLen,...
+        'spatialFilt',spatialFilt,'blockSize',blockSize,'cropWid',cropWid);
+    toc
+end
+toc
+
+varargout{1}= procData;
+
+end
+
+
+function varargout = ProcessFishImages_subset(varargin)
+% ProcessFishImages();
 % procData = ProcessFishImages();
 % procData = ProcessFishImages(imgDir);
 % procData = ProcessFishImages(imgDir,'readMode',readMode,'fps',fps,'imgExt',imgExt,'nFramesInTrl',nFramesInTrl,...
@@ -137,23 +240,6 @@ ref = mean(ref,3);
 clear im_proc fp hOr_temp
 toc
 
-%% Background subtraction
-% [IM_proc, ref] = SubtractBackground(IM);
-% imgDims = size(IM_proc);
-
-
-%% Tracking the fish
-% tic
-% disp('Getting fish pos...')
-% if ~isempty(bp)
-%     %     fishPos = GetFishPos(IM_proc, 30,'filter',bp,'process','parallel');
-%     [fishPos,hOr] = GetFishPos(IM_proc, 25,'filter',bp,'process','parallel','lineLen',15);
-% else
-%     [fishPos,hOr] = GetFishPos(IM_proc, 25,'process','parallel','lineLen',15);
-%     %     fishPos = GetFishPos(IM_proc, 30,'process','serial');
-% end
-% toc
-
 %% Cropping images, adjusting head orientation vector for cropped images, and saving
 tic
 disp('Adjusting head orientation vector for cropped images...')
@@ -213,7 +299,6 @@ trlStartFrames =  (0:nTrls-1)*750 + 1;
     'pauseDur',0,'smoothFactor',8,'dsVecs',dsVecs,'trlStartFrames',trlStartFrames);
 
 disp('Saving midline inds, and tailCurv...')
-% procData.orientation = orientation;
 procData.hOr_crop = hOr_crop;
 procData.midlineInds = midlineInds;
 procData.dsVecs = dsVecs;
@@ -251,6 +336,6 @@ else
 end
 toc
 
-
+varargout{1} = procData;
 
 end

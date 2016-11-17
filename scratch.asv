@@ -1,46 +1,18 @@
-%% The average WT across fish from average WTs for fish across trials
-tic
-W_all = cell(2,1);
 
-%--- Ctrl ---
-disp('Avg WTs from all control fish...')
-var = data.ctrl.vib;
-nFish = length(var);
-for fishNum = 1:nFish
-    disp(['Fish # ' num2str(fishNum)])
-    W = var{fishNum}.W;
-    W = cat(1,W.head.avg,W.tail.avg);
-    if fishNum ==1
-        W_all{1} = W;
+
+count = 0;
+repeat = true;
+while count < 5 && repeat
+    count = count + 1;
+    if strcmpi(saveOrNot,'y')
+        procData.Properties.Writable = true;
+        procData.hOr = curv_head;
+        procData.elicitedSwimInfo = out;
+        repeat = false;
+    elseif strcmpi(saveOrNot,'n')
+        disp('Data not appended to procData!')
+        repeat = false;
     else
-        W_all{1} = cat(3,W_all{1},W);
-    end    
+        repeat = true;
+    end
 end
-data.ctrl.vib_mean = mean(W_all{1},3);
-data.ctrl.vib_std = std(W_all{1},[],3);
-data.ctrl.vib_cv = data.ctrl.vib_std./(data.ctrl.vib_mean + 1);
-corrVec = nan(1,nFish);
-for fishNum = 1:nFish
-    corrVec(fishNum) = corr2(data.ctrl.vib_mean,W_all{1}(:,:,fishNum));
-end
-data.ctrl.vib_corrVec = corrVec;
-
-%--- Abl ---
-disp('Avg WTs from all ablated fish...')
-var = data.abl.vib;
-nFish = length(var);
-for fishNum = 1:nFish
-    disp(['Fish # ' num2str(fishNum)])
-    W = var{fishNum}.W;
-    W = cat(1,W.head.avg,W.tail.avg);
-    if fishNum ==1
-        W_all{2} = W;
-    else
-        W_all{2} = cat(3,W_all{2},W);
-    end    
-end
-
-data.abl.vib_mean = mean(W_all{2},3);
-data.abl.vib_std = std(W_all{2},[],3);
-data.abl.vib_cv = data.abl.vib_std./(data.abl.vib_mean + 1);
-toc

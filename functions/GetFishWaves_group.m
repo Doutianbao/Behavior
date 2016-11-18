@@ -84,45 +84,44 @@ if ~iscell(pathList)
     pathList = {pathList};
 end
 for jj = 1:numel(varargin)
-    if ischar(varargin{jj})
-        val = varargin{jj+1};
+    if ischar(varargin{jj})        
         switch lower(varargin{jj})
             case 'hr'
-                headRange = val;
+                headRange = varargin{jj+1};
             case 'tr'
                 tailRange = val;
             case lower('nFramesInTrl')
-                nFramesInTrl = val;
+                nFramesInTrl = varargin{jj+1};
             case 'fps'
-                fps = val;
+                fps = varargin{jj+1};
             case 'dj'
-                dj = val;
+                dj = varargin{jj+1};
             case 'freqrange'
-                freqRange = val;
+                freqRange = varargin{jj+1};
             case 'freqscale'
-                freqScale = val;
+                freqScale = varargin{jj+1};
             case 'noisetype'
-                noiseType = val;
+                noiseType = varargin{jj+1};
             case 'stringency'
-                stringency = val;
+                stringency = varargin{jj+1};
             case 'sigmaxy'
-                sigmaXY = val;
+                sigmaXY = varargin{jj+1};
             case 'plotornot'
-                plotOrNot = val;
+                plotOrNot = varargin{jj+1};
             case 'trllist'
-                trlList = val;
+                trlList = varargin{jj+1};
             case 'xlim'
-                xLim = val;
+                xLim = varargin{jj+1};
             case 'clim'
-                cLim = val;
+                cLim = varargin{jj+1};
             case 'stimtime'
-                stimTime = val;
+                stimTime = varargin{jj+1};
             case 'onsetalign'
-                onsetAlign = val;
+                onsetAlign = varargin{jj+1};
             case 'savetoproc'
-                saveToProc = val;
+                saveToProc = varargin{jj+1};
             case 'tracetype'
-                traceType = val;
+                traceType = varargin{jj+1};
         end
     end
 end
@@ -151,7 +150,9 @@ for pp = 1:nPaths
         'plotOrNot',plotOrNot_new,'xLim',xLim,'cLim',cLim,'stimTime',stimTime,...
         'onsetAlign',onsetAlign,'saveToProc',saveToProc_new,'noiseType',noiseType,...
         'stringency',stringency,'sigmaXY',sigmaXY_new,'traceType', traceType);
-    sigmaXY_grp(pp) = W{pp}.sigma.ht;
+    fldName = fieldnames(W{pp}.sigma);
+    fldName = fldName{1};
+    sigmaXY_grp(pp) = W{pp}.sigma.(fldName);
     disp(['Completed for ' pathList{pp}])
 end
 

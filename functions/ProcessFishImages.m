@@ -46,36 +46,35 @@ lineLen = 15;
 blockSize = 4;
 cropWid = 90; %( For imgDims ~ [900,900])
 
-for jj  = 2:nargin
-    if ischar(varargin{jj})
-        val = varargin{jj+1};
+for jj  = 1:nargin
+    if ischar(varargin{jj})        
         switch lower(varargin{jj})
             case 'readmode'
-                readMode = val;
+                readMode = varargin{jj+1};
             case 'imgext'
-                imgExt = val;
+                imgExt = varargin{jj+1};
             case 'imginds'
-                imgInds = val;
+                imgInds = varargin{jj+1};
             case 'fps'
                 fps = val;
             case 'nframesintrl'
-                nFramesInTral = val;
+                nFramesInTral = varargin{jj+1};
             case 'spatialfilt'
-                spatialFilt = val;
+                spatialFilt = varargin{jj+1};
             case 'nheadpxls'
-                nHeadPxls = val;
+                nHeadPxls = varargin{jj+1};
             case 'linelen'
-                lineLen = val;
+                lineLen = varargin{jj+1};
             case 'blocksize'
-                blockSize = val;
+                blockSize = varargin{jj+1};
             case 'cropwid'
-                cropWid = val;
+                cropWid = varargin{jj+1};
         end
     end
 end
 
 pathList = varargin{1};
-if length(pathList) ==1  && ~iscell(pathList)
+if ~iscell(pathList)
     pathList = {pathList}; % Encapsulate single path string in a cell.
     
 end

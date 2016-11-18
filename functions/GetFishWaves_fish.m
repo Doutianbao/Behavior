@@ -70,46 +70,45 @@ elseif nargin > 0
     end
 end
 
-for jj = 2:numel(varargin)
-    if ischar(varargin{jj})
-        val = varargin{jj};
+for jj = 1:numel(varargin)   
+    if ischar(varargin{jj})      
         switch lower(varargin{jj})
             case 'hr'
-                headRange = val;
+                headRange =varargin{jj+1};
             case 'tr'
-                tailRange = val;
+                tailRange = varargin{jj+1};
             case lower('nFramesInTrl')
-                nFramesInTrl = val;
+                nFramesInTrl = varargin{jj+1};
             case 'fps'
-                fps = val;
+                fps = varargin{jj+1};
             case 'dj'
-                dj = val;
+                dj = varargin{jj+1};
             case 'freqrange'
-                freqRange = val;
+                freqRange = varargin{jj+1};
             case 'freqscale'
-                freqScale = val;
+                freqScale = varargin{jj+1};
             case 'noisetype'
-                noiseType = val;
+                noiseType = varargin{jj+1};
             case 'stringency'
-                stringency = val;
+                stringency = varargin{jj+1};
             case 'sigmaxy'
-                sigmaXY =val;
+                sigmaXY = varargin{jj+1};
             case 'plotornot'
-                plotOrNot = val;
+                plotOrNot = varargin{jj+1};
             case 'trllist'
-                trlList = val;
+                trlList = varargin{jj+1};
             case 'xlim'
-                xLim = val;
+                xLim = varargin{jj+1};
             case 'clim'
-                cLim = val;
+                cLim = varargin{jj+1};
             case 'stimtime'
-                stimTime = val;
+                stimTime = varargin{jj+1};
             case 'onsetalign'
-                onsetAlign = val;
+                onsetAlign = varargin{jj+1};
             case 'savetoproc'
-                saveToProc = val;
+                saveToProc = varargin{jj+1};
             case 'tracetype'
-                traceType = val;
+                traceType = varargin{jj+1};
         end
     end
 end
@@ -118,7 +117,7 @@ end
 disp('Reading tailCurv...')
 tailCurv = procData.tailCurv;
 nTrls = size(tailCurv,3)/nFramesInTrl;
-if strcmpi(traceType, 'headTail') || strcmpi(traceType,'both')
+if strcmpi(traceType, 'headTail') 
     disp('Getting head orientation...')
     or.head = GetSegOrientationFromTailCurv(tailCurv,headRange);
     disp('Getting tail orientation...')
@@ -130,12 +129,30 @@ if strcmpi(traceType, 'headTail') || strcmpi(traceType,'both')
     or.tail_trl = or.tail_trl - repmat(or.tail_trl(:,1),1,size(or.tail_trl,2));
     or.tail = reshape(or.tail_trl',1,numel(or.tail_trl));
     data.or = or;
-elseif strcmpi(traceType, 'curv') || strcmpi(traceType,'both')
+elseif strcmpi(traceType, 'curv')
     disp('Getting whole body curvature...')
     curv = GetTailTangents(tailCurv,5);
-    curv.trl = reshape(curv,nFramesInTrl,nTrls);
+    curv = curv(end,:);
+    curv_trl = reshape(curv,nFramesInTrl,nTrls)';
+    data.curv = curv;
     data.curv_trl = curv_trl;  
-end
+elseif strcmpi(traceType,'both')    
+    disp('Getting head, tail orientations and body curvature...')
+    or.head = GetSegOrientationFromTailCurv(tailCurv,headRange);
+    or.tail = GetSegOrientationFromTailCurv(tailCurv,tailRange);
+    or.head_trl = reshape(or.head,nFramesInTrl,nTrls)';
+    or.head_trl = or.head_trl - repmat(or.head_trl(:,1),1,size(or.head_trl,2)); % Zero 1st point in trl
+    or.head = reshape(or.head_trl',1,numel(or.head_trl)); % To prevent outrageous std because of jumps at start of trls
+    or.tail_trl = reshape(or.tail,nFramesInTrl,nTrls)';
+    or.tail_trl = or.tail_trl - repmat(or.tail_trl(:,1),1,size(or.tail_trl,2));
+    or.tail = reshape(or.tail_trl',1,numel(or.tail_trl));
+    data.or = or; 
+    curv = GetTailTangents(tailCurv,5);
+    curv = curv(end,:);
+    curv_trl = reshape(curv,nFramesInTrl,nTrls)';
+    data.curv = curv;
+    data.curv_trl = curv_trl;  
+ end
 
 time_trl = (0:nFramesInTrl-1)*1000/fps; % In ms
 
@@ -181,15 +198,10 @@ data.traceType = traceType;
 
 
 %% Computing wavelet transforms
-if strcmpi(traceType,'headTail')
-    W = GetWTs_headTail(data);
-elseif strcmpi(traceType,'curv')
-    W = GetWTs_curv(data);
-elseif strcmpi(traceType,'both')
-    W = MergeStructs(GetWTs_headTail(data), GetWTs_curv(data));
-end
+W = GetWTs(data);
 
 %% Plotting wavelet transforms
+
 if plotOrNot   
     PlotWTs(W)
 end
@@ -204,6 +216,19 @@ end
 
 varargout{1} = W;
 
+end
+
+function W = GetWTs(data)
+traceType = data.traceType;
+
+if strcmpi(traceType,'headTail')
+    W = GetWTs_headTail(data);
+elseif strcmpi(traceType,'curv')
+    W = GetWTs_curv(data);
+elseif strcmpi(traceType,'both')
+    W_headTail = GetWTs_headTail(data);
+    W_curv = GetWTs_curv(data);
+    W = catstruct(W_headTail,W_curv);
 end
 
 function W = GetWTs_headTail(data)
@@ -307,6 +332,7 @@ W.shortTrls = shortTrls;
 W.cLim = data.cLim;
 W.head.corrVec = C.head;
 W.tail.corrVec = C.tail;
+W.traceType = data.traceType;
 end
 
 function W = GetWTs_curv(data)
@@ -323,8 +349,7 @@ onsets = data.onsets;
 
 disp('Computing wavelet transforms...')
 W.curv.coeff = cell(nTrls,1);
-W.tail.coeff = W.head.coeff;
-W.curv.ts = W.head.coeff;
+W.curv.ts = W.curv.coeff;
 W.curv.avg = [];
 W.time = [];
 if isempty(sigmaXY)
@@ -346,11 +371,21 @@ for trl = trlList(:)'
         shortTrls = [shortTrls,trl];
     else
         t  = time_align(tInds);
-        x = chebfilt(data.curv_trl(trl,:),1/fps,freqRange);
-        x = x(tInds);       
+        blah = data.curv_trl(trl,:);
+%         dBlah = Standardize(gradient(blah))*2*max(blah);
+        dBlah = gradient(blah);
+        imf = MyEMD(blah,3);
+%         x = chebfilt(data.curv_trl(trl,:),1/fps,freqRange);
+        x = blah;
+        x_flt = imf(1).comp + imf(2).comp;      
+        x = x(tInds);
+        x_flt = x_flt(tInds);
+        dBlah = dBlah(tInds);
         W.curv.ts{count} = x;
-        [W.curv.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
-            'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);   
+%         [W.curv.coeff{count},freq] = ComputeXWT(x_flt(:),x_flt(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+%             'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);   
+        [W.curv.coeff{count},freq] = ComputeXWT(dBlah(:),dBlah(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+            'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);  
         if  ~isempty(W.curv.coeff{count}) && firstNonZeroFlag
             W.curv.avg = W.curv.coeff{count};            
             firstNonZeroFlag = 0;
@@ -392,99 +427,10 @@ W.trlList = trlList;
 W.shortTrls = shortTrls;
 W.cLim = data.cLim;
 W.curv.corrVec = C.curv;
+W.traceType = data.traceType;
 end
 
-function PlotWTs(W)
-trlList = W.trlList;
-t = W.time;
-freq = W.freq;
-cLim = W.cLim;
-ax = {};
-ax{1} = [1 0.39 0 0.61];
-ax{2} = [1 0.39 0 0.21];
-ax{3} = [1 0.2 0 0];
-count = 0;
-for trl = trlList(:)'
-    count = count + 1;
-    fh = figure('Name','Wavelet transforms of orientation timeseries');
-    axH = CreateSubaxes(fh,ax{1},ax{2},ax{3});
-    % -- Head wavelet --
-    axes(axH(1));
-    imagesc(t,freq,abs(W.head.coeff{trl}))
-    set(gca,'ydir','normal','xtick',[],'clim',cLim);
-    ylabel({'Head';' Freq (Hz)'})
-    xlim([t(1) t(end)])
-    title(['Head and tail orientation, trl = ' num2str(trl)])
-    box off
-    
-    % -- Tail wavelet --
-    axes(axH(2));
-    imagesc(t, freq,abs(W.tail.coeff{trl}))
-    set(gca,'ydir','normal','xtick',[],'clim',cLim);
-    ylabel({'Tail' ; 'Freq (Hz)'})
-    xlim([t(1) t(end)])
-    
-    % -- Head and tail orientation timeseries
-    axes(axH(3))
-    plot(t,W.head.ts{trl},'g.')
-    hold on
-    plot(t,W.tail.ts{trl},'m.')
-    xlim([t(1) t(end)])
-    ylim([-200 200])
-    box off
-    ylabel({'Orientation'; '(deg)'})
-    xTick = get(gca,'xtick');
-    xTick(mod(xTick,100)~=0)=[];
-    set(gca,'tickdir','out','xtick',xTick,'ytick',[-100 0 100],'color','k')
-    xlabel('Time (ms)')
-    shg
-    linkaxes(axH,'x');
 end
-% -- Avg head and tail --
-fh = figure('Name','Avg WT for head and tail');
-ax{1} =[0.8 0.4 0 0.6];
-ax{2} = [0.2 0.4 0.8 0.6];
-ax{3} = [0.8 0.4 0 0.2];
-ax{4} = [0.2 0.4 0.8 0.2];
-ax{5} = [0.8 0.2 0 0];
-axH = CreateSubaxes(fh,ax{1},ax{2},ax{3},ax{4},ax{5});
-axes(axH(1))
-imagesc(t, freq,abs(W.head.avg))
-set(gca,'ydir','normal','xtick',[],'clim',[cLim(1) cLim(2)*0.9]);
-ylabel({'Head' ; 'Freq (Hz)'})
-xlim([t(1) t(end)])
-title('Avg WT for head and tail orientation')
 
-axes(axH(2))
-plot(mean(abs(W.head.avg),2),freq,'g')
-ylim([freq(end) freq(1)])
-box off
-xlim([-inf inf])
-set(gca,'ytick',[],'xaxislocation','top','color','k')
 
-axes(axH(3))
-imagesc(t, freq, abs(W.tail.avg))
-set(gca,'ydir','normal','xtick',[],'clim',cLim);
-ylabel({'Tail' ; 'Freq (Hz)'})
-xlim([t(1) t(end)])
 
-axes(axH(4))
-plot(mean(abs(W.tail.avg),2),freq,'m')
-box off
-ylim([freq(end) freq(1)])
-xlim([-inf inf])
-set(gca,'ytick',[],'color','k')
-xlabel('$\Sigma$ power','interpreter','latex')
-
-axes(axH(5))
-y = Standardize(mean(abs(W.tail.avg),1)) - Standardize(mean(abs(W.head.avg),1));
-plot(t,y,'r')
-hold on
-plot(t, zeros(size(t)),'y--')
-box off
-set(gca,'tickdir','out','color','k','xtick',xTick)
-xlim([t(1) t(end)])
-ylim([-inf inf])
-xlabel('Time(ms)')
-ylabel('$\Sigma |T| - \Sigma |H|$','interpreter','latex')
-end

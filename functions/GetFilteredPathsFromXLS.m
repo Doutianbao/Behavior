@@ -5,7 +5,8 @@ function varargout = GetFilteredPathsFromXLS(varargin)
 % paths = GetFilteredPathsFromXLS();
 % paths = GetFilteredPathsFromXLS([]);
 % paths = GetFilteredPathsFromXLS(xlPath);
-% [paths,paramVals] = GetFilteredPathsFromXL(xlPath);
+% [paths,paramVals] = GetFilteredPathsFromXLS(xlPath);
+% [paths, paramVals, filtInds] = GetFilteredPathsFromXLS(xlPath,filtInds);
 % Inputs:
 % xlPath - Path to xl sheet containing paths. If xlPath = [], then allows
 % for interactive selection of file.
@@ -16,13 +17,19 @@ function varargout = GetFilteredPathsFromXLS(varargin)
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 fileDir = 'S:\Avinash\Ablations and behavior';
+filtInds =[];
 currDir = cd;
 cd(fileDir)
 if nargin==0
     [xlFile,xlPath] = uigetfile('*.xlsx','Select XL sheet with path info...');
     fullPath = fullfile(xlPath,xlFile);
 elseif nargin == 1
-    fullPath = varargin{1};     
+    fullPath = varargin{1};
+    [xlPath,~] = fileparts(fullPath);
+elseif nargin > 1
+     fullPath = varargin{1};
+    [xlPath,~] = fileparts(fullPath);
+    filtInds = varargin{2};
 end
 
 if isempty(xlPath)
@@ -36,13 +43,15 @@ varNames = raw(1,:);
 nanInds = GetNanInds(varNames);
 varNames(nanInds) = [];
 
-disp(varNames)
-filtList = input('Select filt inds, e.g. [1 3 4]: ');
+if isempty(filtInds)
+    disp(varNames)
+    filtInds = input('Select filt inds, e.g. [1 3 4]: ');
+end
 
 rowInds_sub = 1:length(raw);
 paramVals = struct;
-for ff = 1:length(filtList)
-    colInd = filtList(ff);
+for ff = 1:length(filtInds)
+    colInd = filtInds(ff);
     valArray = raw(2:end,colInd);
     nanInds = find(GetNanInds(valArray));
     valArray(nanInds) = [];
@@ -75,6 +84,7 @@ paths = raw(rowInds_sub+1,pathCol);
 paths(GetNanIndsFromCellArray(paths))=[];
 varargout{1} = paths;
 varargout{2} = paramVals;
+varargout{3} = filtInds;
 
 end
 

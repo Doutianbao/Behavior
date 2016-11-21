@@ -1,19 +1,19 @@
-function varargout = GetFilteredPathsFromXLS(varargin)
-%GetFilteredPathsFromXLS Given the path to the xl sheet that has paths to
+function varargout = GetFilteredValsFromXLS(varargin)
+%GetFilteredValsFromXLS Given the path to the xl sheet that has paths to
 %   fish behavior data, allows for selection of paths by interactively
 %   chosen filters.
-% paths = GetFilteredPathsFromXLS();
-% paths = GetFilteredPathsFromXLS([]);
-% paths = GetFilteredPathsFromXLS(xlPath);
-% [paths,paramVals] = GetFilteredPathsFromXLS(xlPath);
-% [paths, paramVals, filtInds] = GetFilteredPathsFromXLS(xlPath,filtInds);
+% vals = GetFilteredValsFromXLS();
+% vals = GetFilteredValsFromXLS([]);
+% vals = GetFilteredValsFromXLS(xlPath);
+% [vals,paramVals] = GetFilteredValsFromXLS(xlPath);
+% [vals, paramVals, filtInds] = GetFilteredValsFromXLS(xlPath,filtInds);
 % Inputs:
 % xlPath - Path to xl sheet containing paths. If xlPath = [], then allows
 % for interactive selection of file.
 % Outputs:
-% paths - Paths after filtering selected parameters for selected values
+% vals - Values after filtering selected parameters for selected values
 % paramVals = Parameter and value data structure.
-% 
+%
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
 fileDir = 'S:\Avinash\Ablations and behavior';
@@ -25,15 +25,13 @@ if nargin==0
     fullPath = fullfile(xlPath,xlFile);
 elseif nargin == 1
     fullPath = varargin{1};
-    [xlPath,~] = fileparts(fullPath);
 elseif nargin > 1
-     fullPath = varargin{1};
-    [xlPath,~] = fileparts(fullPath);
+    fullPath = varargin{1};
     filtInds = varargin{2};
 end
 
-if isempty(xlPath)
-    [xlFile,xlPath] = uigetfile('*.xlsx');
+if isempty(fullPath)
+    [xlFile,xlPath] = uigetfile('*.xlsx','Select XL sheet with path info...');
     fullPath = fullfile(xlPath,xlFile);
 end
 
@@ -57,18 +55,18 @@ for ff = 1:length(filtInds)
     valArray(nanInds) = [];
     raw(nanInds+1,:)=[];
     if ischar(valArray{1})
-        blah = unique(valArray);        
+        blah = unique(valArray);
         fprintf('\n')
         disp(blah')
         ind = input(['Index of ' num2str(varNames{colInd}) ': ']);
         rowInds = find(strcmpi(valArray,blah(ind)));
     else
-        blah = unique(cell2mat(valArray));       
+        blah = unique(cell2mat(valArray));
         fprintf('\n')
         disp(blah')
         ind = input(['Index of ' num2str(varNames{colInd}) ': ']);
         rowInds = find(cell2mat(valArray)==blah(ind));
-    end 
+    end
     if iscell(blah(ind))
         val = blah{ind};
     else
@@ -79,10 +77,18 @@ for ff = 1:length(filtInds)
 end
 
 pathCol = strcmpi(varNames,'path');
-paths = raw(rowInds_sub+1,pathCol);
+keepInds = rowInds_sub + 1;
+paths = raw(keepInds,pathCol);
 
-paths(GetNanIndsFromCellArray(paths))=[];
-varargout{1} = paths;
+nanInds = GetNanIndsFromCellArray(paths);
+keepInds(nanInds) =[];
+if isempty(filtInds)
+    vals = raw(keepInds,:);
+else
+    vals = raw(keepInds,filtInds);
+end
+
+varargout{1} = vals;
 varargout{2} = paramVals;
 varargout{3} = filtInds;
 

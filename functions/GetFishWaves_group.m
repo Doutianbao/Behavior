@@ -39,6 +39,8 @@ function varargout = GetFishWaves_group(pathList,varargin)
 %   w.r.t stimulus frame
 % traceType - 'headTail','curv','both'. If 'headTail', plots head and tail
 %   orientations; 'curv' - plots total body curvature; 'both' - plots both.
+% diffOrNot - 0 or 1; 1 results in taking derivative of curvature
+%   timeseries and then WT.
 % Outputs:
 % W - Cell array containig wavelet transform data for each fish
 % procData - Cell array containing pointers to procData.mat files
@@ -63,6 +65,7 @@ cLim = [1 100];
 onsetAlign = 1;
 saveToProc = 1;
 traceType = 'headTail'; %('headTail','curv','both');
+diffOrNot = 0;
 
 currPath = cd;
 if nargin ==0 || isempty(pathList)
@@ -122,6 +125,8 @@ for jj = 1:numel(varargin)
                 saveToProc = varargin{jj+1};
             case 'tracetype'
                 traceType = varargin{jj+1};
+            case 'diffornot'
+                diffOrNot = varargin{jj+1};
         end
     end
 end
@@ -149,7 +154,8 @@ for pp = 1:nPaths
         'nFramesInTrl',nFramesInTrl,'fps',fps,'freqRange',freqRange,'dj',dj,...
         'plotOrNot',plotOrNot_new,'xLim',xLim,'cLim',cLim,'stimTime',stimTime,...
         'onsetAlign',onsetAlign,'saveToProc',saveToProc_new,'noiseType',noiseType,...
-        'stringency',stringency,'sigmaXY',sigmaXY_new,'traceType', traceType);
+        'stringency',stringency,'sigmaXY',sigmaXY_new,'traceType', traceType,...
+        'diffOrNot',diffOrNot);
     fldName = fieldnames(W{pp}.sigma);
     fldName = fldName{1};
     sigmaXY_grp(pp) = W{pp}.sigma.(fldName);

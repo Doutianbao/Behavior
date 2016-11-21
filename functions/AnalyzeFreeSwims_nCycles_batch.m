@@ -65,8 +65,8 @@ for pp = 1:length(pathList)
         cp = fullfile(cp,'proc');
     end
     cd(cp)
-    out{pp} = AnalyzeFreeSwims_nCycles(cp,'fps',fps,'nFramesInTrl',nFramesInTrl, 'preStimPeriod', preStimPeriod,...
-        'paramList',paramList,'xLim',xLim);
+    out{pp} = AnalyzeFreeSwims_nCycles(cp,'fps',fps,'nFramesInTrl',nFramesInTrl, ...
+        'preStimPeriod', preStimPeriod,'paramList',paramList,'xLim',xLim);
 end
 
 end

@@ -30,9 +30,11 @@ function varargout = GetFishWaves_fish(procData,varargin)
 % 'stimTime' - Stim onset time in milliseconds (default = 100);
 % 'xLim' - X limits of plots (default = [-50 650], in milliseconds, customized for escape responses)
 % 'cLim' - Color limits for normalized wavelet plots (default = [0.1 3]).
-% 'onsetAlign' = 0 or 1. If 1, aligns timeseries of different trials based
+% onsetAlign = 0 or 1. If 1, aligns timeseries of different trials based
 %   onset of response (stored in procData.elicitedSwimInfo). If 0, aligns
 %   w.r.t stimulus frame
+% traceType - 'headTail','curv','both'. Determines the type of timeseries
+%   on which to compute WTs.
 %
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
@@ -54,6 +56,7 @@ onsetAlign = 1;
 saveToProc = 1;
 sigmaXY = [];
 traceType = 'headTail';
+diffOrNot = 0;
 
 if nargin ==0 || isempty(procData)
     disp('Getting procData...')
@@ -109,6 +112,8 @@ for jj = 1:numel(varargin)
                 saveToProc = varargin{jj+1};
             case 'tracetype'
                 traceType = varargin{jj+1};
+            case 'diffornot'
+                diffOrNot = varargin{jj+1};
         end
     end
 end
@@ -195,6 +200,7 @@ data.sigmaXY = sigmaXY;
 data.cLim = cLim;
 data.noiseType = noiseType;
 data.traceType = traceType;
+data.diffOrNot = diffOrNot;
 
 
 %% Computing wavelet transforms
@@ -346,6 +352,7 @@ sigmaXY = data.sigmaXY;
 tLen_exp = (abs(diff(xLim))/1000)*fps;
 freqRange = data.freqRange;
 onsets = data.onsets;
+diffOrNot = data.diffOrNot;
 
 disp('Computing wavelet transforms...')
 W.curv.coeff = cell(nTrls,1);
@@ -373,16 +380,18 @@ for trl = trlList(:)'
         t  = time_align(tInds);
         blah = data.curv_trl(trl,:);
 %         dBlah = Standardize(gradient(blah))*2*max(blah);
-        dBlah = gradient(blah);
-        imf = MyEMD(blah,3);
+        if diffOrNot
+            dBlah = gradient(blah);
+        else
+           imf = MyEMD(blah,3);
+           dBlah = imf(1).comp + imf(2).comp;
+        end   
 %         x = chebfilt(data.curv_trl(trl,:),1/fps,freqRange);
-        x = blah;
-        x_flt = imf(1).comp + imf(2).comp;      
-        x = x(tInds);
-        x_flt = x_flt(tInds);
+        x = blah;        
+        x = x(tInds);       
         dBlah = dBlah(tInds);
         W.curv.ts{count} = x;
-%         [W.curv.coeff{count},freq] = ComputeXWT(x_flt(:),x_flt(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+%         [W.curv.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
 %             'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);   
         [W.curv.coeff{count},freq] = ComputeXWT(dBlah(:),dBlah(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);  

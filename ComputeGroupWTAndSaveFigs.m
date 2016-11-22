@@ -8,7 +8,7 @@ onsetAlign = 1;
 plotOrNot = 0;
 sigmaXY = 100; %(default = NaN);
 cLim = [0 300];
-freqRange_dark = [5 35];
+freqRange_dark = [5 45];
 
 %% Ctrl, tap
 disp('Getting ctrl, tap data...')
@@ -20,11 +20,11 @@ for pp  = 1:length(paths)
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths(end-2:end), 'xLim',[0 750],'paramList',...
+% out = AnalyzeFreeSwims_nCycles_batch(paths(11:end), 'xLim',[0 750],'paramList',...
 %     {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
+[~, procData] = GetFishWaves_group(paths(), 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',0,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
     'traceType','both','diffOrNot',0);
 
 data.ctrl.vib.procData = procData;
@@ -60,12 +60,13 @@ for pp  = 1:length(paths)
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths(end-5:end), 'xLim',[0 750],'paramList',...
+% out = AnalyzeFreeSwims_nCycles_batch(paths(1:end), 'xLim',[0 750],'paramList',...
 %     {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths(1:end-1), 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
+[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',0,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
     'traceType','both','diffOrNot',0);
+
 
 data.abl.vib.procData = procData;
 for fish = 1:length(procData);
@@ -98,7 +99,8 @@ for pp  = 1:length(paths)
         paths{pp} = fullfile(paths{pp},'proc');
     end
 end
-% out = AnalyzeFreeSwims_nCycles_batch(paths(end-2:end), 'xLim',[0 1500],'paramList',...
+
+% out = AnalyzeFreeSwims_nCycles_batch(paths(9:end), 'xLim',[0 1500],'paramList',...
 %     {'bodyAmp'});
 
 [~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_dark,...
@@ -137,10 +139,10 @@ for pp  = 1:length(paths)
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths(end-5:end), 'xLim',[0 1500],'paramList',...
+% out = AnalyzeFreeSwims_nCycles_batch(paths, 'xLim',[0 1500],'paramList',...
 %     {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths([1:6 8:end]), 'saveToProc',1,'xLim',xLim_dark,...
+[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_dark,...
     'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',[0 25],...
     'freqRange',freqRange_dark,'traceType','curv','diffOrNot',1);
 
@@ -159,7 +161,7 @@ for fish = 1:length(procData);
     for fig = 1:length(h)
         saveas(h(fig), fullfile(outDir,['Fig_' sprintf('%.2d',h(fig))]))
     end
-%     dispNext = input('Display next set of figures?(y/n): ','s');
+%     dispNext = input('Display next set of figures?(y/n): ','s');   
 %     if strcmpi(dispNext,'n')
 %         break
 %     end
@@ -574,6 +576,7 @@ title('Response variability across fish for control and ablated groups')
 % -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
 W1 = data.ctrl.vib.mean;
 W2 = data.abl.vib.mean;
+[r_max,c_max] = find(abs(W1) == max(abs(W1(:))));
 ax = {};
 ax{1} = [0.4 0.8 0 0.2]; % WT, Ctrl
 ax{2} = [0.4 0.8 0.4 0.2]; % WT, Abl
@@ -591,6 +594,9 @@ cl = W.cLim;
 %--- Avg WT, Ctrl ---
 axes(axH(1))
 imagesc(time,freq,abs(W1))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
 box off
 title('CONTROL')
@@ -599,6 +605,9 @@ ylabel('Freq (Hz)')
 %--- Avg WT, Abl ---
 axes(axH(2))
 imagesc(time,freq,abs(W2))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','ytick',[],'xtick',[])
 box off
 title('ABLATED')
@@ -649,14 +658,13 @@ ax{5} = [0.8 0.2 0 0]; % Inst mean pow
 
 fh = figure('Name','Avg WT for ctrl and abl');
 axH = CreateSubaxes(fh,ax{1},ax{2},ax{3},ax{4},ax{5});
-% W = data.ctrl.vib.procData{1}.W;
-% freq = W.freq;
-% time = W.time;
-% cl = W.cLim;
 
 %--- Avg WT, Ctrl ---
 axes(axH(1))
 imagesc(time,freq,abs(W1))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
 box off
 ylabel({'CONTROL','Freq (Hz)'})
@@ -666,6 +674,9 @@ title('Average Wavelet Transforms')
 %--- Avg WT, Abl ---
 axes(axH(2))
 imagesc(time,freq,abs(W2))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
 box off
 ylabel({'ABLATED','Freq (Hz)'})
@@ -692,6 +703,7 @@ ylim([min(freq),max(freq)])
 xlabel('Mean Pow')
 set(gca,'color','k','ytick',[])
 
+% -- Inst mean freq --
 axes(axH(5))
 mf1 = instantaneouswavefreq(W1,freq);
 mp1 = instantaneouswavepow(W1);
@@ -708,12 +720,18 @@ mf1(lowInds) = nan;
 mf2(lowInds) = nan;
 t(lowInds) = nan;
 
+beforeInds = time<0;
+mf1(beforeInds) = nan;
+mf2(beforeInds) = nan;
+t(beforeInds) = nan;
+
 plot(t,mf1,'c.')
 hold on
 plot(t,mf2,'m.')
 set(gca,'color','k')
 xlim([time(1) time(end)])
-ylim([-inf inf])
+mf_all  = [mf1(:); mf2(:)];
+ylim([min(mf_all) max(mf_all)])
 ylabel({'Mean', 'Freq (Hz)'})
 lh = legend('Ctrl','Abl');
 set(lh,'location','best','color',[0.7 0.7 0.7])
@@ -722,12 +740,13 @@ linkaxes(axH([1 2 5]),'x')
 
 %--- Fig 3: Difference WT maps ---
 fh = figure('Name','Difference WT maps');
-imagesc(time,freq, abs(W2)-abs(W1))
+imagesc(time,freq, Standardize(W2-W1)-0.5)
 box off
 xlabel('Time (ms)')
 ylabel('Freq (Hz)')
-set(gca,'ydir','normal','tickdir','out','clim',[-50 50]);
-colorbar
+set(gca,'ydir','normal','tickdir','out','clim',[-0.5 0.5]);
+ch =colorbar;
+set(ch,'ytick',[-0.3 0.3],'yticklabel',{'Ctrl > Abl','Abl > Ctrl'})
 title('$\overline{W}_{abl} - \overline{W}_{ctrl}$','interpreter','latex','fontsize',16)
 
 
@@ -768,8 +787,8 @@ cl = W.cLim;
 axes(axH(1))
 imagesc(time,freq,abs(W1))
 hold on
-plot([time(1) time(end)],freq([r_max r_max]),'k:')
-plot(time([c_max c_max]),[freq(1), freq(end)],'k:')
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
 box off
 title('CONTROL')
@@ -779,8 +798,8 @@ ylabel('Freq (Hz)')
 axes(axH(2))
 imagesc(time,freq,abs(W2))
 hold on
-plot([time(1) time(end)],freq([r_max r_max]),'k:')
-plot(time([c_max c_max]),[freq(1), freq(end)],'k:')
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','ytick',[],'xtick',[])
 box off
 title('ABLATED')
@@ -836,8 +855,8 @@ axH = CreateSubaxes(fh,ax{1},ax{2},ax{3},ax{4},ax{5});
 axes(axH(1))
 imagesc(time,freq,abs(W1))
 hold on
-plot([time(1) time(end)],freq([r_max r_max]),'k:')
-plot(time([c_max c_max]),[freq(1), freq(end)],'k:')
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
 box off
 ylabel({'CONTROL','Freq (Hz)'})
@@ -848,8 +867,8 @@ title('Average Wavelet Transforms')
 axes(axH(2))
 imagesc(time,freq,abs(W2))
 hold on
-plot([time(1) time(end)],freq([r_max r_max]),'k:')
-plot(time([c_max c_max]),[freq(1), freq(end)],'k:')
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
 box off
 ylabel({'ABLATED','Freq (Hz)'})
@@ -877,6 +896,8 @@ ylim([min(freq),max(freq)])
 xlabel('Mean Pow')
 set(gca,'color','k','ytick',[])
 
+
+% --- Inst mean freq ---
 axes(axH(5))
 mf1 = instantaneouswavefreq(W1,freq);
 mp1 = instantaneouswavepow(W1);
@@ -888,17 +909,23 @@ mp1 = mp1/sf;
 mp2 = mp2/sf;
 mp = max([mp1(:),mp2(:)],[],2);
 t = time;
-lowInds = find(mp<0.025);
+lowInds = find(mp<0.075);
 mf1(lowInds) = nan;
 mf2(lowInds) = nan;
 t(lowInds) = nan;
+
+beforeInds = time<0;
+mf1(beforeInds) = nan;
+mf2(beforeInds) = nan;
+t(beforeInds) = nan;
 
 plot(t,mf1,'c.')
 hold on
 plot(t,mf2,'m.')
 set(gca,'color','k')
 xlim([time(1) time(end)])
-ylim([-inf inf])
+mf_all  = [mf1(:); mf2(:)];
+ylim([min(mf_all) max(mf_all)])
 ylabel({'Mean', 'Freq (Hz)'})
 lh = legend('Ctrl','Abl');
 set(lh,'location','best','color',[0.7 0.7 0.7])
@@ -907,13 +934,14 @@ linkaxes(axH([1 2 5]),'x')
 
 %--- Fig 3: Difference WT maps ---
 fh = figure('Name','Difference WT maps');
-imagesc(time,freq, abs(W2)-abs(W1))
+imagesc(time,freq, Standardize(W2-W1)-0.5)
 box off
 xlabel('Time (ms)')
 ylabel('Freq (Hz)')
-set(gca,'ydir','normal','tickdir','out','clim',[-8 8]);
-colorbar
-title('$\overline{W}_{abl} - \overline{W}_{ctrl}$','interpreter','latex','fontsize',16)
+set(gca,'ydir','normal','tickdir','out','clim',[-0.5 0.5]);
+ch =colorbar;
+set(ch,'ytick',[-0.3 0.3],'yticklabel',{'Ctrl > Abl','Abl > Ctrl'})
+title('$|\overline{W}_{abl} - \overline{W}_{ctrl}|$','interpreter','latex','fontsize',16)
 
 
 % --- Fig 5: Variablity plot for ctrl and abl ---
@@ -936,7 +964,8 @@ box off
 xlabel('Time (ms)')
 ylabel('Freq (Hz)')
 set(gca,'ydir','normal','tickdir','out','clim',[-0.5 0.5]);
-colorbar
+ch =colorbar;
+set(ch,'ytick',[-0.3 0.3],'yticklabel',{'Ctrl > Abl','Abl > Ctrl'})
 title('$|\overline{W}_{abl}| - |\overline{W}_{ctrl}|$','interpreter','latex','fontsize',16)
 
 

@@ -156,7 +156,7 @@ elseif strcmpi(traceType,'both')
     curv = curv(end,:);
     curv_trl = reshape(curv,nFramesInTrl,nTrls)';
     data.curv = curv;
-    data.curv_trl = curv_trl;  
+    data.curv_trl = curv_trl;
  end
 
 time_trl = (0:nFramesInTrl-1)*1000/fps; % In ms
@@ -282,14 +282,14 @@ for trl = trlList(:)'
         x = x(tInds);
         y  = chebfilt(data.or.tail_trl(trl,:),1/fps,freqRange);
         y = y(tInds);
-        [W.head.ts{count},W.tail.ts{count}] = deal(x,y);
+        [W.head.ts{count},W.tail.ts{count}] = deal(x,y);      
         [W.head.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
-            'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);
+            'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);     
         [W.tail.coeff{count},~] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);
         if  (~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})) && firstNonZeroFlag
-            W.head.avg = W.head.coeff{count};
-            W.tail.avg = W.tail.coeff{count};
+            W.head.avg = abs(W.head.coeff{count});
+            W.tail.avg = abs(W.tail.coeff{count});
             firstNonZeroFlag = 0;
             responseCount = 1;
         elseif ~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})           
@@ -297,8 +297,8 @@ for trl = trlList(:)'
                 shortTrls = [shortTrls,trl];
             else
                 responseCount = responseCount  + 1;
-                W.head.avg = W.head.avg + W.head.coeff{count};
-                W.tail.avg = W.tail.avg + W.tail.coeff{count};
+                W.head.avg = W.head.avg + abs(W.head.coeff{count});
+                W.tail.avg = W.tail.avg + abs(W.tail.coeff{count});
             end            
         end
     end
@@ -317,9 +317,9 @@ W_all_tail = reshape([W.tail.coeff{:}],[size(W.tail.avg),numel(trlList)]);
 W.tail.std = std(W_all_tail,[],3);
 C.head = nan(numel(trlList),1);
 C.tail = C.head;
-for trl = 1:numel(trlList)
+for trl = 1:numel(trlList)  
     C.head(trl) = corr2(W.head.coeff{trl},W.head.avg);
-    C.tail(trl) = corr2(W.tail.coeff{trl},W.tail.avg);
+    C.tail(trl) = corr2(W.tail.coeff{trl},W.tail.avg);  
 end
 
 if ~isempty(t)

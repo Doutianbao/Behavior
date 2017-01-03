@@ -19,19 +19,19 @@ function varargout = ProcessFishImages(varargin)
 % spatialFilt - Spatial filter used to smooth images before finding fish's
 %   head centroid
 % imgInds - Vector of image indices to read. If empty, reads all images.
-%   By default reads all images
+%   By default reads all images.
 % nHeadPxls - Number of head pixels; This is the number of pixels to use
-%   for finding head centroid of fish [25]
+%   for finding head centroid of fish [25].
 % blockSize - Loading all images can take up too much memory, so this
 %   allows processing by splitting total number of images in this many
 %   blocks and processing one block at a time. If empty, or by default
 %   blockSize = 4.
-% cropWid - Crop width. After finding fish, crops image by this width after
-%   aroung the fish to save space
+% cropWid - Crop width. After finding fish, crops image by this width
+%   around the fish to save storage space.
 % lineLen - Length of line in pixels to use for estimating head orienation
 %   [15].
 % Outputs:
-% procData - Mat file saving all relevant info after processing
+% procData - Mat file saving all relevant info after processing.
 % 
 % Avinash Pujala, Koyama lab/HHMI, 2016
 

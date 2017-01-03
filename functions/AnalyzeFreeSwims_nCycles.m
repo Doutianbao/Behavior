@@ -10,7 +10,7 @@ function varargout = AnalyzeFreeSwims_nCycles(varargin)
 % 'fps'  - Frames per second (default: 500)
 % 'nFramesInTrl' - Number frames in a single trial (default: 750)
 % 'paramList' - List of params to extract in this function (default:
-%   {'bodyAmp', 'bodyPer', 'headAmp'}).
+%   {'bodyAmp', 'angVel', 'headAmp'}).
 %   'bodyAmp' - Total body bending amplitudes
 %   'angVel' - Period for total body bends
 %   'headAmp' - Amplitudes for only head segment bends
@@ -308,7 +308,11 @@ while count < 5 && repeat
     if strcmpi(saveOrNot,'y')
         procData.Properties.Writable = true;
         procData.hOr = curv_head;
-        procData.elicitedSwimInfo = out;
+        if sum(strcmpi(fieldnames(procData),'elicitedSwimInfo'))
+            esi = procData.elicitedSwimInfo;
+            esi = catstruct(esi,out);
+        end
+        procData.elicitedSwimInfo = esi;
         repeat = false;
     elseif strcmpi(saveOrNot,'n')
         disp('Data not appended to procData!')

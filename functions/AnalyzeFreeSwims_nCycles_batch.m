@@ -14,7 +14,7 @@ function out = AnalyzeFreeSwims_nCycles_batch(pathList,varargin)
 % 'fps'  - Frames per second (default: 500)
 % 'nFramesInTrl' - Number frames in a single trial (default: 750)
 % 'paramList' - List of params to extract in this function (default:
-%   {'bodyAmp', 'bodyPer', 'headAmp'}).
+%   {'bodyAmp', 'angVel', 'headAmp'}).
 %   'bodyAmp' - Total body bending amplitudes
 %   'angVel' - Period for total body bends
 %   'headAmp' - Amplitudes for only head segment bends

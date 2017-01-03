@@ -1,4 +1,6 @@
 
+clear all
+
 %% Setting inputs
 xlsPath = 'S:\Avinash\Ablations and behavior\Ablation data summary.xlsx';
 saveDir = 'S:\Avinash\Ablations and behavior\GrpData';
@@ -24,7 +26,7 @@ end
 %     {'bodyAmp'});
 
 [~, procData] = GetFishWaves_group(paths(), 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',0,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
+    'onsetAlign',1,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
     'traceType','both','diffOrNot',0);
 
 data.ctrl.vib.procData = procData;
@@ -63,8 +65,8 @@ end
 % out = AnalyzeFreeSwims_nCycles_batch(paths(1:end), 'xLim',[0 750],'paramList',...
 %     {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',0,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
+[~, procData] = GetFishWaves_group(paths(1:end-1), 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',1,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
     'traceType','both','diffOrNot',0);
 
 
@@ -142,7 +144,7 @@ end
 % out = AnalyzeFreeSwims_nCycles_batch(paths, 'xLim',[0 1500],'paramList',...
 %     {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_dark,...
+[~, procData] = GetFishWaves_group(paths(), 'saveToProc',1,'xLim',xLim_dark,...
     'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',[0 25],...
     'freqRange',freqRange_dark,'traceType','curv','diffOrNot',1);
 
@@ -224,7 +226,7 @@ toc
 tic
 W_all = cell(2,1);
 %--- Ctrl ---
-delInd = 1;
+delInd = [];
 disp('Avg WTs from all control fish...')
 procData = data.ctrl.vib.procData;
 nFish = length(procData);
@@ -369,7 +371,7 @@ end
 tic
 disp('Getting correlations...')
 disp('Ctrl')
-D = struct;
+% D = struct;
 nTrls = size(W_all{1},3);
 blah = nan(nTrls,2);
 trlList = 1:nTrls;
@@ -530,7 +532,7 @@ ylabel('TAIL')
 
 
 %--- Fig 2: Difference WT maps ---
-fh = figure('Name','Difference WT maps')
+fh = figure('Name','Difference WT maps');
 ax = {};
 ax{1} = [1 0.5 0 0.5];
 ax{2} = [1 0.5 0 0];
@@ -574,8 +576,9 @@ title('Response variability across fish for control and ablated groups')
 
 % ---- Vib Stim -----
 % -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
-W1 = data.ctrl.vib.mean;
-W2 = data.abl.vib.mean;
+stimType = 'vib';
+W1 = data.ctrl.(stimType).mean;
+W2 = data.abl.(stimType).mean;
 [r_max,c_max] = find(abs(W1) == max(abs(W1(:))));
 ax = {};
 ax{1} = [0.4 0.8 0 0.2]; % WT, Ctrl
@@ -586,7 +589,7 @@ ax{5} = [0.4 0.2 0.4 0]; % Inst mean pow, Abl
 
 fh = figure('Name','Avg WT for ctrl and abl');
 axH = CreateSubaxes(fh,ax{1},ax{2},ax{3},ax{4},ax{5});
-W = data.ctrl.vib.procData{1}.W;
+W = data.ctrl.(stimType).procData{1}.W;
 freq = W.freq;
 time = W.time;
 cl = W.cLim;
@@ -684,7 +687,7 @@ ylabel({'ABLATED','Freq (Hz)'})
 
 %--- GPS for Ctrl & Abl --
 var1 = mean(abs(W1),2);
-var2 = mean(abs(data.abl.vib.mean),2);
+var2 = mean(abs(data.abl.(stimType).mean),2);
 xL = [min(min(var1),min(var2)) max(max(var1),max(var2))];
 
 axes(axH(3))
@@ -708,8 +711,8 @@ axes(axH(5))
 mf1 = instantaneouswavefreq(W1,freq);
 mp1 = instantaneouswavepow(W1);
 
-mf2 = instantaneouswavefreq(data.abl.vib.mean,freq);
-mp2 = instantaneouswavepow(data.abl.vib.mean);
+mf2 = instantaneouswavefreq(data.abl.(stimType).mean,freq);
+mp2 = instantaneouswavepow(data.abl.(stimType).mean);
 sf = max(max(mp1),max(mp2));
 mp1 = mp1/sf;
 mp2 = mp2/sf;
@@ -752,9 +755,9 @@ title('$\overline{W}_{abl} - \overline{W}_{ctrl}$','interpreter','latex','fontsi
 
 % --- Fig 3: Variablity plot for ctrl and abl ---
 figure('Name','Reponse variability across fish')
-plot(sort(data.ctrl.vib.corrVec),'.-')
+plot(sort(data.ctrl.(stimType).corrVec),'.-')
 hold on
-plot(sort(data.abl.vib.corrVec),'ro-')
+plot(sort(data.abl.(stimType).corrVec),'ro-')
 set(gca,'tickdir','out'), box off
 ylim([0.5 1])
 xlabel('Fish #')
@@ -765,10 +768,10 @@ title('Response variability across fish for control and ablated groups')
 
 % ---- Dark flash Stim -----
 % -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
-W1 = data.ctrl.dark.mean;
-W2 = data.abl.dark.mean;
-[r_max,c_max] = find(abs(W1) == max(abs(W1(:))));
 stimType = 'dark';
+W1 = data.ctrl.(stimType).mean;
+W2 = data.abl.(stimType).mean;
+[r_max,c_max] = find(abs(W1) == max(abs(W1(:))));
 ax = {};
 ax{1} = [0.4 0.8 0 0.2]; % WT, Ctrl
 ax{2} = [0.4 0.8 0.4 0.2]; % WT, Abl
@@ -968,4 +971,246 @@ ch =colorbar;
 set(ch,'ytick',[-0.3 0.3],'yticklabel',{'Ctrl > Abl','Abl > Ctrl'})
 title('$|\overline{W}_{abl}| - |\overline{W}_{ctrl}|$','interpreter','latex','fontsize',16)
 
+
+%% Plot Figs - for body curvatures (compact format)
+
+% ---- VIB STIM -----
+% -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
+stimType = 'vib';
+cl = [0 500];
+xl = [-50 300];
+W1 = data.ctrl.(stimType).mean;
+W2 = data.abl.(stimType).mean;
+[r_max,c_max] = find(abs(W1) == max(abs(W1(:))));
+ax = {};
+ax{1} = [0.33 1 0 0]; % WT, Ctrl
+ax{2} = [0.33 1 0.33 0]; % WT, Abl
+ax{3} = [0.33 1 0.66 0]; % WT, Abl - Ctrl
+
+fh = figure('Name','Avg WT for ctrl and abl');
+axH = CreateSubaxes(fh,ax{1},ax{2},ax{3});
+W = data.ctrl.(stimType).procData{1}.W;
+freq = W.freq;
+time = W.time;
+% cl = W.cLim;
+
+%--- Avg WT, Ctrl ---
+axes(axH(1))
+imagesc(time,freq,abs(W1))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out')
+box off
+title('CONTROL')
+ylabel('Freq (Hz)')
+% xlim([time(1) time(end)])
+xlim(xl)
+
+%--- Avg WT, Abl ---
+axes(axH(2))
+imagesc(time,freq,abs(W2))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out','ytick',[])
+box off
+title('ABLATED')
+xlabel('Time (ms)')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+
+%--- Diff maps, Abl - Ctrl ---
+axes(axH(3))
+imagesc(time,freq,W2-W1)
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out','ytick',[])
+box off
+title('ABL - CTRL')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ytick',[-200 0 200],'box','off')
+
+% -- Fig 2: Curvature WT for ctrl and abl : arrangement 2 ---
+ax = {};
+ax{1} = [1 0.33 0 0.66]; % WT, Ctrl
+ax{2} = [1 0.33 0 0.33]; % WT, Abl
+ax{3} = [1 0.33 0 0]; % WT, Abl - Ctrl
+
+fh = figure('Name','Avg WT for ctrl and abl');
+axH = CreateSubaxes(fh,ax{1},ax{2},ax{3});
+W = data.ctrl.(stimType).procData{1}.W;
+freq = W.freq;
+time = W.time;
+cl = W.cLim;
+cl = [0 500];
+
+%--- Avg WT, Ctrl ---
+axes(axH(1))
+imagesc(time,freq,abs(W1))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
+box off
+ylabel({'CONTROL';'Freq (Hz)'})
+% xlim([time(1) time(end)])
+xlim(xl)
+title(['Average wavelet spectra of ' stimType '-elicited responses for control and ablated fish'])
+
+%--- Avg WT, Abl ---
+axes(axH(2))
+imagesc(time,freq,abs(W2))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
+box off
+ylabel({'ABLATED','Freq (Hz)'})
+xlabel('Time (ms)')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+
+%--- Diff map, Abl - Ctrl --
+axes(axH(3))
+imagesc(time,freq,W2-W1)
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out')
+box off
+ylabel({'ABL - CTRL'; 'Freq (Hz)'})
+xlabel('Time (ms)')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ytick',[-200 0 200],'box','off')
+
+
+% ---- DARK FLASH STIM -----
+% -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
+stimType = 'dark';
+mult = 15;
+% cl = [0 50];
+W1 = data.ctrl.(stimType).mean * mult;
+W2 = data.abl.(stimType).mean * mult;
+[r_max,c_max] = find(abs(W1) == max(abs(W1(:))));
+ax = {};
+ax{1} = [0.33 1 0 0]; % WT, Ctrl
+ax{2} = [0.33 1 0.33 0]; % WT, Abl
+ax{3} = [0.33 1 0.66 0]; % WT, Abl - Ctrl
+
+fh = figure('Name','Avg WT for ctrl and abl');
+axH = CreateSubaxes(fh,ax{1},ax{2},ax{3});
+W = data.ctrl.(stimType).procData{1}.W;
+freq = W.freq;
+time = W.time;
+% cl = W.cLim;
+
+
+%--- Avg WT, Ctrl ---
+axes(axH(1))
+imagesc(time,freq,abs(W1))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out')
+box off
+title('CONTROL')
+ylabel('Freq (Hz)')
+% xlim([time(1) time(end)])
+xlim(xl)
+
+%--- Avg WT, Abl ---
+axes(axH(2))
+imagesc(time,freq,abs(W2))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out','ytick',[])
+box off
+title('ABLATED')
+xlabel('Time (ms)')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+
+%--- Diff map, Abl - Ctrl --
+axes(axH(3))
+imagesc(time,freq,W2-W1)
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out','ytick',[])
+box off
+title('ABL - CTRL')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ytick',[-200 0 200],'box','off')
+
+% -- Fig 2: Curvature WT for ctrl and abl : arrangement 2 ---
+ax = {};
+ax{1} = [1 0.33 0 0.66]; % WT, Ctrl
+ax{2} = [1 0.33 0 0.33]; % WT, Abl
+ax{3} = [1 0.33 0 0]; % WT, Abl - Ctrl
+
+fh = figure('Name','Avg WT for ctrl and abl');
+axH = CreateSubaxes(fh,ax{1},ax{2},ax{3});
+W = data.ctrl.(stimType).procData{1}.W;
+
+%--- Avg WT, Ctrl ---
+axes(axH(1))
+imagesc(time,freq,abs(W1))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
+box off
+ylabel({'CONTROL';'Freq (Hz)'})
+% xlim([time(1) time(end)])
+xlim(xl)
+title(['Average wavelet spectra of ' stimType '-elicited responses for control and ablated fish'])
+
+%--- Avg WT, Abl ---
+axes(axH(2))
+imagesc(time,freq,abs(W2))
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',cl,'ydir','normal','tickdir','out','xtick',[])
+box off
+ylabel({'ABLATED','Freq (Hz)'})
+xlabel('Time (ms)')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+
+%--- Diff map, Abl - Ctrl --
+axes(axH(3))
+imagesc(time,freq,W2-W1)
+hold on
+plot([time(1) time(end)],freq([r_max r_max]),'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
+set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out')
+box off
+ylabel({'ABL - CTRL'; 'Freq (Hz)'})
+xlabel('Time (ms)')
+% xlim([time(1) time(end)])
+xlim(xl)
+cb = colorbar;
+set(cb,'location','east','ytick',[-200 0 200],'box','off')
 

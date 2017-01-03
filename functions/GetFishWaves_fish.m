@@ -283,7 +283,7 @@ for trl = trlList(:)'
         y  = chebfilt(data.or.tail_trl(trl,:),1/fps,freqRange);
         y = y(tInds);
         [W.head.ts{count},W.tail.ts{count}] = deal(x,y);      
-        [W.head.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+        [W.head.coeff{count},freq, coi] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);     
         [W.tail.coeff{count},~] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);
@@ -333,6 +333,7 @@ W.sigma = sigma;
 W.freqScale = data.freqScale;
 W.dj = data.dj;
 W.freq = freq;
+W.coi = 1./coi;
 W.trlList = trlList;
 W.shortTrls = shortTrls;
 W.cLim = data.cLim;
@@ -393,7 +394,8 @@ for trl = trlList(:)'
         W.curv.ts{count} = x;
 %         [W.curv.coeff{count},freq] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
 %             'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);   
-        [W.curv.coeff{count},freq] = ComputeXWT(dBlah(:),dBlah(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
+        [W.curv.coeff{count},freq,coi] = ComputeXWT(dBlah(:),dBlah(:),t(:)/1000,'freqRange',freqRange,...
+            'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);  
         if  ~isempty(W.curv.coeff{count}) && firstNonZeroFlag
             W.curv.avg = W.curv.coeff{count};            
@@ -432,6 +434,7 @@ W.sigma = sigma;
 W.freqScale = data.freqScale;
 W.dj = data.dj;
 W.freq = freq;
+W.coi = 1./coi;
 W.trlList = trlList;
 W.shortTrls = shortTrls;
 W.cLim = data.cLim;

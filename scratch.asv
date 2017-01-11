@@ -1,22 +1,21 @@
+M = struct;
+S = struct;
 
-% A_pos = data.abl.vib.mean >= (data.ctrl.vib.mean + 0.5*data.ctrl.vib.std);
-% A_neg = data.abl.vib.mean <= (data.ctrl.vib.mean - 0.5*data.ctrl.vib.std);
-% 
-% A_pn = (A_pos | A_neg);
+C = cat(3, W.ctrl.mHom.vib, W.ctrl.inter.vib, W.ctrl.vent.vib);
+M.ctrl.vib = mean(C,3);
+S.ctrl.vib = std(C,[],3);
 
-% w = data.ctrl.vib.procData{1}.W; 
-% time = w.time; freq = w.freq;
-% A = (data.abl.vib.mean - data.ctrl.vib.mean)./(data.ctrl.vib.std);
-% M = data.ctrl.vib.mean > mean(data.ctrl.vib.mean(:));
-% A = A.*M;
-% A(abs(A) <0.75) = 0;
-% figure
-% imagesc(time,freq,A), set(gca,'ydir','normal')
-% box off
-% xlabel('Time (ms)')
-% ylabel('Freq (Hz)')
-% colorbar
+M.abl.mHom.vib  = mean(W.abl.mHom.vib,3);
+S.abl.mHom.vib = std(W.abl.mHom.vib,[],3);
+
+thr_ctrl = M.ctrl.vib + 1 *S.ctrl.vib;
+thr_abl = M.abl.mHom.vib + 1*S.abl.mHom.vib;
+
+inds1 = find(M.abl.mHom.vib < thr_ctrl);
+inds2 = find(M.ctrl.vib < thr_abl);
+
+B1 = M.ctrl.vib; B1(inds1)=0;
+B2 = M.abl.mHom.vib; B2(inds2)=0;
 
 
-out = AnalyzeFreeSwims_nCycles_batch(paths(11:end), 'xLim',[0 750],'paramList',...
-    {'headAmp','bodyAmp'});
+

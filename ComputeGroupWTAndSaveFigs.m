@@ -10,24 +10,26 @@ onsetAlign = 1;
 plotOrNot = 0;
 sigmaXY = 100; %(default = NaN);
 cLim = [0 300];
-freqRange_dark = [5 45];
+freqRange_dark = [5 40];
+paths = struct;
+ampOrPow = 'amp';
 
 %% Ctrl, tap
 disp('Getting ctrl, tap data...')
-[paths,paramVals, filtInds] = GetFilteredPathsFromXLS(xlsPath);
-for pp  = 1:length(paths)
-    [path_curr, file_curr] = fileparts(paths{pp});
+[paths.ctrl.vib,paramVals, filtInds] = GetFilteredPathsFromXLS(xlsPath);
+for pp  = 1:length(paths.ctrl.vib)
+    [path_curr, file_curr] = fileparts(paths.ctrl.vib{pp});
     if ~strcmpi(file_curr,'proc')
-        paths{pp} = fullfile(paths{pp},'proc');
+        paths.ctrl.vib{pp} = fullfile(paths.ctrl.vib{pp},'proc');
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths(11:end), 'xLim',[0 750],'paramList',...
-%     {'bodyAmp'});
+out = AnalyzeFreeSwims_nCycles_batch(paths.ctrl.vib(), 'xLim',[0 750],'paramList',...
+    {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths(), 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',1,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
-    'traceType','both','diffOrNot',0);
+[~, procData] = GetFishWaves_group(paths.ctrl.vib(), 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',1,'sigmaXY',1,'plotOrNot',plotOrNot,'cLim',cLim,...
+    'traceType','both','diffOrNot',0,'ampOrPow',ampOrPow);
 
 data.ctrl.vib.procData = procData;
 data.ablationType = paramVals.AblationType;
@@ -52,22 +54,23 @@ for fish = 1:length(procData);
 end
 disp('Completed Ctrl, vib')
 
-%% Abl tap
+
+%% Abl, tap
 disp('Getting abl, tap data...')
-[paths,~] = GetFilteredPathsFromXLS(xlsPath,filtInds);
-for pp  = 1:length(paths)
-    [path_curr, file_curr] = fileparts(paths{pp});
+[paths.abl.vib,~] = GetFilteredPathsFromXLS(xlsPath,filtInds);
+for pp  = 1:length(paths.abl.vib)
+    [path_curr, file_curr] = fileparts(paths.abl.vib{pp});
     if ~strcmpi(file_curr,'proc')
-        paths{pp} = fullfile(paths{pp},'proc');
+        paths.abl.vib{pp} = fullfile(paths.abl.vib{pp},'proc');
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths(1:end), 'xLim',[0 750],'paramList',...
-%     {'bodyAmp'});
+out = AnalyzeFreeSwims_nCycles_batch(paths.abl.vib(1:12), 'xLim',[0 750],'paramList',...
+    {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths(1:end-1), 'saveToProc',1,'xLim',xLim_tap,...
-    'onsetAlign',1,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',cLim,...
-    'traceType','both','diffOrNot',0);
+[~, procData] = GetFishWaves_group(paths.abl.vib(1:12), 'saveToProc',1,'xLim',xLim_tap,...
+    'onsetAlign',1,'sigmaXY',1,'plotOrNot',plotOrNot,'cLim',cLim,...
+    'traceType','both','diffOrNot',0,'ampOrPow',ampOrPow);
 
 
 data.abl.vib.procData = procData;
@@ -94,20 +97,21 @@ disp('Completed abl, vib')
 
 %% Ctrl, dark flash
 disp('Getting ctrl, dark flash data...')
-[paths,~] = GetFilteredPathsFromXLS(xlsPath,filtInds);
-for pp  = 1:length(paths)
-    [path_curr, file_curr] = fileparts(paths{pp});
+[paths.ctrl.dark,~] = GetFilteredPathsFromXLS(xlsPath,filtInds);
+for pp  = 1:length(paths.ctrl.dark)
+    [path_curr, file_curr] = fileparts(paths.ctrl.dark{pp});
     if ~strcmpi(file_curr,'proc')
-        paths{pp} = fullfile(paths{pp},'proc');
+        paths.ctrl.dark{pp} = fullfile(paths.ctrl.dark{pp},'proc');
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths(9:end), 'xLim',[0 1500],'paramList',...
-%     {'bodyAmp'});
+out = AnalyzeFreeSwims_nCycles_batch(paths.ctrl.dark(), 'xLim',[0 1500],'paramList',...
+    {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths, 'saveToProc',1,'xLim',xLim_dark,...
-    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',[0 25],...
-    'freqRange',freqRange_dark,'traceType','curv','diffOrNot',1);
+[~, procData] = GetFishWaves_group(paths.ctrl.dark(), 'saveToProc',1,'xLim',xLim_dark,...
+    'onsetAlign',onsetAlign,'sigmaXY',1,'plotOrNot',plotOrNot,'cLim',cLim,...
+    'freqRange',freqRange_dark,'traceType','curv',...
+    'diffOrNot',0,'ampOrPow',ampOrPow);
 
 data.ctrl.dark.procData = procData;
 for fish = 1:length(procData);
@@ -133,20 +137,21 @@ disp('Completed ctrl, dark flash')
 
 %% Abl, dark flash
 disp('Getting abl, dark flash data...')
-[paths,~] = GetFilteredPathsFromXLS(xlsPath,filtInds);
-for pp  = 1:length(paths)
-    [path_curr, file_curr] = fileparts(paths{pp});
+[paths.abl.dark,~] = GetFilteredPathsFromXLS(xlsPath,filtInds);
+for pp  = 1:length(paths.abl.dark)
+    [path_curr, file_curr] = fileparts(paths.abl.dark{pp});
     if ~strcmpi(file_curr,'proc')
-        paths{pp} = fullfile(paths{pp},'proc');
+        paths.abl.dark{pp} = fullfile(paths.abl.dark{pp},'proc');
     end
 end
 
-% out = AnalyzeFreeSwims_nCycles_batch(paths, 'xLim',[0 1500],'paramList',...
-%     {'bodyAmp'});
+out = AnalyzeFreeSwims_nCycles_batch(paths.abl.dark, 'xLim',[0 1500],'paramList',...
+    {'bodyAmp'});
 
-[~, procData] = GetFishWaves_group(paths(), 'saveToProc',1,'xLim',xLim_dark,...
-    'onsetAlign',onsetAlign,'sigmaXY',sigmaXY,'plotOrNot',plotOrNot,'cLim',[0 25],...
-    'freqRange',freqRange_dark,'traceType','curv','diffOrNot',1);
+[~, procData] = GetFishWaves_group(paths.abl.dark(), 'saveToProc',1,'xLim',xLim_dark,...
+    'onsetAlign',onsetAlign,'sigmaXY',1,'plotOrNot',plotOrNot,'cLim',[cLim(1) cLim(2)*3],...
+    'freqRange',freqRange_dark,'traceType','curv',...
+    'diffOrNot',0,'ampOrPow',ampOrPow);
 
 data.abl.dark.procData = procData;
 for fish = 1:length(procData);
@@ -977,7 +982,8 @@ title('$|\overline{W}_{abl}| - |\overline{W}_{ctrl}|$','interpreter','latex','fo
 % ---- VIB STIM -----
 % -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
 stimType = 'vib';
-cl = [0 500];
+cl = [0 250];
+cl_mult = 0.4;
 xl = [-50 300];
 W1 = data.ctrl.(stimType).mean;
 W2 = data.abl.(stimType).mean;
@@ -1020,7 +1026,7 @@ xlabel('Time (ms)')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+set(cb,'location','east','ycolor','w','ytick',[0 cl(2)/2 cl(2)],'box','off')
 
 %--- Diff maps, Abl - Ctrl ---
 axes(axH(3))
@@ -1029,13 +1035,13 @@ hold on
 plot([time(1) time(end)],freq([r_max r_max]),'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
-set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out','ytick',[])
+set(gca,'clim',[-cl(2)*cl_mult cl(2)*cl_mult],'ydir','normal','tickdir','out','ytick',[])
 box off
 title('ABL - CTRL')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ytick',[-200 0 200],'box','off')
+set(cb,'location','east','ytick',[-cl(2)*cl_mult 0 cl(2)*cl_mult],'box','off')
 
 % -- Fig 2: Curvature WT for ctrl and abl : arrangement 2 ---
 ax = {};
@@ -1048,8 +1054,7 @@ axH = CreateSubaxes(fh,ax{1},ax{2},ax{3});
 W = data.ctrl.(stimType).procData{1}.W;
 freq = W.freq;
 time = W.time;
-cl = W.cLim;
-cl = [0 500];
+% cl = W.cLim;
 
 %--- Avg WT, Ctrl ---
 axes(axH(1))
@@ -1077,7 +1082,7 @@ xlabel('Time (ms)')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+set(cb,'location','east','ycolor','w','ytick',[0 cl(2)/2 cl(2)],'box','off')
 
 %--- Diff map, Abl - Ctrl --
 axes(axH(3))
@@ -1086,20 +1091,19 @@ hold on
 plot([time(1) time(end)],freq([r_max r_max]),'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
-set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out')
+set(gca,'clim',[-cl(2)*cl_mult cl(2)*cl_mult],'ydir','normal','tickdir','out')
 box off
 ylabel({'ABL - CTRL'; 'Freq (Hz)'})
 xlabel('Time (ms)')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ytick',[-200 0 200],'box','off')
-
+set(cb,'location','east','ytick',[-cl(2)*cl_mult 0 cl(2)*cl_mult],'box','off')
 
 % ---- DARK FLASH STIM -----
 % -- Fig 1: Curvature WT for ctrl and abl : arrangement 1 ---
 stimType = 'dark';
-mult = 15;
+mult = 1;
 % cl = [0 50];
 W1 = data.ctrl.(stimType).mean * mult;
 W2 = data.abl.(stimType).mean * mult;
@@ -1143,7 +1147,7 @@ xlabel('Time (ms)')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+set(cb,'location','east','ycolor','w','ytick',[0 cl(2)/2 cl(2)],'box','off')
 
 %--- Diff map, Abl - Ctrl --
 axes(axH(3))
@@ -1152,13 +1156,13 @@ hold on
 plot([time(1) time(end)],freq([r_max r_max]),'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
-set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out','ytick',[])
+set(gca,'clim',[-cl(2)*cl_mult cl(2)*cl_mult],'ydir','normal','tickdir','out','ytick',[])
 box off
 title('ABL - CTRL')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ytick',[-200 0 200],'box','off')
+set(cb,'location','east','ytick',[-cl(2)*cl_mult 0 cl(2)*cl_mult],'box','off')
 
 % -- Fig 2: Curvature WT for ctrl and abl : arrangement 2 ---
 ax = {};
@@ -1196,7 +1200,7 @@ xlabel('Time (ms)')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ycolor','w','ytick',[0 250 500],'box','off')
+set(cb,'location','east','ycolor','w','ytick',[0 cl(2)/2 cl(2)],'box','off')
 
 %--- Diff map, Abl - Ctrl --
 axes(axH(3))
@@ -1205,12 +1209,12 @@ hold on
 plot([time(1) time(end)],freq([r_max r_max]),'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
 plot(time([c_max c_max]),[freq(1), freq(end)],'w:')
-set(gca,'clim',[-cl(2)*0.4 cl(2)*0.4],'ydir','normal','tickdir','out')
+set(gca,'clim',[-cl(2)*cl_mult cl(2)*cl_mult],'ydir','normal','tickdir','out')
 box off
 ylabel({'ABL - CTRL'; 'Freq (Hz)'})
 xlabel('Time (ms)')
 % xlim([time(1) time(end)])
 xlim(xl)
 cb = colorbar;
-set(cb,'location','east','ytick',[-200 0 200],'box','off')
+set(cb,'location','east','ytick',[-cl(2)*cl_mult 0 cl(2)*cl_mult],'box','off')
 

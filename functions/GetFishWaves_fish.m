@@ -35,6 +35,10 @@ function varargout = GetFishWaves_fish(procData,varargin)
 %   w.r.t stimulus frame
 % traceType - 'headTail','curv','both'. Determines the type of timeseries
 %   on which to compute WTs.
+% diffOrNot - 0 or 1; 1 results in taking derivative of curvature
+%   timeseries and then WT.
+% ampOrNot - 'amp' or 'pow'; determines whether the magnitude of wavelet
+%   coefficients correspond to amplitude ('amp') or power('pow').
 %
 % Avinash Pujala, Koyama lab/HHMI, 2016
 
@@ -57,6 +61,7 @@ saveToProc = 1;
 sigmaXY = [];
 traceType = 'headTail';
 diffOrNot = 0;
+ampOrPow = 'pow';
 
 if nargin ==0 || isempty(procData)
     disp('Getting procData...')
@@ -114,6 +119,8 @@ for jj = 1:numel(varargin)
                 traceType = varargin{jj+1};
             case 'diffornot'
                 diffOrNot = varargin{jj+1};
+            case 'amporpow'
+                ampOrPow = varargin{jj+1};
         end
     end
 end
@@ -201,6 +208,7 @@ data.cLim = cLim;
 data.noiseType = noiseType;
 data.traceType = traceType;
 data.diffOrNot = diffOrNot;
+data.ampOrPow = ampOrPow;
 
 
 %% Computing wavelet transforms
@@ -284,9 +292,13 @@ for trl = trlList(:)'
         y = y(tInds);
         [W.head.ts{count},W.tail.ts{count}] = deal(x,y);      
         [W.head.coeff{count},freq, coi] = ComputeXWT(x(:),x(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
-            'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);     
+            'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);       
         [W.tail.coeff{count},~] = ComputeXWT(y(:),y(:),t(:)/1000,'freqRange',freqRange,'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.ht,'freqScale',data.freqScale,'noiseType',noiseType);
+        if strcmpi(data.ampOrPow,'amp')
+            W.head.coeff{count} = W.head.coeff{count}.^0.5;
+            W.tail.coeff{count} = W.tail.coeff{count}.^0.5;
+        end
         if  (~isempty(W.head.coeff{count}) || ~isempty(W.tail.coeff{count})) && firstNonZeroFlag
             W.head.avg = abs(W.head.coeff{count});
             W.tail.avg = abs(W.tail.coeff{count});
@@ -397,6 +409,9 @@ for trl = trlList(:)'
         [W.curv.coeff{count},freq,coi] = ComputeXWT(dBlah(:),dBlah(:),t(:)/1000,'freqRange',freqRange,...
             'dj',data.dj,'stringency',data.stringency,...
             'sigmaXY',sigma.curv,'freqScale',data.freqScale,'noiseType',noiseType);  
+        if strcmpi(data.ampOrPow,'amp')
+            W.curv.coeff{count} = W.curv.coeff{count}.^0.5;
+        end
         if  ~isempty(W.curv.coeff{count}) && firstNonZeroFlag
             W.curv.avg = W.curv.coeff{count};            
             firstNonZeroFlag = 0;

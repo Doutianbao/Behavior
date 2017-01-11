@@ -311,6 +311,8 @@ while count < 5 && repeat
         if sum(strcmpi(fieldnames(procData),'elicitedSwimInfo'))
             esi = procData.elicitedSwimInfo;
             esi = catstruct(esi,out);
+        else
+            esi = out;
         end
         procData.elicitedSwimInfo = esi;
         repeat = false;

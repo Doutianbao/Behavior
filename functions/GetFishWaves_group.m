@@ -41,6 +41,8 @@ function varargout = GetFishWaves_group(pathList,varargin)
 %   orientations; 'curv' - plots total body curvature; 'both' - plots both.
 % diffOrNot - 0 or 1; 1 results in taking derivative of curvature
 %   timeseries and then WT.
+% ampOrNot - 'amp' or 'pow'; determines whether the magnitude of wavelet
+%   coefficients correspond to amplitude ('amp') or power('pow').
 % Outputs:
 % W - Cell array containig wavelet transform data for each fish
 % procData - Cell array containing pointers to procData.mat files
@@ -66,6 +68,7 @@ onsetAlign = 1;
 saveToProc = 1;
 traceType = 'headTail'; %('headTail','curv','both');
 diffOrNot = 0;
+ampOrPow = 'pow';
 
 currPath = cd;
 if nargin ==0 || isempty(pathList)
@@ -127,6 +130,8 @@ for jj = 1:numel(varargin)
                 traceType = varargin{jj+1};
             case 'diffornot'
                 diffOrNot = varargin{jj+1};
+            case 'amporpow'
+                ampOrPow = varargin{jj+1};
         end
     end
 end
@@ -155,7 +160,7 @@ for pp = 1:nPaths
         'plotOrNot',plotOrNot_new,'xLim',xLim,'cLim',cLim,'stimTime',stimTime,...
         'onsetAlign',onsetAlign,'saveToProc',saveToProc_new,'noiseType',noiseType,...
         'stringency',stringency,'sigmaXY',sigmaXY_new,'traceType', traceType,...
-        'diffOrNot',diffOrNot);
+        'diffOrNot',diffOrNot,'ampOrPow',ampOrPow);
     fldName = fieldnames(W{pp}.sigma);
     fldName = fldName{1};
     sigmaXY_grp(pp) = W{pp}.sigma.(fldName);

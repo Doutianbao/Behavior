@@ -1,6 +1,6 @@
 
 % Unpacks grpData which contains the data from all ablation groups and returns 
-% creates W, which contains all the wavelet transforms in a more easily
+% W, which contains all the wavelet transforms in a more easily
 % accessible format
 
 grps = fieldnames(grpData);

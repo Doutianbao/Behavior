@@ -1,0 +1,28 @@
+
+The idea is to allow the creation of fish swimming video for a trial chosen based on plotted data
+points.
+
+Created a function, UnrolledDataFrmGrpData the takes grpData and unrolls all the values in such a way as
+to make it writeable to an xl sheet that can read in R.
+
+grpData = 
+
+     mHom: [1x1 struct]
+    inter: [1x1 struct]
+     vent: [1x1 struct]
+	 
+
+	 
+Then,
+data_xls = UnrolledDataFrmGrpData(grpData);
+grpData.data_xls = data_xls;
+
+Saved grpData at
+S:\Avinash\Ablations and behavior\GrpData
+as
+'Ablation data for all groups_20170120T013728.mat'
+
+
+
+
+S:\Avinash\Ablations and behavior\Intermediate RS\20160715\Fish2_ctrl1\fastDir_07-15-16-155631\tap\proc

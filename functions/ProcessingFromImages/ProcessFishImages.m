@@ -44,7 +44,7 @@ spatialFilt = 30;
 nHeadPxls = 25;
 lineLen = 15;
 blockSize = 4;
-cropWid = 90; %( For imgDims ~ [900,900])
+cropWid = 90; %(For imgDims ~ [900,900])
 
 for jj  = 1:nargin
     if ischar(varargin{jj})        
